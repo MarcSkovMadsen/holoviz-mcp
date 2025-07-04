@@ -1,8 +1,6 @@
 """Accessible imports for the holoviz_mcp package."""
 
 import importlib.metadata
-import logging
-import sys
 import warnings
 
 from holoviz_mcp.server import main
@@ -17,5 +15,4 @@ except importlib.metadata.PackageNotFoundError as e:  # pragma: no cover
 __all__: list[str] = ["mcp"]
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
     main()
