@@ -1,0 +1,1 @@
+recursive-include panel_mcp models/*.js

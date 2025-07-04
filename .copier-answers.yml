@@ -1,0 +1,12 @@
+# This file is managed by Copier; DO NOT EDIT OR REMOVE.
+_commit: ec05cb3
+_src_path: https://github.com/panel-extensions/copier-template-panel-extension
+add_autobump_workflow: true
+author_email: marc.skov.madsen@gmail.com
+author_name: MarcSkovMadsen
+docs_url: https://MarcSkovMadsen.github.io/holoviz-mcp
+github_url: https://github.com/MarcSkovMadsen/holoviz-mcp
+github_user: MarcSkovMadsen
+minimal_python_version: py311
+project_short_description: A Model Context Protocol (MCP) server for the HoloViz ecosystem
+project_slug: panel-mcp

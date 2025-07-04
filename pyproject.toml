@@ -1,0 +1,151 @@
+[build-system]
+requires = [
+    "hatchling",
+    "hatch-vcs",
+    "panel>=1.5.0",
+    "packaging",
+]
+build-backend = "hatchling.build"
+
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+
+[project]
+name = "panel-mcp"
+dynamic = ["version"]
+description = 'A Model Context Protocol (MCP) server for the HoloViz ecosystem'
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.11"
+authors = [{ name = "MarcSkovMadsen", email = "marc.skov.madsen@gmail.com" }]
+maintainers = [
+    { name = "MarcSkovMadsen", email = "marc.skov.madsen@gmail.com" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+dependencies = [
+    "packaging",
+    "panel >=1.5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/MarcSkovMadsen/holoviz-mcp"
+Source = "https://github.com/MarcSkovMadsen/holoviz-mcp"
+
+[project.optional-dependencies]
+dev = [
+    "mkdocs-material",
+    "mkdocs",
+    "mkdocstrings[python]",
+    "mkdocs_pycafe",
+    "pre-commit",
+    "pytest-asyncio",
+    "pytest-rerunfailures",
+    "pytest-xdist",
+    "pytest",
+    "watchfiles",
+]
+mypy = [
+    "mypy",
+    "types-requests",
+    "typing-extensions",
+]
+
+[tool.ruff]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".tox",
+    ".eggs",
+    "*.egg",
+    "doc",
+    "dist",
+    "build",
+    "_build",
+    "examples",
+    ".ipynb_checkpoints",
+    "node_modules",
+]
+line-length = 165
+fix = true
+
+[tool.ruff.lint]
+ignore = [
+    "D203", # one-blank-line-before-class and `no-blank-line-before-class` (D211) are incompatible.
+    "D212", # multi-line-summary-first-line. Alternative is to ignore D213 `multi-line-summary-second-line
+    "E402",  # Module level import not at top of file
+    "E712",  # Avoid equality comparisons to True
+    "E731",  # Do not assign a lambda expression, use a def
+    "N803",  # Argument name should be lowercase
+    "N806",  # Variable name should be lowercase
+]
+select = [
+    "B",    # flake8-bugbear
+    "D",    # pydocstyle
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "PIE",
+    "T20",
+    "RUF006",
+    "UP004",
+    "UP006",
+    "UP020",
+    "UP028",
+    "UP030",
+    "UP031",
+    "UP032",
+    "UP034",
+    "UP036",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.per-file-ignores]
+# Ignore all directories named `tests`.
+"tests/**" = ["D"]
+# Ignore all files that end in `_test.py`.
+"*_test.py" = ["D"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.pytest.ini_options]
+addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
+norecursedirs = "doc .git dist build _build .ipynb_checkpoints examples"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+xfail_strict = true
+minversion = "7"
+log_cli_level = "INFO"
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = '3.11'
+no_implicit_optional = true
+check_untyped_defs = true
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }

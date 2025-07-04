@@ -1,0 +1,108 @@
+site_name: panel-mcp
+site_description: "A Model Context Protocol (MCP) server for the HoloViz ecosystem"
+site_author: "MarcSkovMadsen"
+
+repo_url: https://github.com/MarcSkovMadsen/holoviz-mcp
+repo_name: MarcSkovMadsen/panel-mcp
+edit_uri: edit/main/docs/
+
+theme:
+    name: material
+    logo: 'assets/logo.svg'
+    features:
+        - announce.dismiss
+        - content.action.edit
+        - content.action.view
+        - content.code.annotate
+        - content.code.copy
+        - content.tooltips
+        - navigation.footer
+        - navigation.indexes
+        - navigation.sections
+        - navigation.top
+        - search.highlight
+        - search.suggest
+        - toc.follow
+    palette:
+        # Palette toggle for light mode
+        - media: "(prefers-color-scheme: light)"
+          scheme: default
+          primary: white
+          accent: blue
+          toggle:
+            icon: material/brightness-7
+            name: Switch to dark mode
+
+        # Palette toggle for dark mode
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          primary: black
+          accent: blue
+          toggle:
+            icon: material/brightness-4
+            name: Switch to light mode
+
+markdown_extensions:
+    - toc:
+        permalink: true
+    - pymdownx.highlight:
+        anchor_linenums: true
+    - pymdownx.tasklist:
+        custom_checkbox: true
+    - pymdownx.inlinehilite
+    - pymdownx.snippets
+    - admonition
+    - pymdownx.superfences:
+        custom_fences:
+          - name: python
+            class: 'highlight'
+            validator: !!python/name:mkdocs_pycafe.validator
+            format: !!python/object/apply:mkdocs_pycafe.formatter
+              kwds:
+                type: panel
+                requirements: |
+                  # Add any other requirements here
+                  # see https://mkdocs.py.cafe/en/latest/ for more info
+                  panel
+                  panel_mcp
+                link_text: |
+                  <img src="https://py.cafe/logos/pycafe_logo.png" style="height: 24px"> **Run and edit this code in Py.Cafe**
+    - pymdownx.snippets:
+        url_download: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            docstring_style: numpy
+            show_if_no_docstring: true
+            filters:
+            - "!^_"
+
+watch:
+    - docs
+    - src/panel_mcp
+
+nav:
+    - Home: index.md
+    - Examples: examples.md
+    - Reference: reference/panel_mcp.md
+
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/MarcSkovMadsen
+  - icon: fontawesome/brands/twitter
+    link: https://twitter.com/panel_org
+  - icon: fontawesome/brands/python
+    link: https://pypi.org/project/panel-mcp
+  - icon: fontawesome/brands/discourse
+    link: https://discourse.holoviz.org/
+  - icon: fontawesome/brands/discord
+    link: https://discord.com/invite/rb6gPXbdAr
+  - icon: fontawesome/brands/linkedin
+    link: https://www.linkedin.com/company/panel-org
