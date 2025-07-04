@@ -59,6 +59,8 @@ def _get_packages_depending_on(target_package: str) -> list[str]:
 
 PACKAGES_DEPENDING_ON_PANEL = _get_packages_depending_on("panel")
 
+logger.info(f"Discovered {len(PACKAGES_DEPENDING_ON_PANEL)} packages depending on Panel: {PACKAGES_DEPENDING_ON_PANEL}")
+
 for package in PACKAGES_DEPENDING_ON_PANEL:
     try:
         __import__(package)
