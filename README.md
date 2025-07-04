@@ -57,10 +57,11 @@ pip install holoviz-mcp[panel-extensions]
 
 #### VS Code with GitHub Copilot
 
-Add this configuration to your VS Code `settings.json`:
+Add a configuration like below to your VS Code `settings.json`:
 
 ```json
 {
+    ...
     "mcp": {
         "servers": {
             "holoviz-mcp": {
