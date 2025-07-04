@@ -51,19 +51,19 @@ def _get_packages_depending_on(target_package: str) -> list[str]:
                     continue
                 package_name = requirement_str.split()[0].split(";")[0].split(">=")[0].split("==")[0].split("!=")[0].split("<")[0].split(">")[0].split("~")[0]
                 if package_name.lower() == target_package.lower():
-                    dependent_packages.append(dist_name)
+                    dependent_packages.append(dist_name.replace("-", "_"))
                     break
 
     return sorted(set(dependent_packages))
 
 
-PACKAGES = _get_packages_depending_on("panel")
+PACKAGES_DEPENDING_ON_PANEL = _get_packages_depending_on("panel")
 
-for package in PACKAGES:
+for package in PACKAGES_DEPENDING_ON_PANEL:
     try:
         __import__(package)
     except ImportError as e:
-        logger.warning(f"Failed to import {package}: {e}")
+        logger.warning(f"Discovered but failed to import {package}: {e}")
 
 COMPONENTS = get_components()
 
@@ -79,7 +79,7 @@ def packages() -> list[str]:
     -------
         List of package names, for example ["panel"] or ["panel", "panel_material_ui"]
     """
-    return PACKAGES
+    return sorted(set(component.package for component in COMPONENTS))
 
 
 @mcp.tool

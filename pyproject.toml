@@ -65,6 +65,14 @@ mypy = [
     "types-requests",
     "typing-extensions",
 ]
+panel-extensions =[
+    "panel-full-calendar",
+    "panel-graphic-walker",
+    "panel-material-ui",
+    "panel-neuroglancer",
+    "panel-precision-slider",
+    "panel-web-llm",
+]
 
 [tool.ruff]
 exclude = [
