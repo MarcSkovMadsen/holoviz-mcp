@@ -7,9 +7,11 @@ Use this server to search and access documentation for HoloViz libraries, includ
 
 from fastmcp import FastMCP
 
+from holoviz_mcp.shared import config
+
 # The HoloViz MCP server instance
 mcp: FastMCP = FastMCP(
-    name="Panel Material UI MCP Server",
+    name="documentation",
     instructions="""
     [HoloViz](https://holoviz.org/) Documentation MCP Server.
 
@@ -33,3 +35,7 @@ def hello_world() -> str:
         'Hello, world!'
     """
     return "Hello, world!"
+
+
+if __name__ == "__main__":
+    mcp.run(transport=config.TRANSPORT)
