@@ -9,9 +9,9 @@ Use this server to access:
 - Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
-import logging
 from importlib.metadata import distributions
 
+from fastmcp import Context
 from fastmcp import FastMCP
 
 from holoviz_mcp.panel_mcp.data import get_components
@@ -19,8 +19,6 @@ from holoviz_mcp.panel_mcp.models import Component
 from holoviz_mcp.panel_mcp.models import ComponentBase
 from holoviz_mcp.panel_mcp.models import ComponentBaseSearchResult
 from holoviz_mcp.shared import config
-
-logger = logging.getLogger(__name__)
 
 # Create the FastMCP server
 mcp = FastMCP(
@@ -57,21 +55,35 @@ def _get_packages_depending_on(target_package: str) -> list[str]:
     return sorted(set(dependent_packages))
 
 
-PACKAGES_DEPENDING_ON_PANEL = _get_packages_depending_on("panel")
+COMPONENTS: list[Component] = []
 
-logger.info(f"Discovered {len(PACKAGES_DEPENDING_ON_PANEL)} packages depending on Panel: {PACKAGES_DEPENDING_ON_PANEL}")
 
-for package in PACKAGES_DEPENDING_ON_PANEL:
-    try:
-        __import__(package)
-    except ImportError as e:
-        logger.warning(f"Discovered but failed to import {package}: {e}")
+async def _get_components(ctx: Context) -> list[Component]:
+    """
+    Initialize the components by loading them from the data source.
 
-COMPONENTS = get_components()
+    This function is called when the module is imported to ensure that all components are loaded
+    and available for use in the MCP server.
+    """
+    global COMPONENTS
+    if not COMPONENTS:
+        packages_depending_on_panel = _get_packages_depending_on("panel")
+
+        await ctx.info(f"Discovered {len(packages_depending_on_panel)} packages depending on Panel: {packages_depending_on_panel}")
+
+        for package in packages_depending_on_panel:
+            try:
+                __import__(package)
+            except ImportError as e:
+                await ctx.warning(f"Discovered but failed to import {package}: {e}")
+
+        COMPONENTS = get_components()
+
+    return COMPONENTS
 
 
 @mcp.tool
-def packages() -> list[str]:
+async def packages(ctx: Context) -> list[str]:
     """
     List all installed packages that provide `panel.viewable.Viewable` UI components.
 
@@ -81,11 +93,11 @@ def packages() -> list[str]:
     -------
         List of package names, for example ["panel"] or ["panel", "panel_material_ui"]
     """
-    return sorted(set(component.package for component in COMPONENTS))
+    return sorted(set(component.package for component in await _get_components(ctx)))
 
 
 @mcp.tool
-def components(name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentBase]:
+async def components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentBase]:
     """
     List all `panel.viewable.Viewable` UI components with name, package, description and module path.
 
@@ -104,7 +116,7 @@ def components(name: str | None = None, module_path: str | None = None, package:
     """
     components_list = []
 
-    for component in COMPONENTS:
+    for component in await _get_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
         if package and component.package != package:
@@ -117,7 +129,7 @@ def components(name: str | None = None, module_path: str | None = None, package:
 
 
 @mcp.tool
-def search(query: str, package: str | None = None, limit: int = 10) -> list[ComponentBaseSearchResult]:
+async def search(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentBaseSearchResult]:
     """
     Search for Panel components by name, module_path or docstring.
 
@@ -136,7 +148,7 @@ def search(query: str, package: str | None = None, limit: int = 10) -> list[Comp
     query_lower = query.lower()
 
     matches = []
-    for component in COMPONENTS:
+    for component in await _get_components(ctx=ctx):
         score = 0
         if package and component.package.lower() != package.lower():
             continue
@@ -163,7 +175,7 @@ def search(query: str, package: str | None = None, limit: int = 10) -> list[Comp
 
 
 @mcp.tool
-def component(name: str | None = None, module_path: str | None = None, package: str | None = None) -> Component:
+async def component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> Component:
     """
     Return detail information about a `panel.viewable.Viewable` UI component including docstring and parameters.
 
@@ -182,7 +194,7 @@ def component(name: str | None = None, module_path: str | None = None, package: 
     """
     components_list = []
 
-    for component in COMPONENTS:
+    for component in await _get_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
         if package and component.package != package:
@@ -197,43 +209,6 @@ def component(name: str | None = None, module_path: str | None = None, package: 
         raise ValueError(f"Multiple components found matching criteria: '{name}', '{module_path}', '{package}'. Please refine your search.")
 
     return components_list[0]
-
-
-def find_packages_depending_on(target_package: str) -> list[str]:
-    """
-    Find all installed packages that depend on a given package.
-
-    Args:
-        target_package: The name of the package to find dependents for
-
-    Returns
-    -------
-        List of package names that depend on the target package
-    """
-    from importlib.metadata import distributions
-
-    from packaging.requirements import Requirement
-
-    dependent_packages = []
-    target_package_lower = target_package.lower()
-
-    for dist in distributions():
-        if dist.requires:
-            for requirement_str in dist.requires:
-                try:
-                    # Parse the requirement properly using packaging library
-                    requirement = Requirement(requirement_str)
-                    if requirement.name.lower() == target_package_lower:
-                        dependent_packages.append(dist.metadata["Name"])
-                        break
-                except Exception:
-                    # Fallback to simple string parsing if packaging fails
-                    package_name = requirement_str.split()[0].split(";")[0].split(">=")[0].split("==")[0].split("!=")[0].split("<")[0].split(">")[0].split("~")[0]
-                    if package_name.lower() == target_package_lower:
-                        dependent_packages.append(dist.metadata["Name"])
-                        break
-
-    return sorted(set(dependent_packages))
 
 
 if __name__ == "__main__":

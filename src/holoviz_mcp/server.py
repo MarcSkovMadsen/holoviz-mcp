@@ -11,7 +11,6 @@ The server is composed of multiple sub-servers that provide various functionalit
 """
 
 import asyncio
-import logging
 
 from fastmcp import FastMCP
 
@@ -48,7 +47,6 @@ async def setup_composed_server() -> None:
 
 def main() -> None:
     """Set up and run the composed MCP server."""
-    logging.basicConfig(level=logging.INFO)
 
     async def setup_and_run() -> None:
         await setup_composed_server()
