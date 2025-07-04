@@ -10,6 +10,7 @@ Use this server to access:
 """
 
 import logging
+from importlib.metadata import distributions
 
 from fastmcp import FastMCP
 
@@ -17,12 +18,13 @@ from holoviz_mcp.panel_mcp.data import get_components
 from holoviz_mcp.panel_mcp.models import Component
 from holoviz_mcp.panel_mcp.models import ComponentBase
 from holoviz_mcp.panel_mcp.models import ComponentBaseSearchResult
+from holoviz_mcp.shared import config
 
 logger = logging.getLogger(__name__)
 
 # Create the FastMCP server
 mcp = FastMCP(
-    name="Panel MCP Server",
+    name="panel",
     instructions="""
     [Panel](https://panel.holoviz.org/) MCP Server.
 
@@ -35,12 +37,33 @@ mcp = FastMCP(
     - Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
     """,
 )
-extensions = ["panel_material_ui"]
-for ext in extensions:
+
+
+def _get_packages_depending_on(target_package: str) -> list[str]:
+    """Find all installed packages that depend on a given package."""
+    dependent_packages = []
+
+    for dist in distributions():
+        if dist.requires:
+            dist_name = dist.metadata["Name"]
+            for requirement_str in dist.requires:
+                if "extra ==" in requirement_str:
+                    continue
+                package_name = requirement_str.split()[0].split(";")[0].split(">=")[0].split("==")[0].split("!=")[0].split("<")[0].split(">")[0].split("~")[0]
+                if package_name.lower() == target_package.lower():
+                    dependent_packages.append(dist_name)
+                    break
+
+    return sorted(set(dependent_packages))
+
+
+PACKAGES = _get_packages_depending_on("panel")
+
+for package in PACKAGES:
     try:
-        __import__(ext)
+        __import__(package)
     except ImportError as e:
-        logger.warning(f"Failed to import {ext}: {e}")
+        logger.warning(f"Failed to import {package}: {e}")
 
 COMPONENTS = get_components()
 
@@ -56,7 +79,7 @@ def packages() -> list[str]:
     -------
         List of package names, for example ["panel"] or ["panel", "panel_material_ui"]
     """
-    return list(set(comp.package for comp in COMPONENTS))
+    return PACKAGES
 
 
 @mcp.tool
@@ -174,5 +197,42 @@ def component(name: str | None = None, module_path: str | None = None, package: 
     return components_list[0]
 
 
+def find_packages_depending_on(target_package: str) -> list[str]:
+    """
+    Find all installed packages that depend on a given package.
+
+    Args:
+        target_package: The name of the package to find dependents for
+
+    Returns
+    -------
+        List of package names that depend on the target package
+    """
+    from importlib.metadata import distributions
+
+    from packaging.requirements import Requirement
+
+    dependent_packages = []
+    target_package_lower = target_package.lower()
+
+    for dist in distributions():
+        if dist.requires:
+            for requirement_str in dist.requires:
+                try:
+                    # Parse the requirement properly using packaging library
+                    requirement = Requirement(requirement_str)
+                    if requirement.name.lower() == target_package_lower:
+                        dependent_packages.append(dist.metadata["Name"])
+                        break
+                except Exception:
+                    # Fallback to simple string parsing if packaging fails
+                    package_name = requirement_str.split()[0].split(";")[0].split(">=")[0].split("==")[0].split("!=")[0].split("<")[0].split(">")[0].split("~")[0]
+                    if package_name.lower() == target_package_lower:
+                        dependent_packages.append(dist.metadata["Name"])
+                        break
+
+    return sorted(set(dependent_packages))
+
+
 if __name__ == "__main__":
-    mcp.run(transport="http")
+    mcp.run(transport=config.TRANSPORT)
