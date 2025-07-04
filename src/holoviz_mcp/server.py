@@ -49,7 +49,7 @@ def main() -> None:
 
     async def setup_and_run() -> None:
         await setup_composed_server()
-        await mcp.run_async(transport="http")
+        await mcp.run_async()
 
     asyncio.run(setup_and_run())
 
