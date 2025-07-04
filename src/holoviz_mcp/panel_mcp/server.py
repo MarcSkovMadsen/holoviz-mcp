@@ -44,7 +44,7 @@ async def _get_packages_depending_on(target_package: str, ctx: Context) -> list[
     for dist in distributions():
         if dist.requires:
             dist_name = dist.metadata["Name"]
-            await ctx.info(f"Checking package: {dist_name} for dependencies on {target_package}")
+            await ctx.debug(f"Checking package: {dist_name} for dependencies on {target_package}")
             for requirement_str in dist.requires:
                 if "extra ==" in requirement_str:
                     continue

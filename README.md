@@ -64,14 +64,13 @@ Add a configuration like below to your VS Code `settings.json`:
     ...
     "mcp": {
         "servers": {
-            "holoviz-mcp": {
+           "holoviz": {
+                "type": "stdio",
                 "command": "uvx",
                 "args": [
                     "--from",
-                    "git+https://github.com/MarcSkovMadsen/holoviz-mcp",
-                    "holoviz-mcp",
-                    "--with",
-                    "panel-material-ui"
+                    "git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
+                    "holoviz-mcp"
                 ]
             }
         }
@@ -175,7 +174,7 @@ HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 In VS Code settings.json add the mcp server:
 
 ```json
-"holoviz-mcp-dev": {
+"holoviz-dev": {
     "type": "http",
     "url": "http://127.0.0.1:8000/mcp/",
 }
