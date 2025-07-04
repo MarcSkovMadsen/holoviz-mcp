@@ -37,13 +37,14 @@ mcp = FastMCP(
 )
 
 
-def _get_packages_depending_on(target_package: str) -> list[str]:
+async def _get_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
     """Find all installed packages that depend on a given package."""
     dependent_packages = []
 
     for dist in distributions():
         if dist.requires:
             dist_name = dist.metadata["Name"]
+            await ctx.info(f"Checking package: {dist_name} for dependencies on {target_package}")
             for requirement_str in dist.requires:
                 if "extra ==" in requirement_str:
                     continue
@@ -67,7 +68,7 @@ async def _get_components(ctx: Context) -> list[Component]:
     """
     global COMPONENTS
     if not COMPONENTS:
-        packages_depending_on_panel = _get_packages_depending_on("panel")
+        packages_depending_on_panel = await _get_packages_depending_on("panel", ctx=ctx)
 
         await ctx.info(f"Discovered {len(packages_depending_on_panel)} packages depending on Panel: {packages_depending_on_panel}")
 
