@@ -12,7 +12,7 @@ build-backend = "hatchling.build"
 version_scheme = "post-release"
 
 [project]
-name = "panel-mcp"
+name = "holoviz-mcp"
 dynamic = ["version"]
 description = 'A Model Context Protocol (MCP) server for the HoloViz ecosystem'
 readme = "README.md"
@@ -38,8 +38,9 @@ classifiers = [
 ]
 
 dependencies = [
+    "fastmcp",
     "packaging",
-    "panel >=1.5.0",
+    "panel",
 ]
 
 [project.urls]
@@ -117,7 +118,7 @@ select = [
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # Ignore all directories named `tests`.
 "tests/**" = ["D"]
 # Ignore all files that end in `_test.py`.
@@ -149,3 +150,6 @@ check_untyped_defs = true
 [tool.hatch.version]
 source = "vcs"
 raw-options = { version_scheme = "no-guess-dev" }
+
+[project.scripts]
+"holoviz-mcp" = "holoviz_mcp:main"

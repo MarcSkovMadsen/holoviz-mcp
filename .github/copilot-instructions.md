@@ -1,0 +1,8 @@
+# HoloViz MCP
+
+This is a Model Context Protocol (MCP) server for the HoloViz ecosystem.
+
+For context please read :
+
+- the README.md
+- #fetch https://gofastmcp.com/getting-started/welcome.md

@@ -1,1 +1,1 @@
-recursive-include panel_mcp models/*.js
+recursive-include holoviz_mcp models/*.js

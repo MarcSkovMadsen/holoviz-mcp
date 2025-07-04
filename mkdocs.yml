@@ -1,9 +1,9 @@
-site_name: panel-mcp
+site_name: holoviz-mcp
 site_description: "A Model Context Protocol (MCP) server for the HoloViz ecosystem"
 site_author: "MarcSkovMadsen"
 
 repo_url: https://github.com/MarcSkovMadsen/holoviz-mcp
-repo_name: MarcSkovMadsen/panel-mcp
+repo_name: MarcSkovMadsen/holoviz-mcp
 edit_uri: edit/main/docs/
 
 theme:
@@ -64,7 +64,7 @@ markdown_extensions:
                   # Add any other requirements here
                   # see https://mkdocs.py.cafe/en/latest/ for more info
                   panel
-                  panel_mcp
+                  holoviz_mcp
                 link_text: |
                   <img src="https://py.cafe/logos/pycafe_logo.png" style="height: 24px"> **Run and edit this code in Py.Cafe**
     - pymdownx.snippets:
@@ -85,12 +85,12 @@ plugins:
 
 watch:
     - docs
-    - src/panel_mcp
+    - src/holoviz_mcp
 
 nav:
     - Home: index.md
     - Examples: examples.md
-    - Reference: reference/panel_mcp.md
+    - Reference: reference/holoviz_mcp.md
 
 extra:
   social:
@@ -99,7 +99,7 @@ extra:
   - icon: fontawesome/brands/twitter
     link: https://twitter.com/panel_org
   - icon: fontawesome/brands/python
-    link: https://pypi.org/project/panel-mcp
+    link: https://pypi.org/project/holoviz-mcp
   - icon: fontawesome/brands/discourse
     link: https://discourse.holoviz.org/
   - icon: fontawesome/brands/discord

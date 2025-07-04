@@ -1,5 +1,5 @@
 [project]
-name = "panel-mcp"
+name = "holoviz-mcp"
 channels = ["conda-forge"]
 platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
 
@@ -8,6 +8,7 @@ postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-
 
 [dependencies]
 python = ">=3.11"
+fastmcp = "*"
 
 [host-dependencies]
 pip = "*"
@@ -19,11 +20,12 @@ setuptools-scm = "*"
 
 [feature.test.dependencies]
 pytest = ">=6"
+pytest-asyncio = "*"
 pytest-cov = "*"
 mypy = "*"
 [feature.test.tasks]
 test = "pytest"
-test-coverage = "pytest --cov=panel_mcp --cov-report=xml --cov-report=term-missing"
+test-coverage = "pytest --cov=holoviz_mcp --cov-report=xml --cov-report=term-missing"
 
 [feature.build.dependencies]
 python-build = "*"
@@ -69,7 +71,7 @@ _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
-depends_on = ["_install-ui"]
+depends-on = ["_install-ui"]
 
 [feature.docs.dependencies]
 mkdocs = "*"

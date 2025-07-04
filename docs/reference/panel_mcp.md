@@ -1,3 +1,3 @@
 # Reference
 
-::: panel_mcp
+::: holoviz_mcp
