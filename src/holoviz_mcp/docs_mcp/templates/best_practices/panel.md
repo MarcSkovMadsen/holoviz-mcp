@@ -16,7 +16,8 @@ import param
 # DO always run pn.extension
 # DO remember to add any imports needed by panes, e.g. pn.extension("tabulator", "plotly", ...)
 # DON'T add "bokeh" as an extension. It is not needed.
-pn.extension()
+# Do use throttled=True when using slider unless you have a specific reason not to
+pn.extension(throttled=True)
 
 # DO organize functions to extract data separately as your app grows. Eventually in a separate data.py file.
 # DO use caching to speed up the app, e.g. for expensive data loading or processing that would return the same result given same input arguments.
@@ -170,7 +171,13 @@ DO note how this test simulates the user's behaviour of loading the page, changi
 - DO use `if pn.state.served:` to check if being served with `panel serve`
 - DO use `if __name__ == "__main__":` to check if run directly via `python`
 
-**Test**
+## Workflows
+
+**Development**
+
+- DO always start and keep running a development server `panel serve path_to_file.py --dev --show` with hot reload while developing!
+
+**Testing**
 
 - DO structure your code with Parameterized components, so that reactivity and user interactions can be tested easily.
 - DO separate UI logic from business logic to enable unit testing
@@ -241,7 +248,13 @@ filtered = filtered[
 ]
 ```
 
+## Components
+
+- DO arrange vertically when displaying `CheckButtonGroup` in a sidebar `CheckButtonGroup(..., vertical=True)`.
+
 ## Plotting
+
+- DO use bar charts over pie Charts.
 
 ### HoloViews/hvPlot
 - DO let Panel control the renderer theme
@@ -258,12 +271,16 @@ filtered = filtered[
 
 ### Plotly
 
-Do set the template (theme) depending on the `theme` of the app
+Do set the template (theme) depending on the `theme` of the app.
 
 ```python
 def create_plot(self) -> go.Figure:
     fig = ...
     template = "plotly_dark" if pn.state.theme=="dark" else "plotly_white"
-    fig.update_layout(template=template)
+    fig.update_layout(
+        template=template, # Change template to align with the theme
+        paper_bgcolor='rgba(0,0,0,0)', # Change to transparent background to align with the app background
+        plot_bgcolor='rgba(0,0,0,0)' # Change to transparent background to align with the app background
+    )
     return fig
 ```

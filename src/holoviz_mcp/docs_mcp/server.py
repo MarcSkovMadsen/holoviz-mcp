@@ -23,11 +23,7 @@ mcp: FastMCP = FastMCP(
 )
 
 
-@mcp.resource(
-    uri="best-practices://{package}",
-    description="Get best practices for using a package.",
-    mime_type="text/markdown",
-)
+@mcp.tool
 def best_practices(package: str) -> str:
     """Get best practices for using a package with LLMs.
 

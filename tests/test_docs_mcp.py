@@ -11,9 +11,9 @@ from holoviz_mcp.docs_mcp.server import mcp
 
 
 @pytest.mark.asyncio
-async def test_get_intermediate_hello_world_app():
-    """Test the get_intermediate_hello_world_app tool."""
+async def test_best_practices_resource():
+    """Test the best-practices resource."""
     client = Client(mcp)
     async with client:
-        result = await client.read_resource("best-practices://panel_material_ui")
-        assert result[0].text
+        result = await client.call_tool("best_practices", {"package": "panel"})
+        assert result.data
