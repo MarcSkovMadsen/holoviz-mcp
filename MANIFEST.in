@@ -1,1 +1,1 @@
-recursive-include holoviz_mcp models/*.js
+recursive-include holoviz_mcp/docs_mcp/templates *.md
