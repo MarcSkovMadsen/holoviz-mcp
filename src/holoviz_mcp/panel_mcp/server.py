@@ -88,7 +88,7 @@ async def packages(ctx: Context) -> list[str]:
     """
     List all installed packages that provide `panel.viewable.Viewable` UI components.
 
-    Use this tool to get an overview of the packages providing UI components for use in your applications.
+    DO use this tool to get an overview of the packages providing UI components for use in your applications.
 
     Returns
     -------
@@ -102,7 +102,7 @@ async def components(ctx: Context, name: str | None = None, module_path: str | N
     """
     List all `panel.viewable.Viewable` UI components with name, package, description and module path.
 
-    Use this tool to get an overview of available `panel.viewable.Viewable` UI components
+    DO use this tool to get an overview of available `panel.viewable.Viewable` UI components
     for use in your applications.
 
     Args:

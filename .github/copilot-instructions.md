@@ -17,4 +17,6 @@ Before adding tests to this project, please #fetch the following:
 
 ## Best Practices
 
+- DO Write code and tests and an experienced, lead Python developer would be proud of.
 - DO integration tests instead of mocking out integrations
+- DO use pytest to test. DO not create custom scripts or notebooks.
