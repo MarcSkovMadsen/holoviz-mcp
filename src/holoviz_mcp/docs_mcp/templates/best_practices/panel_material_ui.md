@@ -20,7 +20,8 @@ import param
 # DO run pn.extension
 # DO remember to add any imports needed by panes, e.g. pn.extension("tabulator", "plotly", ...)
 # DON'T add "bokeh" as an extension. It is not needed.
-pn.extension()
+# Do use throttled=True when using slider unless you have a specific reason not to
+pn.extension(throttled=True)
 
 # DO organize functions to extract data separately as your app grows
 # DO use caching to speed up the app, e.g. for expensive data loading or processing that would return the same result given same input arguments.
@@ -159,7 +160,7 @@ DO provide lists of children to the `Page.sidebar`, `Page.main` or `Page.header`
 pmui.Page(
     header=[component1, component2],  # This is correct
     sidebar=[component3, component4],  # This is correct
-    main=[component5, component6],  # This is correct
+    main=[a_list_like_layout, a_grid],  # This is correct
 )
 ```
 
@@ -168,8 +169,8 @@ DON'T provide non-lists as children to the `Page.sidebar`, `Page.main` or `Page.
 ```python
 pmui.Page(
     header=component1,  # This is incorrect
-    sidebar=component2,  # This is incorrect
-    main=component3,  # This is incorrect
+    sidebar=list(a_list_like_layout),  # This is incorrect
+    main=list(a_grid),  # This is incorrect
 )
 ```
 
