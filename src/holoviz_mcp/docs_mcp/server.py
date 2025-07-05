@@ -7,6 +7,7 @@ Use this server to search and access documentation for HoloViz libraries, includ
 
 from fastmcp import FastMCP
 
+from holoviz_mcp.docs_mcp.templates import get_best_practices
 from holoviz_mcp.shared import config
 
 # The HoloViz MCP server instance
@@ -22,19 +23,22 @@ mcp: FastMCP = FastMCP(
 )
 
 
-@mcp.tool
-def hello_world() -> str:
-    """Return a simple greeting message.
+@mcp.resource(
+    uri="best-practices://{package}",
+    description="Get best practices for using a package.",
+    mime_type="text/markdown",
+)
+def best_practices(package: str) -> str:
+    """Get best practices for using a package with LLMs.
+
+    Args:
+        package (str): The name of the package to get best practices for. For example, "panel", "panel_material_ui", etc.
 
     Returns
     -------
-        str: A greeting message.
-
-    Example:
-        >>> hello_world()
-        'Hello, world!'
+        str: A string containing the best practices for the package in Markdown format.
     """
-    return "Hello, world!"
+    return get_best_practices(package)
 
 
 if __name__ == "__main__":
