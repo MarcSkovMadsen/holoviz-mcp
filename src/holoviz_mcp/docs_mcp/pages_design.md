@@ -333,7 +333,7 @@ default_reference_folder: "examples/reference"
 ## Index Update Strategy
 
 ### **First Time Initialization**
-The documentation index will be created **automatically on first use** of either the `reference_guide` or `pages` tools:
+The documentation index will be created **automatically on first use** of either the `get_reference_guide` or `pages` tools:
 
 ```python
 # In both tools, there will be logic like:
@@ -349,11 +349,11 @@ if not indexer.is_indexed():
 - **Simpler deployment** - no background processes or startup delays
 
 ### **Subsequent Updates**
-After the initial creation, the index will be updated **only when manually triggered** using the `update_docs_index` tool:
+After the initial creation, the index will be updated **only when manually triggered** using the `update_index` tool:
 
 ```python
 # Manual updates only
-update_docs_index()  # User must explicitly call this
+update_index()  # User must explicitly call this
 ```
 
 **Benefits of manual updates:**
@@ -387,13 +387,13 @@ class DocumentationIndexer:
 
 ```python
 # Day 1: First use (automatic index creation)
-reference_guide("Button", "panel")  # Index created automatically during first call
+get_reference_guide("Button", "panel")  # Index created automatically during first call
 
 # Day 7: Manual refresh to get latest documentation
-update_docs_index()  # User explicitly updates when needed
+update_index()  # User explicitly updates when needed
 
 # Day 14: Another manual refresh
-update_docs_index()  # User controls update frequency
+update_index()  # User controls update frequency
 ```
 
 ### **Alternative Strategies (Future Enhancements)**

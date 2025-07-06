@@ -25,7 +25,7 @@ async def main():
     utility_tools = []
 
     for tool_name, tool_info in tools_dict.items():
-        if any(x in tool_name for x in ["docs", "best_practices", "reference_guide", "page", "update_docs"]) or (
+        if any(x in tool_name for x in ["docs", "get_best_practices", "get_reference_guide", "get_page", "update_docs"]) or (
             tool_name == "search" and "component" not in str(tool_info)
         ):
             docs_tools.append((tool_name, tool_info))

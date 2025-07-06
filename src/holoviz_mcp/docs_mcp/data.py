@@ -421,7 +421,7 @@ class DocumentationIndexer:
 
             raise ValueError(f"Document ID collision detected. {len(duplicates)} duplicate IDs found. Check logs for details.")
 
-    async def search_reference_guide(self, component: str, package: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
+    async def search_get_reference_guide(self, component: str, package: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
         """Search for reference guides for a specific component."""
         await self.ensure_indexed()
 

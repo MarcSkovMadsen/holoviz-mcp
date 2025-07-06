@@ -15,17 +15,17 @@ async def test_best_practices_resource():
     """Test the best-practices resource."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("best_practices", {"package": "panel"})
+        result = await client.call_tool("get_best_practices", {"package": "panel"})
         assert result.data
 
 
 @pytest.mark.skip(reason="This test is very slow and not needed for CI")
 @pytest.mark.asyncio
-async def test_update_docs_index():
+async def test_update_index():
     """Test the best-practices resource."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("update_docs_index")
+        result = await client.call_tool("update_index")
         assert result.data
 
 
@@ -147,6 +147,6 @@ async def test_page():
     client = Client(mcp)
     async with client:
         # Test search with specific package filter
-        result = await client.call_tool("page", {"path": "doc/index.md", "package": "hvplot"})
+        result = await client.call_tool("get_page", {"path": "doc/index.md", "package": "hvplot"})
         assert result.data
         assert result.data.title == "hvPlot"

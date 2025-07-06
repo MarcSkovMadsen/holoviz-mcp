@@ -12,7 +12,7 @@ from fastmcp import FastMCP
 
 from holoviz_mcp.docs_mcp.data import DocumentationIndexer
 from holoviz_mcp.docs_mcp.models import Page
-from holoviz_mcp.docs_mcp.templates import get_best_practices
+from holoviz_mcp.docs_mcp.templates import get_best_practices as _get_best_practices
 from holoviz_mcp.shared import config
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ mcp: FastMCP = FastMCP(
 
 
 @mcp.tool
-def best_practices(package: str) -> str:
+def get_best_practices(package: str) -> str:
     """Get best practices for using a package with LLMs.
 
     DO Always use this tool to get best practices for using a package with LLMs before using it!
@@ -55,20 +55,11 @@ def best_practices(package: str) -> str:
     -------
         str: A string containing the best practices for the package in Markdown format.
     """
-    return get_best_practices(package)
-
-
-# ✅ IMPLEMENTED: Page model is defined in src/holoviz_mcp/docs_mcp/models.py
-# ✅ IMPLEMENTED: DocumentationIndexer is fully implemented in src/holoviz_mcp/docs_mcp/data.py
-#    - ChromaDB-based persistent indexing
-#    - Semantic search with SentenceTransformer embeddings
-#    - Subfolder disambiguation for reference notebooks
-#    - Title extraction with filename fallback
-#    - Multi-strategy component search
+    return _get_best_practices(package)
 
 
 @mcp.tool
-async def reference_guide(component: str, package: str | None = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
+async def get_reference_guide(component: str, package: str | None = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
     """Find reference guides for specific HoloViz components.
 
     Reference guides are a subset of all documentation pages that focus on specific UI components
@@ -93,19 +84,19 @@ async def reference_guide(component: str, package: str | None = None, content: b
 
     Examples
     --------
-    >>> reference_guide("Button")  # Find Button component guide across all packages
-    >>> reference_guide("Button", "panel")  # Find Panel Button component guide specifically
-    >>> reference_guide("TextInput", "panel_material_ui")  # Find Material UI TextInput guide
-    >>> reference_guide("bar", "hvplot")  # Find hvplot bar chart reference
-    >>> reference_guide("scatter", "hvplot")  # Find hvplot scatter plot reference
-    >>> reference_guide("Audio", content=False)  # Don't include Markdown content for faster response
+    >>> get_reference_guide("Button")  # Find Button component guide across all packages
+    >>> get_reference_guide("Button", "panel")  # Find Panel Button component guide specifically
+    >>> get_reference_guide("TextInput", "panel_material_ui")  # Find Material UI TextInput guide
+    >>> get_reference_guide("bar", "hvplot")  # Find hvplot bar chart reference
+    >>> get_reference_guide("scatter", "hvplot")  # Find hvplot scatter plot reference
+    >>> get_reference_guide("Audio", content=False)  # Don't include Markdown content for faster response
     """
     indexer = get_indexer()
-    return await indexer.search_reference_guide(component, package, content, ctx=ctx)
+    return await indexer.search_get_reference_guide(component, package, content, ctx=ctx)
 
 
 @mcp.tool
-async def page(path: str, package: str, ctx: Context) -> Page:
+async def get_page(path: str, package: str, ctx: Context) -> Page:
     # Change to imperative mode for docstring
     """Retrieve a specific documentation page by path and package.
 
@@ -163,7 +154,7 @@ async def search(
 
 
 @mcp.tool
-async def update_docs_index(ctx: Context) -> str:
+async def update_index(ctx: Context) -> str:
     """Update the documentation index by re-cloning repositories and re-indexing content.
 
     DO use this tool periodically (weekly) to ensure the documentation index is up-to-date
@@ -178,7 +169,7 @@ async def update_docs_index(ctx: Context) -> str:
 
     Examples
     --------
-    >>> update_docs_index()  # Updates all documentation repositories and rebuilds index
+    >>> update_index()  # Updates all documentation repositories and rebuilds index
     """
     try:
         indexer = get_indexer()

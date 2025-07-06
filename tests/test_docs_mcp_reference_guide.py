@@ -1,7 +1,7 @@
 """
-Comprehensive tests for the reference_guide tool in the documentation MCP server.
+Comprehensive tests for the get_reference_guide tool in the documentation MCP server.
 
-Tests the reference_guide tool functionality and all docstring examples.
+Tests the get_reference_guide tool functionality and all docstring examples.
 """
 
 import pytest
@@ -11,11 +11,11 @@ from holoviz_mcp.docs_mcp.server import mcp
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_button_no_package():
-    """Test reference_guide for Button component across all packages."""
+async def test_get_reference_guide_button_no_package():
+    """Test get_reference_guide for Button component across all packages."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Button"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -33,11 +33,11 @@ async def test_reference_guide_button_no_package():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_button_panel_specific():
-    """Test reference_guide finds the one and only Button reference guide in Panel package specifically."""
+async def test_get_reference_guide_button_panel_specific():
+    """Test get_reference_guide finds the one and only Button reference guide in Panel package specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
@@ -50,11 +50,11 @@ async def test_reference_guide_button_panel_specific():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_button_panel_material_ui_specific():
-    """Test reference_guide finds the one and only Button reference guide in Panel Material UI package specifically."""
+async def test_get_reference_guide_button_panel_material_ui_specific():
+    """Test get_reference_guide finds the one and only Button reference guide in Panel Material UI package specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "panel_material_ui"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel_material_ui"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
@@ -67,11 +67,11 @@ async def test_reference_guide_button_panel_material_ui_specific():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_textinput_material_ui():
-    """Test reference_guide for TextInput component in Material UI package."""
+async def test_get_reference_guide_textinput_material_ui():
+    """Test get_reference_guide for TextInput component in Material UI package."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "TextInput", "package": "panel_material_ui"})
+        result = await client.call_tool("get_reference_guide", {"component": "TextInput", "package": "panel_material_ui"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 1
@@ -83,11 +83,11 @@ async def test_reference_guide_textinput_material_ui():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_bar_hvplot():
-    """Test reference_guide for bar chart component in hvPlot package."""
+async def test_get_reference_guide_bar_hvplot():
+    """Test get_reference_guide for bar chart component in hvPlot package."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "bar", "package": "hvplot"})
+        result = await client.call_tool("get_reference_guide", {"component": "bar", "package": "hvplot"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 2
@@ -101,11 +101,11 @@ async def test_reference_guide_bar_hvplot():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_scatter_hvplot():
-    """Test reference_guide for scatter plot component in hvPlot package."""
+async def test_get_reference_guide_scatter_hvplot():
+    """Test get_reference_guide for scatter plot component in hvPlot package."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "scatter", "package": "hvplot"})
+        result = await client.call_tool("get_reference_guide", {"component": "scatter", "package": "hvplot"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -118,11 +118,11 @@ async def test_reference_guide_scatter_hvplot():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_audio_no_content():
-    """Test reference_guide for Audio component with content=False for faster response."""
+async def test_get_reference_guide_audio_no_content():
+    """Test get_reference_guide for Audio component with content=False for faster response."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Audio", "content": False})
+        result = await client.call_tool("get_reference_guide", {"component": "Audio", "content": False})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -140,15 +140,15 @@ async def test_reference_guide_audio_no_content():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_common_widgets():
-    """Test reference_guide for common Panel widgets."""
+async def test_get_reference_guide_common_widgets():
+    """Test get_reference_guide for common Panel widgets."""
     client = Client(mcp)
     async with client:
         # Test various common widget types
         widgets = ["DiscreteSlider", "Select", "Checkbox", "Toggle", "DatePicker"]
 
         for widget in widgets:
-            result = await client.call_tool("reference_guide", {"component": widget, "package": "panel"})
+            result = await client.call_tool("get_reference_guide", {"component": widget, "package": "panel"})
             assert result.data
             assert isinstance(result.data, list)
 
@@ -162,33 +162,33 @@ async def test_reference_guide_common_widgets():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_edge_cases():
-    """Test reference_guide with edge cases."""
+async def test_get_reference_guide_edge_cases():
+    """Test get_reference_guide with edge cases."""
     client = Client(mcp)
     async with client:
         # Test with non-existent component
-        result = await client.call_tool("reference_guide", {"component": "NonExistentWidget123"})
+        result = await client.call_tool("get_reference_guide", {"component": "NonExistentWidget123"})
         # Should handle gracefully
         assert isinstance(result.data, list)
 
         # Test with empty component name
-        result = await client.call_tool("reference_guide", {"component": ""})
+        result = await client.call_tool("get_reference_guide", {"component": ""})
         # Should handle gracefully
         assert isinstance(result.data, list)
 
         # Test with invalid package
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "nonexistent_package"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "nonexistent_package"})
         # Should handle gracefully and return empty results
         assert isinstance(result.data, list)
         assert len(result.data) == 0
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_relevance_scoring():
-    """Test that reference_guide returns results with relevance scores."""
+async def test_get_reference_guide_relevance_scoring():
+    """Test that get_reference_guide returns results with relevance scores."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -205,11 +205,11 @@ async def test_reference_guide_relevance_scoring():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_return_structure():
-    """Test that reference_guide returns properly structured Page objects."""
+async def test_get_reference_guide_return_structure():
+    """Test that get_reference_guide returns properly structured Page objects."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -241,12 +241,12 @@ async def test_reference_guide_return_structure():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_maximum_results():
-    """Test that reference_guide returns at most 5 results."""
+async def test_get_reference_guide_maximum_results():
+    """Test that get_reference_guide returns at most 5 results."""
     client = Client(mcp)
     async with client:
         result = await client.call_tool(
-            "reference_guide",
+            "get_reference_guide",
             {
                 "component": "Button"  # Common component that should have many results
             },
@@ -259,11 +259,11 @@ async def test_reference_guide_maximum_results():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_no_duplicates():
-    """Test that reference_guide doesn't return duplicate results."""
+async def test_get_reference_guide_no_duplicates():
+    """Test that get_reference_guide doesn't return duplicate results."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -277,12 +277,12 @@ async def test_reference_guide_no_duplicates():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_multiple_packages():
-    """Test that reference_guide can find components across multiple packages."""
+async def test_get_reference_guide_multiple_packages():
+    """Test that get_reference_guide can find components across multiple packages."""
     client = Client(mcp)
     async with client:
         # Search for Button across all packages
-        result = await client.call_tool("reference_guide", {"component": "Button"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -296,12 +296,12 @@ async def test_reference_guide_multiple_packages():
 
 
 @pytest.mark.asyncio
-async def test_reference_guide_exact_filename_matching():
-    """Test that reference_guide prioritizes exact filename matches."""
+async def test_get_reference_guide_exact_filename_matching():
+    """Test that get_reference_guide prioritizes exact filename matches."""
     client = Client(mcp)
     async with client:
         # Test that searching for "Button" finds files with "Button" in the filename
-        result = await client.call_tool("reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
