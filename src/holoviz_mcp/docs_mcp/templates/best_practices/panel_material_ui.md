@@ -239,6 +239,20 @@ pmui.Row([child1, child2, child3,]) # DON'T
 
 ## Material UI Examples
 
+### Standalone Icons
+
+DO use `Typography` to make standalone icons without interactivity instead of `IconButton`:
+
+```python
+# CORRECT: Typography for standalone decorative icons
+pmui.Typography(
+    f'<span class="material-icons" style="font-size: 4rem;">lightbulb</span>',
+    sizing_mode="fixed", width=60, height=60, sx = {"color": "primary.main"},
+)
+# INCORRECT: IconButton for decorative icons
+pmui.IconButton(icon=icon, disabled=True, ...)
+```
+
 ### Static Components Pattern (Material UI)
 ```python
 import panel as pn

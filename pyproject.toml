@@ -38,9 +38,13 @@ classifiers = [
 ]
 
 dependencies = [
+    "chromadb",
     "fastmcp",
+    "GitPython",
     "packaging",
+    "nbconvert",
     "panel",
+    "sentence-transformers",
 ]
 
 [project.urls]
@@ -58,6 +62,7 @@ dev = [
     "pytest-rerunfailures",
     "pytest-xdist",
     "pytest",
+    "types-PyYAML",
     "watchfiles",
 ]
 mypy = [
@@ -161,3 +166,4 @@ raw-options = { version_scheme = "no-guess-dev" }
 
 [project.scripts]
 "holoviz-mcp" = "holoviz_mcp:main"
+"holoviz-mcp-update" = "holoviz_mcp.docs_mcp.data:main"

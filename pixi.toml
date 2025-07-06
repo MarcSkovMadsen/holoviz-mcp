@@ -8,7 +8,12 @@ postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-
 
 [dependencies]
 python = ">=3.11"
+chromadb = "*"
 fastmcp = "*"
+GitPython = "*"
+nbconvert = "*"
+panel = "*"
+sentence-transformers = "*"
 
 [host-dependencies]
 pip = "*"
@@ -23,6 +28,8 @@ pytest = ">=6"
 pytest-asyncio = "*"
 pytest-cov = "*"
 mypy = "*"
+types-PyYAML = "*"
+
 [feature.test.tasks]
 test = "pytest"
 test-coverage = "pytest --cov=holoviz_mcp --cov-report=xml --cov-report=term-missing"
