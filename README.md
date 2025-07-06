@@ -163,6 +163,8 @@ For other MCP-compatible clients, use the standard MCP configuration:
 
 **Progress Monitoring**: In VS Code, you can monitor progress in `OUTPUT → MCP: holoviz` to see indexing status and any potential issues.
 
+![OUTPUT](docs/assets/images/vs-code-output-holoviz.png)
+
 ## 💡 What You Can Ask
 
 <details>
@@ -425,4 +427,4 @@ We welcome contributions! Here's how to get started:
 - **pytest** for comprehensive testing
 - **GitHub Actions** for CI/CD
 
-Run `pixi run pre-commit-install` to set up code quality checks..
+Run `pixi run pre-commit-install` to set up code quality checks.
