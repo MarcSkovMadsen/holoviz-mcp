@@ -5,9 +5,9 @@
 [![pypi-version](https://img.shields.io/pypi/v/holoviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/holoviz-mcp)
 [![python-version](https://img.shields.io/pypi/pyversions/holoviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/holoviz-mcp)
 
-A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem, enabling AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/).
+A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem, enabling AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [datashader](https://datashader.org/) and your favorite Python libraries.
 
-![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)
+[![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)](https://holoviz.org)
 
 ## ✨ What This Provides
 
@@ -26,6 +26,12 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 - **🧠 Smart Context**: The assistant understands your environment and available Panel extensions
 - **📖 Always Updated**: Documentation stays current with the latest HoloViz ecosystem changes
 - **🔧 Zero Setup**: Works immediately with any MCP-compatible AI assistant
+
+## Need more?
+
+Check out the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on youtube.
+
+[![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
 
 ## 🚀 Quick Start
 
@@ -430,6 +436,7 @@ Run `pixi run pre-commit-install` to set up code quality checks.
 - [ ] Provide Panel and Panel Material UI best practices for both "beginners" and "intermediate" users. Current ones are for "intermediate users".
 - [ ] Find that "magic" prompt that makes the LLM run a development server with hot reload (`panel serve ... --dev`) while developing. Would make things more engaging. I've tried a lot.
 - [ ] Get [Panel #8018](https://github.com/holoviz/panel/issues/8018) fixed.
+- [ ] Make it configurable/ extensible enabling users to add other github repositories or their own best practice guides.
 - [ ] Try out [Playwright MCP](https://github.com/microsoft/playwright-mcp). Its probably worth recommending for taking screenshots and interacting with the app in the browser.
 - [ ] Provide reference guides for other HoloViz packages starting with hvPlot, param and HoloViews.
 - [ ] Base index on latest released versions instead of latest code (`Head`).
