@@ -425,4 +425,4 @@ We welcome contributions! Here's how to get started:
 - **pytest** for comprehensive testing
 - **GitHub Actions** for CI/CD
 
-Run `pixi run pre-commit-install` to set up code quality checks.
+Run `pixi run pre-commit-install` to set up code quality checks..
