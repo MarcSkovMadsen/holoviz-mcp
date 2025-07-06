@@ -9,12 +9,14 @@ Use this server to access:
 - Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
+import webbrowser
 from importlib.metadata import distributions
 
 from fastmcp import Context
 from fastmcp import FastMCP
 
 from holoviz_mcp.panel_mcp.data import get_components
+from holoviz_mcp.panel_mcp.data import to_proxy_url
 from holoviz_mcp.panel_mcp.models import Component
 from holoviz_mcp.panel_mcp.models import ComponentBase
 from holoviz_mcp.panel_mcp.models import ComponentBaseSearchResult
@@ -210,6 +212,67 @@ async def component(ctx: Context, name: str | None = None, module_path: str | No
         raise ValueError(f"Multiple components found matching criteria: '{name}', '{module_path}', '{package}'. Please refine your search.")
 
     return components_list[0]
+
+
+@mcp.tool(enabled=bool(config.JUPYTER_SERVER_PROXY_URL))
+def get_proxy_url(url: str) -> str:
+    """
+    Get the appropriate URL to access a local server.
+
+    If the url is on the format `http://localhost:5007...` or `http://127.0.0.1:5007...` it will be converted to a proxied URL.
+    The localhost url might be extremely slow or might not work at all since we are running on a remote server.
+
+    DO use this tool to get the correct URL to access a local Panel server.
+
+    Args:
+        url: The local server URL to convert.
+
+    Returns
+    -------
+        The appropriate URL to use (either original or proxied).
+
+    Example
+    -------
+        >>> get_proxy_url("http://localhost:5007")
+        https://my-jupyterhub-domain/some-user-specific-prefix/proxy/5007/
+        >>> get_proxy_url("http://localhost:5007/dashboard")
+        https://my-jupyterhub-domain/some-user-specific-prefix/proxy/5007/dashboard
+        >>> get_proxy_url("https://panel.holoviz.org")
+        https://panel.holoviz.org
+    """
+    return to_proxy_url(url)
+
+
+@mcp.tool
+def open_in_browser(url: str, new_tab: bool = True) -> str:
+    """
+    Open a URL in the browser.
+
+    DO Use this tool to open URLs in the browser instead of asking the user to manually open them.
+
+    If the url is on localhost and a proxy server is configured, the URL will be converted to a proxied URL and opened in the browser.
+
+    Args:
+        url: The URL to open in the browser.
+        new_tab: If True, open in a new tab. If False, open in the same window.
+
+    Returns
+    -------
+        The URL that was opened.
+
+    Example
+    -------
+        >>> open_in_browser("http://localhost:5007/dashboard", new_tab=True)
+        >>> open_in_browser("https://panel.holoviz.org", new_tab=False)
+    """
+    url = to_proxy_url(url)
+
+    if new_tab:
+        webbrowser.open_new_tab(url)
+    else:
+        webbrowser.open(url)
+
+    return url
 
 
 if __name__ == "__main__":

@@ -14,6 +14,8 @@ from pathlib import Path
 
 from panel.viewable import Viewable
 
+from holoviz_mcp.shared import config
+
 from .models import Component
 from .models import ParameterInfo
 
@@ -221,3 +223,52 @@ def load_components(filepath: str) -> list[Component]:
 
     # Convert JSON data back to Pydantic models
     return [Component(**item) for item in json_data]
+
+
+def to_proxy_url(url: str, jupyter_server_proxy_url: str = config.JUPYTER_SERVER_PROXY_URL):
+    """
+    Convert a localhost or 127.0.0.1 URL to a Jupyter server proxy URL.
+
+    Parameters
+    ----------
+    url : str
+        The original URL to convert
+    jupyter_server_proxy_url : str | None
+        The Jupyter server proxy base URL, or None/empty to return original URL
+
+    Returns
+    -------
+    str
+        The converted proxy URL or original URL if not a localhost/127.0.0.1 URL
+    """
+    if jupyter_server_proxy_url and jupyter_server_proxy_url.strip():
+        # Check if this is a localhost or 127.0.0.1 URL
+        if url.startswith("http://localhost:"):
+            # Parse the URL to extract port, path, and query
+            url_parts = url.replace("http://localhost:", "")
+        elif url.startswith("http://127.0.0.1:"):
+            # Parse the URL to extract port, path, and query
+            url_parts = url.replace("http://127.0.0.1:", "")
+        else:
+            # Not a local URL, return original
+            proxy_url = url
+            return proxy_url
+
+        # Find the port (everything before the first slash or end of string)
+        if "/" in url_parts:
+            port = url_parts.split("/", 1)[0]
+            path_and_query = "/" + url_parts.split("/", 1)[1]
+        else:
+            port = url_parts
+            path_and_query = "/"
+
+        # Validate that port is a valid number
+        if port and port.isdigit() and 1 <= int(port) <= 65535:
+            # Build the proxy URL
+            proxy_url = f"{jupyter_server_proxy_url}{port}{path_and_query}"
+        else:
+            # Invalid port, return original URL
+            proxy_url = url
+    else:
+        proxy_url = url
+    return proxy_url
