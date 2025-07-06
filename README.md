@@ -37,7 +37,7 @@ Check out the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on youtub
 
 ### Requirements
 
-- Python 3.11+
+- Python 3.11+ and [uv](https://docs.astral.sh/uv/)
 - VS Code with GitHub Copilot, Claude Desktop, Cursor, or other MCP-compatible client
 
 ### One-Click Install
