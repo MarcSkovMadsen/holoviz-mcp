@@ -15,11 +15,12 @@ from importlib.metadata import distributions
 from fastmcp import Context
 from fastmcp import FastMCP
 
-from holoviz_mcp.panel_mcp.data import get_components
+from holoviz_mcp.panel_mcp.data import get_components as _get_components_org
 from holoviz_mcp.panel_mcp.data import to_proxy_url
-from holoviz_mcp.panel_mcp.models import Component
-from holoviz_mcp.panel_mcp.models import ComponentBase
-from holoviz_mcp.panel_mcp.models import ComponentBaseSearchResult
+from holoviz_mcp.panel_mcp.models import ComponentDetails
+from holoviz_mcp.panel_mcp.models import ComponentSummary
+from holoviz_mcp.panel_mcp.models import ComponentSummarySearchResult
+from holoviz_mcp.panel_mcp.models import ParameterInfo
 from holoviz_mcp.shared import config
 
 # Create the FastMCP server
@@ -31,16 +32,31 @@ mcp = FastMCP(
     This MCP server provides tools, resources and prompts for using Panel to develop quick, interactive
     applications, tools and dashboards in Python using best practices.
 
-    Use this server to access:
-
-    - Panel Best Practices: Learn how to use Panel effectively.
-    - Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
+    DO use this server to search for specific Panel components and access detailed information including docstrings and parameter information.
     """,
 )
 
 
 async def _get_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
-    """Find all installed packages that depend on a given package."""
+    """
+    Find all installed packages that depend on a given package.
+
+    This is a helper function that searches through installed packages to find
+    those that have the target package as a dependency. Used to discover
+    Panel-related packages in the environment.
+
+    Parameters
+    ----------
+    target_package : str
+        The name of the package to search for dependencies on (e.g., 'panel').
+    ctx : Context
+        FastMCP context for logging and debugging.
+
+    Returns
+    -------
+    list[str]
+        Sorted list of package names that depend on the target package.
+    """
     dependent_packages = []
 
     for dist in distributions():
@@ -58,15 +74,29 @@ async def _get_packages_depending_on(target_package: str, ctx: Context) -> list[
     return sorted(set(dependent_packages))
 
 
-COMPONENTS: list[Component] = []
+COMPONENTS: list[ComponentDetails] = []
 
 
-async def _get_components(ctx: Context) -> list[Component]:
+async def _get_all_components(ctx: Context) -> list[ComponentDetails]:
     """
-    Initialize the components by loading them from the data source.
+    Get all available Panel components from discovered packages.
 
-    This function is called when the module is imported to ensure that all components are loaded
-    and available for use in the MCP server.
+    This function initializes and caches the global COMPONENTS list by:
+    1. Discovering all packages that depend on Panel
+    2. Importing those packages to register their components
+    3. Collecting detailed information about all Panel components
+
+    This is called lazily to populate the component cache when needed.
+
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context for logging and debugging.
+
+    Returns
+    -------
+    list[ComponentDetails]
+        Complete list of all discovered Panel components with detailed metadata.
     """
     global COMPONENTS
     if not COMPONENTS:
@@ -80,78 +110,88 @@ async def _get_components(ctx: Context) -> list[Component]:
             except ImportError as e:
                 await ctx.warning(f"Discovered but failed to import {package}: {e}")
 
-        COMPONENTS = get_components()
+        COMPONENTS = _get_components_org()
 
     return COMPONENTS
 
 
 @mcp.tool
-async def packages(ctx: Context) -> list[str]:
+async def get_packages(ctx: Context) -> list[str]:
     """
-    List all installed packages that provide `panel.viewable.Viewable` UI components.
+    List all installed packages that provide Panel UI components.
 
-    DO use this tool to get an overview of the packages providing UI components for use in your applications.
+    Use this tool to discover what Panel-related packages are available in your environment.
+    This helps you understand which packages you can use in the 'package' parameter of other tools.
+
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context (automatically provided by the MCP framework).
 
     Returns
     -------
-        List of package names, for example ["panel"] or ["panel", "panel_material_ui"]
+    list[str]
+        List of package names that provide Panel components, sorted alphabetically.
+        Examples: ["panel"], ["panel", "panel_material_ui"], ["panel", "awesome_panel_extensions"]
+
+    Examples
+    --------
+    Use this tool to see available packages:
+    >>> get_packages()
+    ["panel", "panel_material_ui", "awesome_panel_extensions"]
+
+    Then use those package names in other tools:
+    >>> get_component_summary(package="panel_material_ui")
+    >>> search("button", package="panel")
     """
-    return sorted(set(component.package for component in await _get_components(ctx)))
+    return sorted(set(component.package for component in await _get_all_components(ctx)))
 
 
 @mcp.tool
-async def components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentBase]:
+async def search(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
     """
-    List all `panel.viewable.Viewable` UI components with name, package, description and module path.
+    Search for Panel components by name, module path, or description.
 
-    DO use this tool to get an overview of available `panel.viewable.Viewable` UI components
-    for use in your applications.
+    Use this tool to find components when you don't know the exact name but have keywords.
+    The search looks through component names, module paths, and documentation to find matches.
 
-    Args:
-        name: Optional name of the component to filter by. If None, returns all components.
-            For example, "Button" or "TextInput".
-        module_path: Optional module path to filter components by. If None, returns all components.
-        package: Optional package name to filter components by. If None, returns all components.
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context (automatically provided by the MCP framework).
+    query : str
+        Search term to look for. Can be component names, functionality keywords, or descriptions.
+        Examples: "button", "input", "text", "chart", "plot", "slider", "select"
+    package : str, optional
+        Package name to filter results. If None, searches all packages.
+        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+    limit : int, optional
+        Maximum number of results to return. Default is 10.
 
     Returns
     -------
-        List of dictionaries containing component summary information
-    """
-    components_list = []
+    list[ComponentSummarySearchResult]
+        List of matching components with relevance scores (0-100, where 100 is exact match).
+        Results are sorted by relevance score in descending order.
 
-    for component in await _get_components(ctx=ctx):
-        if name and component.name.lower() != name.lower():
-            continue
-        if package and component.package != package:
-            continue
-        if module_path and not component.module_path.startswith(module_path):
-            continue
-        components_list.append(component.to_base())
+    Examples
+    --------
+    Search for button components:
+    >>> search("button")
+    [ComponentSummarySearchResult(name="Button", package="panel", relevance_score=80, ...)]
 
-    return components_list
+    Search within a specific package:
+    >>> search("input", package="panel_material_ui")
+    [ComponentSummarySearchResult(name="TextInput", package="panel_material_ui", ...)]
 
-
-@mcp.tool
-async def search(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentBaseSearchResult]:
-    """
-    Search for Panel components by name, module_path or docstring.
-
-    Use this tool to find components that match a specific search term.
-
-    Args:
-        query: Search term to look for in component names and descriptions
-        package: Optional package name to filter components by. If None, searches all components.
-            For example, "panel" or "panel_material_ui".
-        limit: Maximum number of results to return (default: 10)
-
-    Returns
-    -------
-        List of matching components with relevance scores. 100 is the highest score, indicating an exact match.
+    Find chart components with limited results:
+    >>> search("chart", limit=5)
+    [ComponentSummarySearchResult(name="Bokeh", package="panel", ...)]
     """
     query_lower = query.lower()
 
     matches = []
-    for component in await _get_components(ctx=ctx):
+    for component in await _get_all_components(ctx=ctx):
         score = 0
         if package and component.package.lower() != package.lower():
             continue
@@ -168,7 +208,7 @@ async def search(ctx: Context, query: str, package: str | None = None, limit: in
             score = 20
 
         if score > 0:
-            matches.append(ComponentBaseSearchResult.from_component(component=component, relevance_score=score))
+            matches.append(ComponentSummarySearchResult.from_component(component=component, relevance_score=score))
 
     matches.sort(key=lambda x: x.relevance_score, reverse=True)
     if len(matches) > limit:
@@ -177,27 +217,32 @@ async def search(ctx: Context, query: str, package: str | None = None, limit: in
     return matches
 
 
-@mcp.tool
-async def component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> Component:
+async def _get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentDetails]:
     """
-    Return detail information about a `panel.viewable.Viewable` UI component including docstring and parameters.
+    Get component details based on filtering criteria.
 
-    Use this tool to get detailed information about a specific `panel.viewable.Viewable` UI component
-    for use in your applications.
+    This is an internal function used by the public component tools to filter
+    and retrieve components based on name, module path, and package criteria.
 
-    Args:
-        name: Optional name of the component to filter by. If None, returns all components.
-            For example, "Button" or "TextInput".
-        module_path: Optional module path to filter components by. If None, returns all components.
-        package: Optional package name to filter components by. If None, returns all components.
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context for logging and debugging.
+    name : str, optional
+        Component name to filter by (case-insensitive). If None, all components match.
+    module_path : str, optional
+        Module path prefix to filter by. If None, all components match.
+    package : str, optional
+        Package name to filter by. If None, all components match.
 
     Returns
     -------
-        List of dictionaries containing component summary information
+    list[ComponentDetails]
+        List of components matching the specified criteria.
     """
     components_list = []
 
-    for component in await _get_components(ctx=ctx):
+    for component in await _get_all_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
         if package and component.package != package:
@@ -206,66 +251,271 @@ async def component(ctx: Context, name: str | None = None, module_path: str | No
             continue
         components_list.append(component)
 
-    if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
-    if len(components_list) > 1:
-        raise ValueError(f"Multiple components found matching criteria: '{name}', '{module_path}', '{package}'. Please refine your search.")
-
-    return components_list[0]
+    return components_list
 
 
-@mcp.tool(enabled=bool(config.JUPYTER_SERVER_PROXY_URL))
-def get_proxy_url(url: str) -> str:
+@mcp.tool
+async def get_component_summary(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
     """
-    Get the appropriate URL to access a local server.
+    Get a summary list of Panel components without detailed docstring and parameter information.
 
-    If the url is on the format `http://localhost:5007...` or `http://127.0.0.1:5007...` it will be converted to a proxied URL.
-    The localhost url might be extremely slow or might not work at all since we are running on a remote server.
+    Use this tool to get an overview of available Panel components when you want to browse
+    or discover components without needing full parameter details. This is faster than
+    get_component_details and provides just the essential information.
 
-    DO use this tool to get the correct URL to access a local Panel server.
-
-    Args:
-        url: The local server URL to convert.
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context (automatically provided by the MCP framework).
+    name : str, optional
+        Component name to filter by (case-insensitive). If None, returns all components.
+        Examples: "Button", "TextInput", "Slider"
+    module_path : str, optional
+        Module path prefix to filter by. If None, returns all components.
+        Examples: "panel.widgets" to get all widgets, "panel.pane" to get all panes
+    package : str, optional
+        Package name to filter by. If None, returns all components.
+        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
 
     Returns
     -------
-        The appropriate URL to use (either original or proxied).
+    list[ComponentSummary]
+        List of component summaries containing name, package, description, and module path.
+        No parameter details are included for faster responses.
 
-    Example
-    -------
-        >>> get_proxy_url("http://localhost:5007")
-        https://my-jupyterhub-domain/some-user-specific-prefix/proxy/5007/
-        >>> get_proxy_url("http://localhost:5007/dashboard")
-        https://my-jupyterhub-domain/some-user-specific-prefix/proxy/5007/dashboard
-        >>> get_proxy_url("https://panel.holoviz.org")
-        https://panel.holoviz.org
+    Examples
+    --------
+    Get all available components:
+    >>> get_component_summary()
+    [ComponentSummary(name="Button", package="panel", description="A clickable button widget", ...)]
+
+    Get all Material UI components:
+    >>> get_component_summary(package="panel_material_ui")
+    [ComponentSummary(name="Button", package="panel_material_ui", ...)]
+
+    Get all Button components from all packages:
+    >>> get_component_summary(name="Button")
+    [ComponentSummary(name="Button", package="panel", ...), ComponentSummary(name="Button", package="panel_material_ui", ...)]
     """
-    return to_proxy_url(url)
+    components_list = []
+
+    for component in await _get_all_components(ctx=ctx):
+        if name and component.name.lower() != name.lower():
+            continue
+        if package and component.package != package:
+            continue
+        if module_path and not component.module_path.startswith(module_path):
+            continue
+        components_list.append(component.to_base())
+
+    return components_list
+
+
+@mcp.tool
+async def get_component_details(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
+    """
+    Get complete details about a single Panel component including docstring and parameters.
+
+    Use this tool when you need full information about a specific Panel component, including
+    its docstring, parameter specifications, and initialization signature. This is the most
+    comprehensive tool for component information.
+
+    IMPORTANT: This tool returns exactly one component. If your criteria match multiple components,
+    you'll get an error asking you to be more specific.
+
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context (automatically provided by the MCP framework).
+    name : str, optional
+        Component name to match (case-insensitive). If None, must specify other criteria.
+        Examples: "Button", "TextInput", "Slider"
+    module_path : str, optional
+        Full module path to match. If None, uses name and package to find component.
+        Examples: "panel.widgets.Button", "panel_material_ui.Button"
+    package : str, optional
+        Package name to filter by. If None, searches all packages.
+        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+
+    Returns
+    -------
+    ComponentDetails
+        Complete component information including docstring, parameters, and initialization signature.
+
+    Raises
+    ------
+    ValueError
+        If no components match the criteria or if multiple components match (be more specific).
+
+    Examples
+    --------
+    Get Panel's Button component:
+    >>> get_component_details(name="Button", package="panel")
+    ComponentDetails(name="Button", package="panel", docstring="A clickable button...", parameters={...})
+
+    Get Material UI Button component:
+    >>> get_component_details(name="Button", package="panel_material_ui")
+    ComponentDetails(name="Button", package="panel_material_ui", ...)
+
+    Get component by exact module path:
+    >>> get_component_details(module_path="panel.widgets.button.Button")
+    ComponentDetails(name="Button", module_path="panel.widgets.button.Button", ...)
+    """
+    components_list = await _get_component(ctx, name, module_path, package)
+
+    if not components_list:
+        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
+    if len(components_list) > 1:
+        module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
+        raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
+
+    component = components_list[0]
+    return component
+
+
+@mcp.tool
+async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> dict[str, ParameterInfo]:
+    """
+    Get detailed parameter information for a single Panel component.
+
+    Use this tool when you need to understand the parameters of a specific Panel component,
+    including their types, default values, documentation, and constraints. This is useful
+    for understanding how to properly initialize and configure a component.
+
+    IMPORTANT: This tool returns parameters for exactly one component. If your criteria
+    match multiple components, you'll get an error asking you to be more specific.
+
+    Parameters
+    ----------
+    ctx : Context
+        FastMCP context (automatically provided by the MCP framework).
+    name : str, optional
+        Component name to match (case-insensitive). If None, must specify other criteria.
+        Examples: "Button", "TextInput", "Slider"
+    module_path : str, optional
+        Full module path to match. If None, uses name and package to find component.
+        Examples: "panel.widgets.Button", "panel_material_ui.Button"
+    package : str, optional
+        Package name to filter by. If None, searches all packages.
+        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+
+    Returns
+    -------
+    dict[str, ParameterInfo]
+        Dictionary mapping parameter names to their detailed information, including:
+        - type: Parameter type (e.g., 'String', 'Number', 'Boolean')
+        - default: Default value
+        - doc: Parameter documentation
+        - bounds: Value constraints for numeric parameters
+        - objects: Available options for selector parameters
+
+    Raises
+    ------
+    ValueError
+        If no components match the criteria or if multiple components match (be more specific).
+
+    Examples
+    --------
+    Get Button parameters:
+    >>> get_component_parameters(name="Button", package="panel")
+    {"name": ParameterInfo(type="String", default="Button", doc="The text displayed on the button"), ...}
+
+    Get TextInput parameters:
+    >>> get_component_parameters(name="TextInput", package="panel")
+    {"value": ParameterInfo(type="String", default="", doc="The current text value"), ...}
+
+    Get parameters by exact module path:
+    >>> get_component_parameters(module_path="panel.widgets.Slider")
+    {"start": ParameterInfo(type="Number", default=0, bounds=(0, 100)), ...}
+    """
+    components_list = await _get_component(ctx, name, module_path, package)
+
+    if not components_list:
+        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
+    if len(components_list) > 1:
+        module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
+        raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
+
+    component = components_list[0]
+    return component.parameters
+
+
+@mcp.tool(enabled=bool(config.JUPYTER_SERVER_PROXY_URL))
+def get_accessible_url(url: str) -> str:
+    """
+    Convert localhost URLs to accessible URLs in remote environments.
+
+    Use this tool to get the correct URL for accessing local Panel servers when running
+    in remote environments like JupyterHub, Binder, or cloud platforms. The tool automatically
+    converts localhost URLs to proxied URLs that work in these environments.
+
+    This tool is only enabled when a proxy configuration is detected.
+
+    Parameters
+    ----------
+    url : str
+        The original URL to convert. Should be a localhost or 127.0.0.1 URL.
+        Examples: "http://localhost:5007", "http://127.0.0.1:5007/dashboard"
+
+    Returns
+    -------
+    str
+        The accessible URL to use. If running locally, returns the original URL.
+        If running on a remote server, returns the proxied URL that works in that environment.
+
+    Examples
+    --------
+    Convert localhost URL to accessible URL:
+    >>> get_accessible_url("http://localhost:5007")
+    "https://my-jupyterhub-domain/user/alice/proxy/5007/"
+
+    Convert localhost URL with path:
+    >>> get_accessible_url("http://localhost:5007/dashboard")
+    "https://my-jupyterhub-domain/user/alice/proxy/5007/dashboard"
+
+    External URLs are returned unchanged:
+    >>> get_accessible_url("https://panel.holoviz.org")
+    "https://panel.holoviz.org"
+    """
+    return to_proxy_url(url, config.JUPYTER_SERVER_PROXY_URL)
 
 
 @mcp.tool
 def open_in_browser(url: str, new_tab: bool = True) -> str:
     """
-    Open a URL in the browser.
+    Open a URL in the user's web browser.
 
-    DO Use this tool to open URLs in the browser instead of asking the user to manually open them.
+    Use this tool to automatically open URLs in the browser instead of asking the user
+    to manually copy and paste URLs. This provides a better user experience.
 
-    If the url is on localhost and a proxy server is configured, the URL will be converted to a proxied URL and opened in the browser.
+    The tool automatically handles URL conversion for remote environments - if the URL
+    is a localhost URL and a proxy is configured, it will be converted to a proxied URL
+    before opening.
 
-    Args:
-        url: The URL to open in the browser.
-        new_tab: If True, open in a new tab. If False, open in the same window.
+    Parameters
+    ----------
+    url : str
+        The URL to open in the browser. Can be localhost, 127.0.0.1, or any web URL.
+        Examples: "http://localhost:5007", "https://panel.holoviz.org"
+    new_tab : bool, optional
+        Whether to open in a new tab (True) or same window (False). Default is True.
 
     Returns
     -------
-        The URL that was opened.
+    str
+        The URL that was actually opened (may be converted to a proxy URL if applicable).
 
-    Example
-    -------
-        >>> open_in_browser("http://localhost:5007/dashboard", new_tab=True)
-        >>> open_in_browser("https://panel.holoviz.org", new_tab=False)
+    Examples
+    --------
+    Open Panel app in new tab:
+    >>> open_in_browser("http://localhost:5007/dashboard")
+    "https://my-jupyterhub-domain/user/alice/proxy/5007/dashboard"
+
+    Open documentation in same window:
+    >>> open_in_browser("https://panel.holoviz.org", new_tab=False)
+    "https://panel.holoviz.org"
     """
-    url = to_proxy_url(url)
+    url = to_proxy_url(url, config.JUPYTER_SERVER_PROXY_URL)
 
     if new_tab:
         webbrowser.open_new_tab(url)
