@@ -137,7 +137,7 @@ DO note how this test simulates the user's behaviour of loading the page, changi
 - `pn.pane.Markdown`, `pn.pane.HTML` for content
 
 ### Serving
-- `panel serve app.py --dev --show` for development
+- `panel serve app.py --dev` for development with hot reload. Add `--show` to open in browser.
 - `app.servable()` to mark components for serving
 
 ## Core Principles
@@ -166,16 +166,26 @@ DO note how this test simulates the user's behaviour of loading the page, changi
 - In a sidebar the order should be: 1) optional image/logo, 2) short app description, 3) input widgets/filters, 4) additional documentation.
 
 **Serving**
-- DO use `panel serve app.py --dev --show` for development with hot reload
+- DO use `panel serve app.py --dev` for development with hot reload.
   - DON't use legacy `--autoreload` flag.
 - DO use `if pn.state.served:` to check if being served with `panel serve`
 - DO use `if __name__ == "__main__":` to check if run directly via `python`
+
+```python
+# Correct:
+if pn.state.served:
+    main().servable()
+
+# Incorrect
+if __name__ == "__main__":
+    main().servable()
+```
 
 ## Workflows
 
 **Development**
 
-- DO always start and keep running a development server `panel serve path_to_file.py --dev --show` with hot reload while developing!
+- DO always start and keep running a development server `panel serve path_to_file.py --dev` with hot reload while developing!
 
 **Testing**
 
@@ -257,17 +267,11 @@ filtered = filtered[
 - DO use bar charts over pie Charts.
 
 ### HoloViews/hvPlot
+
 - DO let Panel control the renderer theme
     - DON'T set `hv.renderer('bokeh').theme = 'dark_minimal'`
-- Prefer Bokeh > Plotly > Matplotlib for interactivity
-- DO use bar charts over pie Charts. Pie charts are not supported.
-- DO use NumeralTickFormatter and 'a' formatter for axis formatting:
 
-| Input | Format String | Output |
-| - |  - | - |
-| 1230974 | '0.0a' | 1.2m |
-| 1460 | '0 a' | 1 k |
-| -104000 | '0a' | -104k |
+DO follow the hvplot and holoviews best practice guides!
 
 ### Plotly
 

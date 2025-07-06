@@ -153,6 +153,7 @@ def test_characters_reactivity():
 - DO provide the input widgets as children to the `Page.sidebar` argument
 - DO not add advanced or high components to the `Page.header` as it is only 100px high by default. Normally only buttons, indicators, text and navigation links go into the header.
 - DON'T include `ThemeToggle` or other widgets to toggle the theme when using the `Page`. A `ThemeToggle` is already built in.
+- DO Add a little bit of `margin=10` to the outer layout component(s) in the `main` area. To make them stand out from the `sidebar` components: `Grid(..., container=True, margin=15)`.
 
 DO provide lists of children to the `Page.sidebar`, `Page.main` or `Page.header` arguments:
 
@@ -202,9 +203,14 @@ DO synchronize component themes with Page theme:
         return page
 ```
 
-### Column
+### Grid
+
+- DO set `spacing=2` or higher to separate sub components in the grid.
+
+### Column/ Row
 
 - DO use `size` parameter instead of `xs`, `sm` or `md` parameters - they do not exist.
+- DO use `sx` to set `spacing` instead of setting `spacing` directly. It does not exist.
 
 ### List like layouts
 
@@ -232,6 +238,10 @@ pmui.Row([child1, child2, child3,]) # DON'T
 
 - DO use the `Paper` component over the `Card` unless you need the `Card`s extra features.
 - DO set `collapsible=False` unless collapsible is needed.
+
+### Tabulator
+
+- DO use "materialize" `theme` instead of "material". The latter does not exist.
 
 ### Non-Existing Components
 
