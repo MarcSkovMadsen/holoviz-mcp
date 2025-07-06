@@ -37,7 +37,7 @@ mcp = FastMCP(
 )
 
 
-async def _get_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
+async def _list_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
     """
     Find all installed packages that depend on a given package.
 
@@ -100,7 +100,7 @@ async def _get_all_components(ctx: Context) -> list[ComponentDetails]:
     """
     global COMPONENTS
     if not COMPONENTS:
-        packages_depending_on_panel = await _get_packages_depending_on("panel", ctx=ctx)
+        packages_depending_on_panel = await _list_packages_depending_on("panel", ctx=ctx)
 
         await ctx.info(f"Discovered {len(packages_depending_on_panel)} packages depending on Panel: {packages_depending_on_panel}")
 
@@ -116,7 +116,7 @@ async def _get_all_components(ctx: Context) -> list[ComponentDetails]:
 
 
 @mcp.tool
-async def get_packages(ctx: Context) -> list[str]:
+async def list_packages(ctx: Context) -> list[str]:
     """
     List all installed packages that provide Panel UI components.
 
@@ -137,11 +137,11 @@ async def get_packages(ctx: Context) -> list[str]:
     Examples
     --------
     Use this tool to see available packages:
-    >>> get_packages()
+    >>> list_packages()
     ["panel", "panel_material_ui", "awesome_panel_extensions"]
 
     Then use those package names in other tools:
-    >>> get_component_summary(package="panel_material_ui")
+    >>> list_components(package="panel_material_ui")
     >>> search("button", package="panel")
     """
     return sorted(set(component.package for component in await _get_all_components(ctx)))
@@ -255,13 +255,13 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
 
 
 @mcp.tool
-async def get_component_summary(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
+async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
     """
     Get a summary list of Panel components without detailed docstring and parameter information.
 
     Use this tool to get an overview of available Panel components when you want to browse
     or discover components without needing full parameter details. This is faster than
-    get_component_details and provides just the essential information.
+    get_component and provides just the essential information.
 
     Parameters
     ----------
@@ -286,15 +286,15 @@ async def get_component_summary(ctx: Context, name: str | None = None, module_pa
     Examples
     --------
     Get all available components:
-    >>> get_component_summary()
+    >>> list_components()
     [ComponentSummary(name="Button", package="panel", description="A clickable button widget", ...)]
 
     Get all Material UI components:
-    >>> get_component_summary(package="panel_material_ui")
+    >>> list_components(package="panel_material_ui")
     [ComponentSummary(name="Button", package="panel_material_ui", ...)]
 
     Get all Button components from all packages:
-    >>> get_component_summary(name="Button")
+    >>> list_components(name="Button")
     [ComponentSummary(name="Button", package="panel", ...), ComponentSummary(name="Button", package="panel_material_ui", ...)]
     """
     components_list = []
@@ -312,7 +312,7 @@ async def get_component_summary(ctx: Context, name: str | None = None, module_pa
 
 
 @mcp.tool
-async def get_component_details(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
+async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
     """
     Get complete details about a single Panel component including docstring and parameters.
 
@@ -350,15 +350,15 @@ async def get_component_details(ctx: Context, name: str | None = None, module_pa
     Examples
     --------
     Get Panel's Button component:
-    >>> get_component_details(name="Button", package="panel")
+    >>> get_component(name="Button", package="panel")
     ComponentDetails(name="Button", package="panel", docstring="A clickable button...", parameters={...})
 
     Get Material UI Button component:
-    >>> get_component_details(name="Button", package="panel_material_ui")
+    >>> get_component(name="Button", package="panel_material_ui")
     ComponentDetails(name="Button", package="panel_material_ui", ...)
 
     Get component by exact module path:
-    >>> get_component_details(module_path="panel.widgets.button.Button")
+    >>> get_component(module_path="panel.widgets.button.Button")
     ComponentDetails(name="Button", module_path="panel.widgets.button.Button", ...)
     """
     components_list = await _get_component(ctx, name, module_path, package)

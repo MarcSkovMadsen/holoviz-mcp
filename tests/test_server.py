@@ -20,7 +20,7 @@ async def test_server():
         tools = await client.list_tools()
         assert tools
 
-        result = await client.call_tool("panel_get_component_summary", {})
+        result = await client.call_tool("panel_list_components", {})
         assert result.data
 
         result = await client.call_tool("docs_best_practices", {"package": "panel"})

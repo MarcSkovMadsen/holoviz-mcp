@@ -232,10 +232,10 @@ The AI assistant provides accurate, contextual answers with:
 <details>
 <summary><b>Panel Components</b></summary>
 
-- **panel_get_packages**: List all installed packages that provide Panel UI components
+- **panel_list_packages**: List all installed packages that provide Panel UI components
 - **panel_search**: Search for Panel components by name, module path, or description
-- **panel_get_component_summary**: Get a summary list of Panel components without detailed parameter information
-- **panel_get_component_details**: Get complete details about a single Panel component including docstring and parameters
+- **panel_list_components**: Get a summary list of Panel components without detailed parameter information
+- **panel_get_component**: Get complete details about a single Panel component including docstring and parameters
 - **panel_get_component_parameters**: Get detailed parameter information for a single Panel component
 
 </details>

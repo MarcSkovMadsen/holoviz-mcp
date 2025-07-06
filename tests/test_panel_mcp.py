@@ -33,7 +33,7 @@ class TestPanelMCPIntegration:
         """Test the packages tool with real data."""
         client = Client(mcp)
         async with client:
-            result = await client.call_tool("get_packages", {})
+            result = await client.call_tool("list_packages", {})
 
         # Should return a list of package names
         assert isinstance(result.data, list)
@@ -47,7 +47,7 @@ class TestPanelMCPIntegration:
         """Test the components tool with real data."""
         client = Client(mcp)
         async with client:
-            result = await client.call_tool("get_component_summary", {})
+            result = await client.call_tool("list_components", {})
 
         # Should return a list of component dictionaries
         assert isinstance(result.data, list)
@@ -73,13 +73,13 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get all packages
-            packages_result = await client.call_tool("get_packages", {})
+            packages_result = await client.call_tool("list_packages", {})
             packages = packages_result.data
 
             if len(packages) > 0:
                 # Filter by the first package
                 test_package = packages[0]
-                result = await client.call_tool("get_component_summary", {"package": test_package})
+                result = await client.call_tool("list_components", {"package": test_package})
 
                 # All components should be from the specified package
                 assert isinstance(result.data, list)
@@ -92,12 +92,12 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get all components to find a name to filter by
-            all_components = await client.call_tool("get_component_summary", {})
+            all_components = await client.call_tool("list_components", {})
 
             if len(all_components.data) > 0:
                 # Use the first component's name
                 test_name = all_components.data[0]["name"]
-                result = await client.call_tool("get_component_summary", {"name": test_name})
+                result = await client.call_tool("list_components", {"name": test_name})
 
                 # All components should have the specified name
                 assert isinstance(result.data, list)
@@ -146,7 +146,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get available packages
-            packages_result = await client.call_tool("get_packages", {})
+            packages_result = await client.call_tool("list_packages", {})
             packages = packages_result.data
 
             if len(packages) > 0:
@@ -165,7 +165,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get all components to find one to query
-            all_components = await client.call_tool("get_component_summary", {})
+            all_components = await client.call_tool("list_components", {})
 
             if len(all_components.data) > 0:
                 # Find a component that should be unique (or use package filter)
@@ -174,7 +174,7 @@ class TestPanelMCPIntegration:
                 test_package = test_component["package"]
 
                 # Query for the specific component with package filter to ensure uniqueness
-                result = await client.call_tool("get_component_details", {"name": test_name, "package": test_package})
+                result = await client.call_tool("get_component", {"name": test_name, "package": test_package})
 
                 # Should return detailed component information
                 component = result.data
@@ -206,7 +206,7 @@ class TestPanelMCPIntegration:
         async with client:
             # This should raise an error
             with pytest.raises(Exception) as exc_info:
-                await client.call_tool("get_component_details", {"name": "NonExistentComponent12345"})
+                await client.call_tool("get_component", {"name": "NonExistentComponent12345"})
 
             assert "No components found" in str(exc_info.value)
 
@@ -216,7 +216,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First check if there are any components with the same name across packages
-            all_components = await client.call_tool("get_component_summary", {})
+            all_components = await client.call_tool("list_components", {})
 
             # Group by name to find duplicates
             name_counts: dict = {}
@@ -234,7 +234,7 @@ class TestPanelMCPIntegration:
             if ambiguous_name:
                 # This should raise an error about multiple components
                 with pytest.raises(Exception) as exc_info:
-                    await client.call_tool("get_component_details", {"name": ambiguous_name})
+                    await client.call_tool("get_component", {"name": ambiguous_name})
 
                 assert "Multiple components found" in str(exc_info.value)
 
@@ -246,7 +246,7 @@ class TestPanelMCPIntegration:
             tools = await client.list_tools()
 
         tool_names = [tool.name for tool in tools]
-        expected_tools = ["get_packages", "get_component_summary", "search", "get_component_details", "get_component_parameters", "open_in_browser"]
+        expected_tools = ["list_packages", "list_components", "search", "get_component", "get_component_parameters", "open_in_browser"]
 
         for tool in expected_tools:
             assert tool in tool_names
@@ -274,8 +274,8 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Get packages and components
-            packages_result = await client.call_tool("get_packages", {})
-            components_result = await client.call_tool("get_component_summary", {})
+            packages_result = await client.call_tool("list_packages", {})
+            components_result = await client.call_tool("list_components", {})
 
             packages = set(packages_result.data)
             component_packages = set(comp["package"] for comp in components_result.data)
@@ -305,12 +305,12 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Get all components and check the first one with parameters
-            components_result = await client.call_tool("get_component_summary", {})
+            components_result = await client.call_tool("list_components", {})
 
             if len(components_result.data) > 0:
                 # Get detailed info for the first component
                 first_comp = components_result.data[0]
-                result = await client.call_tool("get_component_details", {"name": first_comp["name"], "package": first_comp["package"]})
+                result = await client.call_tool("get_component", {"name": first_comp["name"], "package": first_comp["package"]})
 
                 component = result.data
 
