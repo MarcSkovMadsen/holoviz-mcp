@@ -38,6 +38,7 @@ classifiers = [
 ]
 
 dependencies = [
+    "certifi",
     "chromadb",
     "fastmcp",
     "GitPython",

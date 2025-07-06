@@ -100,14 +100,47 @@ class DocumentationIndexer:
         self.chroma_client = chromadb.PersistentClient(path=str(self.data_dir / "chroma"))
         self.collection = self.chroma_client.get_or_create_collection("holoviz_docs")
 
-        # Initialize embedding model
-        self.embedding_model = SentenceTransformer(os.getenv("HOLOVIZ_EMBEDDING_MODEL", "all-MiniLM-L6-v2"))
+        # Initialize embedding model with SSL certificate handling
+        self.embedding_model = self._initialize_embedding_model()
 
         # Initialize notebook converter
         self.nb_exporter = MarkdownExporter()
 
         # Load configuration
         self.config = self._load_config()
+
+    def _initialize_embedding_model(self) -> SentenceTransformer:
+        """Initialize the SentenceTransformer with SSL certificate handling."""
+        model_name = os.getenv("HOLOVIZ_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+
+        try:
+            # Try to load the model normally first
+            return SentenceTransformer(model_name)
+        except Exception as e:
+            if "SSL" in str(e) or "certificate" in str(e).lower():
+                logger.warning(f"SSL certificate error encountered: {e}")
+                logger.info("Attempting to configure SSL certificates...")
+
+                # Try to set SSL certificate path using certifi
+                try:
+                    import certifi
+
+                    cert_path = certifi.where()
+                    # Set both environment variables for maximum compatibility
+                    os.environ["SSL_CERT_FILE"] = cert_path
+                    os.environ["REQUESTS_CA_BUNDLE"] = cert_path
+                    logger.info(f"Set SSL_CERT_FILE and REQUESTS_CA_BUNDLE to: {cert_path}")
+
+                    # Retry loading the model
+                    return SentenceTransformer(model_name)
+                except Exception as cert_error:
+                    logger.error(f"Failed to configure SSL certificates: {cert_error}")
+                    logger.warning("Please ensure your SSL certificates are properly configured.")
+                    logger.warning("For Windows users, try setting REQUESTS_CA_BUNDLE environment variable.")
+                    raise
+            else:
+                # Re-raise non-SSL related errors
+                raise
 
     def _load_config(self) -> dict[str, Any]:
         """Load configuration from environment or file."""
@@ -280,7 +313,7 @@ class DocumentationIndexer:
         repo_config = self.config["repositories"][package]
         folders = repo_config["doc_folders"]
         files: set = set()
-        await log_info(f"Processing {package} documentation files in {",".join(folders)}", ctx)
+        await log_info(f"Processing {package} documentation files in {','.join(folders)}", ctx)
         for folder in folders:
             docs_folder: Path = repo_path / folder
             files = files.union(docs_folder.rglob("*.md"))
