@@ -155,6 +155,14 @@ For other MCP-compatible clients, use the standard MCP configuration:
 
 **That's it!** Start asking questions about Panel components, and your AI assistant will have access to comprehensive documentation and component details.
 
+### ⏱️ First-Time Setup
+
+**Installation**: The first installation may take 1-2 minutes as dependencies are downloaded and configured.
+
+**Documentation Indexing**: The first time you search documentation, the system will automatically download and index HoloViz documentation from GitHub. This process takes 5-10 minutes but only happens once. Subsequent searches will be instant.
+
+**Progress Monitoring**: In VS Code, you can monitor progress in `OUTPUT → MCP: holoviz` to see indexing status and any potential issues.
+
 ## 💡 What You Can Ask
 
 <details>
@@ -243,11 +251,11 @@ The AI assistant provides accurate, contextual answers with:
 <details>
 <summary><b>Documentation</b></summary>
 
-- **docs_best_practices**: Get best practices for using a package with LLMs
-- **docs_reference_guide**: Find reference guides for specific HoloViz components
-- **docs_page**: Retrieve a specific documentation page by path and package
+- **docs_get_best_practices**: Get best practices for using a package with LLMs
+- **docs_get_reference_guide**: Find reference guides for specific HoloViz components
+- **docs_get_page**: Retrieve a specific documentation page by path and package
 - **docs_search**: Search HoloViz documentation using semantic similarity
-- **docs_update_docs_index**: Update the documentation index by re-cloning repositories and re-indexing content
+- **docs_update_index**: Update the documentation index by re-cloning repositories and re-indexing content
 
 </details>
 

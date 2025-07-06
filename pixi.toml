@@ -8,6 +8,7 @@ postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-
 
 [dependencies]
 python = ">=3.11"
+certifi = "*"
 chromadb = "*"
 fastmcp = "*"
 GitPython = "*"
