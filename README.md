@@ -163,6 +163,8 @@ For other MCP-compatible clients, use the standard MCP configuration:
 
 **Progress Monitoring**: In VS Code, you can monitor progress in `OUTPUT → MCP: holoviz` to see indexing status and any potential issues.
 
+![OUTPUT](docs/assets/images/vs-code-output-holoviz.png)
+
 ## 💡 What You Can Ask
 
 <details>
@@ -189,10 +191,6 @@ For other MCP-compatible clients, use the standard MCP configuration:
 - `clicks` (int): Number of times button has been clicked
 - And many more...
 
-**Ask:** *"How do I create a dashboard with sliders and plots?"*
-
-**AI Response:** Provides complete code examples with proper Panel layout structure and component integration.
-
 </details>
 
 <details>
@@ -209,23 +207,23 @@ For other MCP-compatible clients, use the standard MCP configuration:
 </details>
 
 <details>
-<summary><b>🚀 Building Applications</b></summary>
+<summary><b>🚀 Building Tools, Dashboards and Applications</b></summary>
 
-**Ask:** *"How do I build a data dashboard with Panel?"*
+**Ask:** *"How do I build a minimal, Hello World data dashboard with Panel?"*
 
-**AI Response:** Provides complete application architecture with layout components, data connections, and interactive widgets. Includes code for multi-page dashboards with navigation and state management.
+**AI Response:** Provides basic application architecture with layout components, data connections, and interactive widgets.
 
-**Ask:** *"Create a web application for data analysis"*
+**Ask:** *"How do I create a minimal, dashboard with Panel Material UI sliders and plots?"*
 
-**AI Response:** Delivers full application templates with file upload, data processing, visualization, and export functionality using Panel's serve capabilities.
+**AI Response:** Provides complete code examples with proper Panel layout structure and Panel Material UI component integration.
+
+**Ask:** *"Build a sales dashboard for data analysis using Panel Material UI components. Follow the Panel and Panel Material UI best practices. Create tests and make sure issues are identified and fixed."*
+
+**AI Response:** Provides code for interactive tools with dynamic filtering, real-time updates, and responsive layouts that work across devices.
 
 **Ask:** *"How do I deploy a Panel application?"*
 
 **AI Response:** Offers deployment strategies for various platforms (Heroku, AWS, local server) with configuration examples and best practices for production environments.
-
-**Ask:** *"Build a tool for interactive data exploration"*
-
-**AI Response:** Provides code for interactive tools with dynamic filtering, real-time updates, and responsive layouts that work across devices.
 
 </details>
 
@@ -426,3 +424,13 @@ We welcome contributions! Here's how to get started:
 - **GitHub Actions** for CI/CD
 
 Run `pixi run pre-commit-install` to set up code quality checks.
+
+## Roadmap
+
+- [ ] Provide Panel and Panel Material UI best practices for both "beginners" and "intermediate" users. Current ones are for "intermediate users".
+- [ ] Find that "magic" prompt that makes the LLM run a development server with hot reload (`panel serve ... --dev`) while developing. Would make things more engaging. I've tried a lot.
+- [ ] Get [Panel #8018](https://github.com/holoviz/panel/issues/8018) fixed.
+- [ ] Try out [Playwright MCP](https://github.com/microsoft/playwright-mcp). Its probably worth recommending for taking screenshots and interacting with the app in the browser.
+- [ ] Provide reference guides for other HoloViz packages starting with hvPlot, param and HoloViews.
+- [ ] Base index on latest released versions instead of latest code (`Head`).
+- [ ] Migrate to HoloViz organisation.
