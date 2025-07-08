@@ -15,13 +15,13 @@ from importlib.metadata import distributions
 from fastmcp import Context
 from fastmcp import FastMCP
 
+from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.panel_mcp.data import get_components as _get_components_org
 from holoviz_mcp.panel_mcp.data import to_proxy_url
 from holoviz_mcp.panel_mcp.models import ComponentDetails
 from holoviz_mcp.panel_mcp.models import ComponentSummary
 from holoviz_mcp.panel_mcp.models import ComponentSummarySearchResult
 from holoviz_mcp.panel_mcp.models import ParameterInfo
-from holoviz_mcp.shared import config
 
 # Create the FastMCP server
 mcp = FastMCP(
@@ -440,7 +440,11 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     return component.parameters
 
 
-@mcp.tool(enabled=bool(config.JUPYTER_SERVER_PROXY_URL))
+# Get configuration for conditional tool enabling
+_config = get_config()
+
+
+@mcp.tool(enabled=bool(_config.server.jupyter_server_proxy_url))
 def get_accessible_url(url: str) -> str:
     """
     Convert localhost URLs to accessible URLs in remote environments.
@@ -477,7 +481,8 @@ def get_accessible_url(url: str) -> str:
     >>> get_accessible_url("https://panel.holoviz.org")
     "https://panel.holoviz.org"
     """
-    return to_proxy_url(url, config.JUPYTER_SERVER_PROXY_URL)
+    config = get_config()
+    return to_proxy_url(url, config.server.jupyter_server_proxy_url)
 
 
 @mcp.tool
@@ -515,7 +520,8 @@ def open_in_browser(url: str, new_tab: bool = True) -> str:
     >>> open_in_browser("https://panel.holoviz.org", new_tab=False)
     "https://panel.holoviz.org"
     """
-    url = to_proxy_url(url, config.JUPYTER_SERVER_PROXY_URL)
+    config = get_config()
+    url = to_proxy_url(url, config.server.jupyter_server_proxy_url)
 
     if new_tab:
         webbrowser.open_new_tab(url)
@@ -526,4 +532,5 @@ def open_in_browser(url: str, new_tab: bool = True) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport=config.TRANSPORT)
+    config = get_config()
+    mcp.run(transport=config.server.transport)

@@ -14,9 +14,9 @@ import asyncio
 
 from fastmcp import FastMCP
 
+from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.docs_mcp.server import mcp as docs_mcp
 from holoviz_mcp.panel_mcp.server import mcp as panel_mcp
-from holoviz_mcp.shared import config
 
 mcp: FastMCP = FastMCP(
     name="holoviz",
@@ -57,7 +57,8 @@ def main() -> None:
 
     async def setup_and_run() -> None:
         await setup_composed_server()
-        await mcp.run_async(transport=config.TRANSPORT)
+        config = get_config()
+        await mcp.run_async(transport=config.server.transport)
 
     asyncio.run(setup_and_run())
 

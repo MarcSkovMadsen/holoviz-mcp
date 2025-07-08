@@ -15,8 +15,6 @@ from pathlib import Path
 
 from panel.viewable import Viewable
 
-from holoviz_mcp.shared import config
-
 from .models import ComponentDetails
 from .models import ParameterInfo
 
@@ -254,7 +252,7 @@ def load_components(filepath: str) -> list[ComponentDetails]:
     return [ComponentDetails(**item) for item in json_data]
 
 
-def to_proxy_url(url: str, jupyter_server_proxy_url: str = config.JUPYTER_SERVER_PROXY_URL) -> str:
+def to_proxy_url(url: str, jupyter_server_proxy_url: str = "") -> str:
     """
     Convert localhost URLs to Jupyter server proxy URLs when applicable.
 

@@ -1,1 +1,1 @@
-recursive-include holoviz_mcp/docs_mcp/templates *.md
+recursive-include holoviz_mcp/config *.yaml *.json

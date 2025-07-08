@@ -19,10 +19,9 @@ async def test_best_practices_resource():
         assert result.data
 
 
-@pytest.mark.skip(reason="This test is very slow and not needed for CI")
 @pytest.mark.asyncio
 async def test_update_index():
-    """Test the best-practices resource."""
+    """Test the update_index tool."""
     client = Client(mcp)
     async with client:
         result = await client.call_tool("update_index")
@@ -109,13 +108,13 @@ async def test_pages_material_ui_specific():
     client = Client(mcp)
     async with client:
         # Test search for Material UI styling
-        result = await client.call_tool("search", {"query": "How to style Material UI components?", "package": "panel_material_ui"})
+        result = await client.call_tool("search", {"query": "How to style Material UI components?", "package": "panel-material-ui"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # Results should be from panel_material_ui package
+        # Results should be from panel-material-ui package
         for page in result.data:
-            assert page["package"] == "panel_material_ui"
+            assert page["package"] == "panel-material-ui"
 
 
 @pytest.mark.asyncio

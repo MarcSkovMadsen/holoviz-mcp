@@ -54,13 +54,13 @@ async def test_get_reference_guide_button_panel_material_ui_specific():
     """Test get_reference_guide finds the one and only Button reference guide in Panel Material UI package specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel_material_ui"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel-material-ui"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
         page = result.data[0]
         assert page["path"] == "examples/reference/widgets/Button.ipynb"
-        assert page["package"] == "panel_material_ui"
+        assert page["package"] == "panel-material-ui"
         assert page["title"] == "Button"
         assert page["url"] == "https://panel-material-ui.holoviz.org/reference/widgets/Button.html"
         assert page["relevance_score"] == 1.0
@@ -71,13 +71,13 @@ async def test_get_reference_guide_textinput_material_ui():
     """Test get_reference_guide for TextInput component in Material UI package."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "TextInput", "package": "panel_material_ui"})
+        result = await client.call_tool("get_reference_guide", {"component": "TextInput", "package": "panel-material-ui"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 1
 
         page = result.data[0]
-        assert page["package"] == "panel_material_ui"
+        assert page["package"] == "panel-material-ui"
         assert page["path"] == "examples/reference/widgets/TextInput.ipynb"
         assert page["relevance_score"] == 1.0
 

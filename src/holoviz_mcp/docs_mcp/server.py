@@ -10,10 +10,11 @@ import logging
 from fastmcp import Context
 from fastmcp import FastMCP
 
+from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.docs_mcp.data import DocumentationIndexer
+from holoviz_mcp.docs_mcp.data import get_best_practices as _get_best_practices
+from holoviz_mcp.docs_mcp.data import list_best_practices as _list_best_practices
 from holoviz_mcp.docs_mcp.models import Page
-from holoviz_mcp.docs_mcp.templates import get_best_practices as _get_best_practices
-from holoviz_mcp.shared import config
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,21 @@ def get_best_practices(package: str) -> str:
         str: A string containing the best practices for the package in Markdown format.
     """
     return _get_best_practices(package)
+
+
+@mcp.tool
+def list_best_practices() -> list[str]:
+    """List all available best practices packages.
+
+    This tool discovers available best practices from both user and default directories,
+    with user resources taking precedence over default ones.
+
+    Returns
+    -------
+        list[str]: A list of package names that have best practices available.
+                   Names are returned in hyphenated format (e.g., "panel-material-ui").
+    """
+    return _list_best_practices()
 
 
 @mcp.tool
@@ -185,4 +201,5 @@ async def update_index(ctx: Context) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport=config.TRANSPORT)
+    config = get_config()
+    mcp.run(transport=config.server.transport)
