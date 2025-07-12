@@ -360,7 +360,8 @@ HoloViz MCP supports user configuration via a YAML file, allowing you to customi
 
 ### Custom Configuration File
 
-You can provide a custom configuration file to override or extend the default settings. By default, configuration is loaded from `~/.holoviz-mcp/config.yaml`, but you can specify a different location using the `HOLOVIZ_MCP_USER_DIR` environment variable:
+By default, configuration is loaded from `~/.holoviz-mcp/config.yaml`.
+To use a different location, set the `HOLOVIZ_MCP_USER_DIR` environment variable:
 
 ```bash
 export HOLOVIZ_MCP_USER_DIR=/path/to/your/config_dir
@@ -368,33 +369,42 @@ export HOLOVIZ_MCP_USER_DIR=/path/to/your/config_dir
 
 ### Adding Custom Documentation Repositories
 
-To add documentation from other libraries or your own projects, edit your configuration YAML and add entries under `docs.repositories`.
+You can add documentation from other libraries or your own projects by editing your configuration YAML and adding entries under `docs.repositories`.
 
-#### Example: Adding Plotly and Altair Documentation
+**Example: Adding Plotly and Altair Documentation**
 
 ```yaml
 docs:
   repositories:
     plotly:
       url: "https://github.com/plotly/plotly.py.git"
-      branch: "main"
-      folders:
-        docs: {}
       base_url: "https://plotly.com/python"
     altair:
       url: "https://github.com/altair-viz/altair.git"
-      branch: "main"
-      folders:
-        doc: {}
       base_url: "https://altair-viz.github.io"
 ```
 
 After updating your configuration:
 
-- update your index (`holoviz-mcp-update`)
-- restart the MCP server
+1. Update your documentation index:
+   ```bash
+   holoviz-mcp-update
+   ```
+2. Restart the MCP server.
 
 Your custom documentation repositories will now be available for search and reference within HoloViz MCP.
+
+### Schema Validation
+
+A [`schema.json`](https://raw.githubusercontent.com/MarcSkovMadsen/holoviz-mcp/refs/heads/main/src/holoviz_mcp/config/schema.json) file is provided for configuration validation and editor autocompletion.
+
+**For VS Code with [vscode-yaml](https://github.com/redhat-developer/vscode-yaml):**
+
+Add this at the top of your YAML file:
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/MarcSkovMadsen/holoviz-mcp/refs/heads/main/src/holoviz_mcp/config/schema.json
+```
+This enables real-time validation and autocompletion in VS Code.
 
 ## 🔧 Troubleshooting
 
