@@ -105,14 +105,14 @@ class TestEnvironmentVariableOverrides:
         for value in true_values:
             os.environ["HOLOVIZ_MCP_ALLOW_CODE_EXECUTION"] = value
             # Clear cached config
-            config_loader._config = None
+            config_loader.clear_cache()
             config = config_loader.load_config()
             assert config.server.security.allow_code_execution is True, f"Failed for value: {value}"
 
         for value in false_values:
             os.environ["HOLOVIZ_MCP_ALLOW_CODE_EXECUTION"] = value
             # Clear cached config
-            config_loader._config = None
+            config_loader.clear_cache()
             config = config_loader.load_config()
             assert config.server.security.allow_code_execution is False, f"Failed for value: {value}"
 

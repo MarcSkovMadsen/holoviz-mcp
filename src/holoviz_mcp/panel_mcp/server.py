@@ -144,11 +144,11 @@ async def list_packages(ctx: Context) -> list[str]:
     >>> list_components(package="panel_material_ui")
     >>> search("button", package="panel")
     """
-    return sorted(set(component.package for component in await _get_all_components(ctx)))
+    return sorted(set(component.project for component in await _get_all_components(ctx)))
 
 
 @mcp.tool
-async def search(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
+async def search(ctx: Context, query: str, project: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
     """
     Search for Panel components by name, module path, or description.
 
@@ -193,7 +193,7 @@ async def search(ctx: Context, query: str, package: str | None = None, limit: in
     matches = []
     for component in await _get_all_components(ctx=ctx):
         score = 0
-        if package and component.package.lower() != package.lower():
+        if project and component.project.lower() != project.lower():
             continue
 
         if component.name.lower() == query_lower or component.module_path.lower() == query_lower:
@@ -217,12 +217,12 @@ async def search(ctx: Context, query: str, package: str | None = None, limit: in
     return matches
 
 
-async def _get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentDetails]:
+async def _get_component(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> list[ComponentDetails]:
     """
     Get component details based on filtering criteria.
 
     This is an internal function used by the public component tools to filter
-    and retrieve components based on name, module path, and package criteria.
+    and retrieve components based on name, module path, and project criteria.
 
     Parameters
     ----------
@@ -245,7 +245,7 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
     for component in await _get_all_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
-        if package and component.package != package:
+        if project and component.project != project:
             continue
         if module_path and not component.module_path.startswith(module_path):
             continue
@@ -255,7 +255,7 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
 
 
 @mcp.tool
-async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
+async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> list[ComponentSummary]:
     """
     Get a summary list of Panel components without detailed docstring and parameter information.
 
@@ -302,7 +302,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
     for component in await _get_all_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
-        if package and component.package != package:
+        if project and component.project != project:
             continue
         if module_path and not component.module_path.startswith(module_path):
             continue
@@ -312,7 +312,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
 
 
 @mcp.tool
-async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
+async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> ComponentDetails:
     """
     Get complete details about a single Panel component including docstring and parameters.
 
@@ -361,10 +361,10 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     >>> get_component(module_path="panel.widgets.button.Button")
     ComponentDetails(name="Button", module_path="panel.widgets.button.Button", ...)
     """
-    components_list = await _get_component(ctx, name, module_path, package)
+    components_list = await _get_component(ctx, name, module_path, project)
 
     if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
+        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{project}'. Please check your inputs.")
     if len(components_list) > 1:
         module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
         raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
@@ -374,7 +374,7 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
 
 
 @mcp.tool
-async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> dict[str, ParameterInfo]:
+async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> dict[str, ParameterInfo]:
     """
     Get detailed parameter information for a single Panel component.
 
@@ -428,10 +428,10 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     >>> get_component_parameters(module_path="panel.widgets.Slider")
     {"start": ParameterInfo(type="Number", default=0, bounds=(0, 100)), ...}
     """
-    components_list = await _get_component(ctx, name, module_path, package)
+    components_list = await _get_component(ctx, name, module_path, project)
 
     if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
+        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{project}'. Please check your inputs.")
     if len(components_list) > 1:
         module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
         raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")

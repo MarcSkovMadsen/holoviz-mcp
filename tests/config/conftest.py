@@ -10,7 +10,7 @@ import pytest
 import yaml
 
 from holoviz_mcp.config import ConfigLoader
-from holoviz_mcp.config import EnvironmentConfig
+from holoviz_mcp.config import HoloVizMCPConfig
 
 
 @pytest.fixture
@@ -28,15 +28,22 @@ def temp_repos_dir() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def env_config(temp_config_dir: Path, temp_repos_dir: Path) -> EnvironmentConfig:
-    """Create test environment configuration."""
-    return EnvironmentConfig(user_dir=temp_config_dir / "user", default_dir=temp_config_dir / "default", repos_dir=temp_repos_dir)
+def test_config(temp_config_dir: Path, temp_repos_dir: Path) -> HoloVizMCPConfig:
+    """Create test configuration with temporary directories."""
+    return HoloVizMCPConfig(user_dir=temp_config_dir / "user", default_dir=temp_config_dir / "default", repos_dir=temp_repos_dir)
 
 
 @pytest.fixture
-def config_loader(env_config: EnvironmentConfig) -> ConfigLoader:
+def env_config(test_config: HoloVizMCPConfig):
+    """Create test environment configuration for backward compatibility."""
+    # Return test_config directly since HoloVizMCPConfig now has all the same methods
+    return test_config
+
+
+@pytest.fixture
+def config_loader(test_config: HoloVizMCPConfig) -> ConfigLoader:
     """Create test configuration loader."""
-    return ConfigLoader(env_config)
+    return ConfigLoader(test_config)
 
 
 @pytest.fixture
@@ -91,9 +98,9 @@ def sample_resources_dir(temp_config_dir: Path) -> Path:
 
 
 @pytest.fixture
-def user_config_file(env_config: EnvironmentConfig, sample_config: dict[str, Any]) -> Path:
+def user_config_file(test_config: HoloVizMCPConfig, sample_config: dict[str, Any]) -> Path:
     """Create a user configuration file."""
-    config_file = env_config.config_file_path()
+    config_file = test_config.config_file_path()
     config_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(config_file, "w") as f:
@@ -103,9 +110,9 @@ def user_config_file(env_config: EnvironmentConfig, sample_config: dict[str, Any
 
 
 @pytest.fixture
-def default_config_file(env_config: EnvironmentConfig) -> Path:
+def default_config_file(test_config: HoloVizMCPConfig) -> Path:
     """Create a default configuration file."""
-    config_file = env_config.default_dir / "config.yaml"
+    config_file = test_config.default_dir / "config.yaml"
     config_file.parent.mkdir(parents=True, exist_ok=True)
 
     default_config = {

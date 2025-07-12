@@ -17,7 +17,6 @@ from pydantic import HttpUrl
 from sentence_transformers import SentenceTransformer
 
 from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.config.models import EnvironmentConfig
 from holoviz_mcp.config.models import FolderConfig
 from holoviz_mcp.config.models import GitRepository
 from holoviz_mcp.docs_mcp.models import Page
@@ -50,38 +49,38 @@ async def log_exception(message: str, ctx: Context | None = None):
         raise Exception(message)
 
 
-def get_best_practices(package: str) -> str:
-    """Get best practices for using a package with LLMs.
+def get_best_practices(project: str) -> str:
+    """Get best practices for using a project with LLMs.
 
     This function searches for best practices resources in user and default directories,
     with user resources taking precedence over default ones.
 
     Args:
-        package (str): The name of the package to get best practices for.
+        project (str): The name of the project to get best practices for.
                       Both hyphenated (e.g., "panel-material-ui") and underscored
                       (e.g., "panel_material_ui") names are supported.
 
     Returns
     -------
-        str: A string containing the best practices for the package in Markdown format.
+        str: A string containing the best practices for the project in Markdown format.
 
     Raises
     ------
-        FileNotFoundError: If no best practices file is found for the package.
+        FileNotFoundError: If no best practices file is found for the project.
     """
-    env_config = EnvironmentConfig.from_environment()
+    config = get_config()
 
     # Convert underscored names to hyphenated for file lookup
-    package_filename = package.replace("_", "-")
+    project_filename = project.replace("_", "-")
 
     # Search in user directory first, then default directory
     search_paths = [
-        env_config.best_practices_dir("user"),
-        env_config.best_practices_dir("default"),
+        config.best_practices_dir("user"),
+        config.best_practices_dir("default"),
     ]
 
     for search_dir in search_paths:
-        best_practices_file = search_dir / f"{package_filename}.md"
+        best_practices_file = search_dir / f"{project_filename}.md"
         if best_practices_file.exists():
             return best_practices_file.read_text(encoding="utf-8")
 
@@ -93,41 +92,60 @@ def get_best_practices(package: str) -> str:
 
     available_str = ", ".join(set(available_files)) if available_files else "None"
     raise FileNotFoundError(
-        f"Best practices file for package '{package}' not found. " f"Available packages: {available_str}. " f"Searched in: {[str(p) for p in search_paths]}"
+        f"Best practices file for project '{project}' not found. " f"Available projects: {available_str}. " f"Searched in: {[str(p) for p in search_paths]}"
     )
 
 
 def list_best_practices() -> list[str]:
-    """List all available best practices packages.
+    """List all available best practices projects.
 
     This function discovers available best practices from both user and default directories,
     with user resources taking precedence over default ones.
 
     Returns
     -------
-        list[str]: A list of package names that have best practices available.
+        list[str]: A list of project names that have best practices available.
                    Names are returned in hyphenated format (e.g., "panel-material-ui").
     """
-    env_config = EnvironmentConfig.from_environment()
+    config = get_config()
 
-    # Collect available packages from both directories
-    available_packages = set()
+    # Collect available projects from both directories
+    available_projects = set()
 
     search_paths = [
-        env_config.best_practices_dir("user"),
-        env_config.best_practices_dir("default"),
+        config.best_practices_dir("user"),
+        config.best_practices_dir("default"),
     ]
 
     for search_dir in search_paths:
         if search_dir.exists():
             for md_file in search_dir.glob("*.md"):
-                available_packages.add(md_file.stem)
+                available_projects.add(md_file.stem)
 
-    return sorted(list(available_packages))
+    return sorted(list(available_projects))
 
 
 def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
-    """Convert a relative file path to a URL path."""
+    """Convert a relative file path to a URL path.
+
+    Converts file paths to web URLs by replacing file extensions with .html
+    and optionally removing the first path component for legacy compatibility.
+
+    Args:
+        path: The file path to convert
+        remove_first_part: Whether to remove the first path component (legacy compatibility)
+
+    Returns
+    -------
+        URL path with .html extension
+
+    Examples
+    --------
+        >>> convert_path_to_url(Path("doc/getting_started.md"))
+        "getting_started.html"
+        >>> convert_path_to_url(Path("examples/reference/Button.ipynb"), False)
+        "examples/reference/Button.html"
+    """
     # Convert path to URL format
     parts = list(path.parts)
 
@@ -135,14 +153,20 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
     if remove_first_part and parts:
         parts.pop(0)
 
-    url = str(Path(*parts)) if parts else ""
-    url = str(url).replace(".md", ".html").replace(".ipynb", ".html").replace(".rst", ".html")
-    return url
+    # Reconstruct path and convert to string
+    if parts:
+        url_path = str(Path(*parts))
+    else:
+        url_path = ""
 
+    # Replace file extensions with .html (simpler approach)
+    if url_path:
+        # Get the path without extension and add .html
+        path_obj = Path(url_path)
+        if path_obj.suffix in {".md", ".ipynb", ".rst", ".txt"}:
+            url_path = str(path_obj.with_suffix(".html"))
 
-def get_is_reference(relative_path: Path) -> bool:
-    """Check if the path is a reference document (legacy function)."""
-    return "reference" in relative_path.parts
+    return url_path
 
 
 class DocumentationIndexer:
@@ -155,19 +179,19 @@ class DocumentationIndexer:
             data_dir: Directory to store index data. Defaults to user config directory.
             repos_dir: Directory to store cloned repositories. Defaults to HOLOVIZ_MCP_REPOS_DIR.
         """
-        # Use environment config for default paths
-        env_config = EnvironmentConfig.from_environment()
+        # Use unified config for default paths
+        config = get_config()
 
-        self.data_dir = data_dir or env_config.user_dir
+        self.data_dir = data_dir or config.user_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Use configurable repos directory for repository downloads
-        self.repos_dir = repos_dir or env_config.repos_dir
+        self.repos_dir = repos_dir or config.repos_dir
         self.repos_dir.mkdir(parents=True, exist_ok=True)
 
         # Use config logic to resolve vector DB path
         config = get_config()
-        vector_db_path = config.server.get_vector_db_path(env_config.user_dir)
+        vector_db_path = config.server.resolve_vector_db_path(config.user_dir)
         vector_db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Disable ChromaDB telemetry based on config
@@ -269,20 +293,20 @@ class DocumentationIndexer:
             await log_warning(msg, ctx)  # Changed from log_exception to log_warning so it doesn't raise
             return None
 
-    def _is_reference_document(self, file_path: Path, package: str, folder_name: str = "") -> bool:
+    def _is_reference_document(self, file_path: Path, project: str, folder_name: str = "") -> bool:
         """Check if the document is a reference document using configurable patterns.
 
         Args:
             file_path: Full path to the file
-            package: Package name
+            project: Project name
             folder_name: Name of the folder this file belongs to
 
         Returns
         -------
             bool: True if this is a reference document
         """
-        repo_config = self.config.repositories[package]
-        repo_path = self.repos_dir / package
+        repo_config = self.config.repositories[project]
+        repo_path = self.repos_dir / project
 
         try:
             relative_path = file_path.relative_to(repo_path)
@@ -292,22 +316,46 @@ class DocumentationIndexer:
                 if relative_path.match(pattern):
                     return True
 
-            # Fallback to legacy check
-            return get_is_reference(relative_path)
+            # Fallback to simple "reference" in path check
+            return "reference" in relative_path.parts
         except (ValueError, KeyError):
-            # If we can't determine relative path or no patterns configured, use legacy
-            return get_is_reference(file_path)
+            # If we can't determine relative path or no patterns configured, use simple fallback
+            return "reference" in file_path.parts
 
-    def _generate_doc_id(self, package: str, path: Path) -> str:
-        """Generate a unique document ID from package and path."""
+    def _generate_doc_id(self, project: str, path: Path) -> str:
+        """Generate a unique document ID from project and path."""
         readable_path = str(path).replace("/", "___").replace(".", "_")
-        readable_id = f"{package}___{readable_path}"
+        readable_id = f"{project}___{readable_path}"
 
         return readable_id
 
-    def _generate_doc_url(self, package: str, path: Path, folder_name: str = "") -> str:
-        """Generate documentation URL for a file."""
-        repo_config = self.config.repositories[package]
+    def _generate_doc_url(self, project: str, path: Path, folder_name: str = "") -> str:
+        """Generate documentation URL for a file.
+
+        This method creates the final URL where the documentation can be accessed online.
+        It handles folder URL mapping to ensure proper URL structure for different documentation layouts.
+
+        Args:
+            project: Name of the project/repository (e.g., "panel", "hvplot")
+            path: Relative path to the file within the repository
+            folder_name: Name of the folder containing the file (e.g., "examples/reference", "doc")
+                       Used for URL path mapping when folders have custom URL structures
+
+        Returns
+        -------
+            Complete URL to the documentation file
+
+        Examples
+        --------
+            For Panel reference guides:
+            - Input: project="panel", path="examples/reference/widgets/Button.ipynb", folder_name="examples/reference"
+            - Output: "https://panel.holoviz.org/reference/widgets/Button.html"
+
+            For regular documentation:
+            - Input: project="panel", path="doc/getting_started.md", folder_name="doc"
+            - Output: "https://panel.holoviz.org/getting_started.html"
+        """
+        repo_config = self.config.repositories[project]
         base_url = str(repo_config.base_url).rstrip("/")
 
         # Get the URL path mapping for this folder
@@ -401,20 +449,18 @@ class DocumentationIndexer:
             logger.error(f"Failed to convert notebook {notebook_path}: {e}")
             return str(e)
 
-    def process_file(self, file_path: Path, package: str, folder_name: str = "") -> Optional[dict[str, Any]]:
+    def process_file(self, file_path: Path, project: str, folder_name: str = "") -> Optional[dict[str, Any]]:
         """Process a file and extract metadata."""
         try:
-            if file_path.suffix == ".md":
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-            elif file_path.suffix == ".ipynb":
+            # Handle different file types
+            if file_path.suffix == ".ipynb":
                 content = self.convert_notebook_to_markdown(file_path)
-            elif file_path.suffix in [".rst", ".txt"]:
-                # Handle RST and TXT files as plain text - no conversion needed
+            elif file_path.suffix in [".md", ".rst", ".txt"]:
+                # Handle all text-based files uniformly
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
             else:
-                # Skip files that aren't markdown, notebooks, RST, or TXT
+                # Skip files that aren't supported
                 logger.debug(f"Skipping unsupported file type: {file_path}")
                 return None
 
@@ -427,20 +473,20 @@ class DocumentationIndexer:
             description = self._extract_description_from_markdown(content)
 
             # Generate relative path for documentation
-            repo_path = self.repos_dir / package
+            repo_path = self.repos_dir / project
             relative_path = file_path.relative_to(repo_path)
 
             # Create document ID that includes path for disambiguation
-            doc_id = self._generate_doc_id(package, relative_path)
+            doc_id = self._generate_doc_id(project, relative_path)
 
             # Check if this is a reference document using configurable patterns
-            is_reference = self._is_reference_document(file_path, package, folder_name)
+            is_reference = self._is_reference_document(file_path, project, folder_name)
 
             return {
                 "id": doc_id,
                 "title": title,
-                "url": self._generate_doc_url(package, relative_path, folder_name),
-                "package": package,
+                "url": self._generate_doc_url(project, relative_path, folder_name),
+                "project": project,
                 "path": str(relative_path),
                 "path_stem": file_path.stem,
                 "description": description,
@@ -451,10 +497,10 @@ class DocumentationIndexer:
             logger.error(f"Failed to process file {file_path}: {e}")
             return None
 
-    async def extract_docs_from_repo(self, repo_path: Path, package: str, ctx: Context | None = None) -> list[dict[str, Any]]:
+    async def extract_docs_from_repo(self, repo_path: Path, project: str, ctx: Context | None = None) -> list[dict[str, Any]]:
         """Extract documentation files from a repository."""
         docs = []
-        repo_config = self.config.repositories[package]
+        repo_config = self.config.repositories[project]
 
         # Use the new folder structure with URL path mapping
         if isinstance(repo_config.folders, dict):
@@ -464,7 +510,7 @@ class DocumentationIndexer:
             folders = {name: FolderConfig() for name in repo_config.folders}
 
         files: set = set()
-        await log_info(f"Processing {package} documentation files in {','.join(folders.keys())}", ctx)
+        await log_info(f"Processing {project} documentation files in {','.join(folders.keys())}", ctx)
 
         for folder_name in folders.keys():
             docs_folder: Path = repo_path / folder_name
@@ -486,7 +532,7 @@ class DocumentationIndexer:
                     except ValueError:
                         continue
 
-                doc_data = self.process_file(file, package, folder_name)
+                doc_data = self.process_file(file, project, folder_name)
                 if doc_data:
                     docs.append(doc_data)
 
@@ -494,7 +540,7 @@ class DocumentationIndexer:
         reference_count = sum(1 for doc in docs if doc["is_reference"])
         regular_count = len(docs) - reference_count
 
-        await log_info(f"  📄 {package}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)", ctx)
+        await log_info(f"  📄 {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)", ctx)
 
         return docs
 
@@ -581,7 +627,7 @@ class DocumentationIndexer:
                 {
                     "title": doc["title"],
                     "url": doc["url"],
-                    "package": doc["package"],
+                    "project": doc["project"],
                     "path": doc["path"],
                     "path_stem": doc["path_stem"],
                     "description": doc["description"],
@@ -608,14 +654,14 @@ class DocumentationIndexer:
             doc_id = doc["id"]
             if doc_id in seen_ids:
                 duplicates.append(
-                    {"id": doc_id, "first_doc": seen_ids[doc_id], "duplicate_doc": {"package": doc["package"], "path": doc["path"], "title": doc["title"]}}
+                    {"id": doc_id, "first_doc": seen_ids[doc_id], "duplicate_doc": {"project": doc["project"], "path": doc["path"], "title": doc["title"]}}
                 )
 
                 await log_warning(f"DUPLICATE ID FOUND: {doc_id}", ctx)
-                await log_warning(f"  First document: {seen_ids[doc_id]['package']}/{seen_ids[doc_id]['path']} - {seen_ids[doc_id]['title']}", ctx)
-                await log_warning(f"  Duplicate document: {doc['package']}/{doc['path']} - {doc['title']}", ctx)
+                await log_warning(f"  First document: {seen_ids[doc_id]['project']}/{seen_ids[doc_id]['path']} - {seen_ids[doc_id]['title']}", ctx)
+                await log_warning(f"  Duplicate document: {doc['project']}/{doc['path']} - {doc['title']}", ctx)
             else:
-                seen_ids[doc_id] = {"package": doc["package"], "path": doc["path"], "title": doc["title"]}
+                seen_ids[doc_id] = {"project": doc["project"], "path": doc["path"], "title": doc["title"]}
 
         if duplicates:
             error_msg = f"Found {len(duplicates)} duplicate document IDs"
@@ -624,20 +670,20 @@ class DocumentationIndexer:
             # Log all duplicates for debugging
             for dup in duplicates:
                 await log_exception(
-                    f"Duplicate ID '{dup['id']}': {dup['first_doc']['package']}/{dup['first_doc']['path']} vs {dup['duplicate_doc']['package']}/{dup['duplicate_doc']['path']}",  # noqa: D401, E501
+                    f"Duplicate ID '{dup['id']}': {dup['first_doc']['project']}/{dup['first_doc']['path']} vs {dup['duplicate_doc']['project']}/{dup['duplicate_doc']['path']}",  # noqa: D401, E501
                     ctx,
                 )
 
             raise ValueError(f"Document ID collision detected. {len(duplicates)} duplicate IDs found. Check logs for details.")
 
-    async def search_get_reference_guide(self, component: str, package: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
+    async def search_get_reference_guide(self, component: str, project: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
         """Search for reference guides for a specific component."""
         await self.ensure_indexed()
 
         # Build search strategies
         filters: list[dict[str, Any]] = []
-        if package:
-            filters.append({"package": str(package)})
+        if project:
+            filters.append({"project": str(project)})
         filters.append({"path_stem": str(component)})
         filters.append({"is_reference": True})
         where_clause: dict[str, Any] = {"$and": filters} if len(filters) > 1 else filters[0]
@@ -663,7 +709,7 @@ class DocumentationIndexer:
                     page = Page(
                         title=str(metadata["title"]),
                         url=HttpUrl(url_value),
-                        package=str(metadata["package"]),
+                        project=str(metadata["project"]),
                         path=str(metadata["path"]),
                         description=str(metadata["description"]),
                         is_reference=bool(metadata["is_reference"]),
@@ -671,20 +717,20 @@ class DocumentationIndexer:
                         relevance_score=relevance_score,
                     )
 
-                    if package and page.package != package:
-                        await log_exception(f"Package mismatch for component '{component}': expected '{package}', got '{page.package}'", ctx)
+                    if project and page.project != project:
+                        await log_exception(f"Project mismatch for component '{component}': expected '{project}', got '{page.project}'", ctx)
                     elif metadata["path_stem"] != component:
                         await log_exception(f"Path stem mismatch for component '{component}': expected '{component}', got '{metadata['path_stem']}'", ctx)
                     else:
                         all_results.append(page)
         return all_results
 
-    async def search_pages(self, query: str, package: Optional[str] = None, content: bool = True, max_results: int = 5, ctx: Context | None = None) -> list[Page]:
+    async def search_pages(self, query: str, project: Optional[str] = None, content: bool = True, max_results: int = 5, ctx: Context | None = None) -> list[Page]:
         """Search documentation pages using semantic similarity."""
         await self.ensure_indexed(ctx=ctx)
 
         # Build where clause for filtering
-        where_clause = {"package": str(package)} if package else None
+        where_clause = {"project": str(project)} if project else None
 
         try:
             # Perform vector similarity search
@@ -721,7 +767,7 @@ class DocumentationIndexer:
                         page = Page(
                             title=str(metadata["title"]),
                             url=HttpUrl(url_value),
-                            package=str(metadata["package"]),
+                            project=str(metadata["project"]),
                             path=str(metadata["path"]),
                             description=str(metadata["description"]),
                             is_reference=bool(metadata["is_reference"]),
@@ -735,12 +781,12 @@ class DocumentationIndexer:
             logger.error(f"Search failed for query '{query}': {e}")
             return []
 
-    async def get_page(self, path: str, package: str, ctx: Context | None = None) -> Page:
+    async def get_page(self, path: str, project: str, ctx: Context | None = None) -> Page:
         """Search documentation pages using semantic similarity."""
         await self.ensure_indexed(ctx=ctx)
 
         # Build where clause for filtering
-        filters: list[dict[str, str]] = [{"package": str(package)}, {"path": str(path)}]
+        filters: list[dict[str, str]] = [{"project": str(project)}, {"path": str(path)}]
         where_clause: dict[str, Any] = {"$and": filters}
 
         # Perform vector similarity search
@@ -777,7 +823,7 @@ class DocumentationIndexer:
                     page = Page(
                         title=str(metadata["title"]),
                         url=HttpUrl(url_value),
-                        package=str(metadata["package"]),
+                        project=str(metadata["project"]),
                         path=str(metadata["path"]),
                         description=str(metadata["description"]),
                         is_reference=bool(metadata["is_reference"]),
@@ -787,9 +833,9 @@ class DocumentationIndexer:
                     pages.append(page)
 
         if len(pages) > 1:
-            raise ValueError(f"Multiple pages found for path '{path}' in package '{package}'. Please ensure unique paths.")
+            raise ValueError(f"Multiple pages found for path '{path}' in project '{project}'. Please ensure unique paths.")
         elif len(pages) == 0:
-            raise ValueError(f"No page found for path '{path}' in package '{package}'.")
+            raise ValueError(f"No page found for path '{path}' in project '{project}'.")
         return pages[0]
 
     async def _log_summary_table(self, ctx: Context | None = None):
@@ -802,20 +848,20 @@ class DocumentationIndexer:
                 await log_info("No documents found in index", ctx)
                 return
 
-            # Count documents by package and type
-            package_stats: dict[str, dict[str, int]] = {}
+            # Count documents by project and type
+            project_stats: dict[str, dict[str, int]] = {}
             for metadata in results["metadatas"]:
-                package = str(metadata.get("package", "unknown"))
+                project = str(metadata.get("project", "unknown"))
                 is_reference = metadata.get("is_reference", False)
 
-                if package not in package_stats:
-                    package_stats[package] = {"total": 0, "regular": 0, "reference": 0}
+                if project not in project_stats:
+                    project_stats[project] = {"total": 0, "regular": 0, "reference": 0}
 
-                package_stats[package]["total"] += 1
+                project_stats[project]["total"] += 1
                 if is_reference:
-                    package_stats[package]["reference"] += 1
+                    project_stats[project]["reference"] += 1
                 else:
-                    package_stats[package]["regular"] += 1
+                    project_stats[project]["regular"] += 1
 
             # Log summary table
             await log_info("", ctx)
@@ -828,9 +874,9 @@ class DocumentationIndexer:
             total_regular = 0
             total_reference = 0
 
-            for package in sorted(package_stats.keys()):
-                stats = package_stats[package]
-                await log_info(f"{package:<20} {stats['total']:<8} {stats['regular']:<8} {stats['reference']:<10}", ctx)
+            for project in sorted(project_stats.keys()):
+                stats = project_stats[project]
+                await log_info(f"{project:<20} {stats['total']:<8} {stats['regular']:<8} {stats['reference']:<10}", ctx)
                 total_docs += stats["total"]
                 total_regular += stats["regular"]
                 total_reference += stats["reference"]

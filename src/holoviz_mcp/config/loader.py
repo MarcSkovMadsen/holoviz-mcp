@@ -11,7 +11,6 @@ from typing import Optional
 import yaml
 from pydantic import ValidationError
 
-from .models import EnvironmentConfig
 from .models import HoloVizMCPConfig
 
 logger = logging.getLogger(__name__)
@@ -24,14 +23,16 @@ class ConfigurationError(Exception):
 class ConfigLoader:
     """Loads and manages HoloViz MCP configuration."""
 
-    def __init__(self, env_config: Optional[EnvironmentConfig] = None):
+    def __init__(self, config: Optional[HoloVizMCPConfig] = None):
         """Initialize configuration loader.
 
         Args:
-            env_config: Environment configuration. If None, loads from environment.
+            config: Pre-configured HoloVizMCPConfig with environment paths.
+                   If None, loads paths from environment. Configuration will
+                   still be loaded from files even if this is provided.
         """
-        self.env_config = env_config or EnvironmentConfig.from_environment()
-        self._config: Optional[HoloVizMCPConfig] = None
+        self._env_config = config
+        self._loaded_config: Optional[HoloVizMCPConfig] = None
 
     def load_config(self) -> HoloVizMCPConfig:
         """Load configuration from files and environment.
@@ -44,14 +45,20 @@ class ConfigLoader:
         ------
             ConfigurationError: If configuration cannot be loaded or is invalid.
         """
-        if self._config is not None:
-            return self._config
+        if self._loaded_config is not None:
+            return self._loaded_config
 
-        # Start with default configuration
+        # Get environment config (from parameter or environment)
+        if self._env_config is not None:
+            env_config = self._env_config
+        else:
+            env_config = HoloVizMCPConfig.from_environment()
+
+        # Start with default configuration dict
         config_dict = self._get_default_config()
 
         # Load from default config file if it exists
-        default_config_file = self.env_config.default_dir / "config.yaml"
+        default_config_file = env_config.default_dir / "config.yaml"
         if default_config_file.exists():
             try:
                 default_config = self._load_yaml_file(default_config_file)
@@ -61,22 +68,42 @@ class ConfigLoader:
                 logger.warning(f"Failed to load default config from {default_config_file}: {e}")
 
         # Load from user config file if it exists
-        user_config_file = self.env_config.config_file_path()
+        user_config_file = env_config.config_file_path()
         if user_config_file.exists():
             user_config = self._load_yaml_file(user_config_file)
+            # Filter out any unknown fields to prevent validation errors
+            user_config = self._filter_known_fields(user_config)
             config_dict = self._merge_configs(config_dict, user_config)
             logger.info(f"Loaded user configuration from {user_config_file}")
 
         # Apply environment variable overrides
         config_dict = self._apply_env_overrides(config_dict)
 
-        # Validate and create configuration
+        # Add the environment paths to the config dict
+        config_dict.update(
+            {
+                "user_dir": env_config.user_dir,
+                "default_dir": env_config.default_dir,
+                "repos_dir": env_config.repos_dir,
+            }
+        )
+
+        # Create the final configuration
         try:
-            self._config = HoloVizMCPConfig(**config_dict)
+            self._loaded_config = HoloVizMCPConfig(**config_dict)
         except ValidationError as e:
             raise ConfigurationError(f"Invalid configuration: {e}") from e
 
-        return self._config
+        return self._loaded_config
+
+    def _filter_known_fields(self, config_dict: dict[str, Any]) -> dict[str, Any]:
+        """Filter out unknown fields that aren't part of the HoloVizMCPConfig schema.
+
+        This prevents validation errors when loading user config files that might
+        contain extra fields.
+        """
+        known_fields = {"server", "docs", "resources", "prompts", "user_dir", "default_dir", "repos_dir"}
+        return {k: v for k, v in config_dict.items() if k in known_fields}
 
     def _get_default_config(self) -> dict[str, Any]:
         """Get default configuration dictionary."""
@@ -190,23 +217,28 @@ class ConfigLoader:
 
     def get_repos_dir(self) -> Path:
         """Get the repository download directory."""
-        return self.env_config.repos_dir
+        config = self.load_config()
+        return config.repos_dir
 
     def get_resources_dir(self) -> Path:
         """Get the resources directory."""
-        return self.env_config.resources_dir()
+        config = self.load_config()
+        return config.resources_dir()
 
     def get_prompts_dir(self) -> Path:
         """Get the prompts directory."""
-        return self.env_config.prompts_dir()
+        config = self.load_config()
+        return config.prompts_dir()
 
     def get_best_practices_dir(self) -> Path:
         """Get the best practices directory."""
-        return self.env_config.best_practices_dir()
+        config = self.load_config()
+        return config.best_practices_dir()
 
     def create_default_user_config(self) -> None:
         """Create a default user configuration file."""
-        config_file = self.env_config.config_file_path()
+        config = self.load_config()
+        config_file = config.config_file_path()
 
         # Create directories if they don't exist
         config_file.parent.mkdir(parents=True, exist_ok=True)
@@ -246,8 +278,12 @@ class ConfigLoader:
         -------
             Reloaded configuration.
         """
-        self._config = None
+        self._loaded_config = None
         return self.load_config()
+
+    def clear_cache(self) -> None:
+        """Clear the cached configuration to force reload on next access."""
+        self._loaded_config = None
 
 
 # Global configuration loader instance

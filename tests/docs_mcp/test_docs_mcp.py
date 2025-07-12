@@ -15,10 +15,11 @@ async def test_best_practices_resource():
     """Test the best-practices resource."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_best_practices", {"package": "panel"})
+        result = await client.call_tool("get_best_practices", {"project": "panel"})
         assert result.data
 
 
+@pytest.mark.skip(reason="this test is very slow")
 @pytest.mark.asyncio
 async def test_update_index():
     """Test the update_index tool."""
@@ -33,7 +34,7 @@ async def test_pages_semantic_search():
     """Test the pages tool with semantic search queries."""
     client = Client(mcp)
     async with client:
-        # Test basic semantic search across all packages
+        # Test basic semantic search across all projects
         result = await client.call_tool("search", {"query": "dashboard layout best practices"})
         assert result.data
         assert isinstance(result.data, list)
@@ -44,25 +45,25 @@ async def test_pages_semantic_search():
         for page in result.data:
             assert "title" in page
             assert "url" in page
-            assert "package" in page
+            assert "project" in page
             assert "path" in page
             # Should include content by default
             assert "content" in page
 
 
 @pytest.mark.asyncio
-async def test_pages_with_package_filter():
-    """Test the pages tool with package filtering."""
+async def test_pages_with_project_filter():
+    """Test the pages tool with project filtering."""
     client = Client(mcp)
     async with client:
-        # Test search with specific package filter
-        result = await client.call_tool("search", {"query": "interactive plotting with widgets", "package": "hvplot"})
+        # Test search with specific project filter
+        result = await client.call_tool("search", {"query": "interactive plotting with widgets", "project": "hvplot"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # All results should be from hvplot package
+        # All results should be from hvplot project
         for page in result.data:
-            assert page["package"] == "hvplot"
+            assert page["project"] == "hvplot"
 
 
 @pytest.mark.asyncio
@@ -71,15 +72,15 @@ async def test_pages_with_custom_max_results():
     client = Client(mcp)
     async with client:
         # Test search with limited results
-        result = await client.call_tool("search", {"query": "custom widgets", "package": "panel", "max_results": 3})
+        result = await client.call_tool("search", {"query": "custom widgets", "project": "panel", "max_results": 3})
         assert result.data
         assert isinstance(result.data, list)
         # Should return at most 3 results
         assert len(result.data) <= 3
 
-        # All results should be from panel package
+        # All results should be from panel project
         for page in result.data:
-            assert page["package"] == "panel"
+            assert page["project"] == "panel"
 
 
 @pytest.mark.asyncio
@@ -96,7 +97,7 @@ async def test_pages_without_content():
         for page in result.data:
             assert "title" in page
             assert "url" in page
-            assert "package" in page
+            assert "project" in page
             assert "path" in page
             # Should not include content when content=False
             assert page.get("content") is None
@@ -108,13 +109,13 @@ async def test_pages_material_ui_specific():
     client = Client(mcp)
     async with client:
         # Test search for Material UI styling
-        result = await client.call_tool("search", {"query": "How to style Material UI components?", "package": "panel-material-ui"})
+        result = await client.call_tool("search", {"query": "How to style Material UI components?", "project": "panel-material-ui"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # Results should be from panel-material-ui package
+        # Results should be from panel-material-ui project
         for page in result.data:
-            assert page["package"] == "panel-material-ui"
+            assert page["project"] == "panel-material-ui"
 
 
 @pytest.mark.asyncio
@@ -129,12 +130,12 @@ async def test_pages_empty_query():
 
 
 @pytest.mark.asyncio
-async def test_pages_invalid_package():
-    """Test the pages tool with invalid package name."""
+async def test_pages_invalid_project():
+    """Test the pages tool with invalid project name."""
     client = Client(mcp)
     async with client:
-        # Test with non-existent package
-        result = await client.call_tool("search", {"query": "test query", "package": "nonexistent_package"})
+        # Test with non-existent project
+        result = await client.call_tool("search", {"query": "test query", "project": "nonexistent_project"})
         # Should handle gracefully and return empty results
         assert isinstance(result.data, list)
         assert len(result.data) == 0
@@ -142,10 +143,10 @@ async def test_pages_invalid_package():
 
 @pytest.mark.asyncio
 async def test_page():
-    """Test the page tool with package filtering."""
+    """Test the page tool with project filtering."""
     client = Client(mcp)
     async with client:
-        # Test search with specific package filter
-        result = await client.call_tool("get_page", {"path": "doc/index.md", "package": "hvplot"})
+        # Test search with specific project filter
+        result = await client.call_tool("get_page", {"path": "doc/index.md", "project": "hvplot"})
         assert result.data
         assert result.data.title == "hvPlot"

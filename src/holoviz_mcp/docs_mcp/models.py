@@ -12,8 +12,8 @@ class Page(BaseModel):
 
     title: str = Field(..., description="The title of the documentation page.")
     url: HttpUrl = Field(..., description="The URL of the documentation page.")
-    package: str = Field(..., description="The package to which the documentation page belongs.")
-    path: str = Field(..., description="The path to the documentation page within the package.")
+    project: str = Field(..., description="The project to which the documentation page belongs.")
+    path: str = Field(..., description="The path to the documentation page within the project.")
     is_reference: bool = Field(..., description="Indicates if the page is a reference guide page.")
     description: Optional[str] = Field(default=None, description="A brief description of the documentation page.")
     content: Optional[str] = Field(default=None, description="The Markdown content of the documentation page, if available.")

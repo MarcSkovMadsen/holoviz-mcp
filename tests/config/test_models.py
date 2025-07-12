@@ -1,6 +1,5 @@
 """Tests for configuration models."""
 
-import os
 from pathlib import Path
 
 import pytest
@@ -9,7 +8,6 @@ from pydantic import ValidationError
 from pydantic import parse_obj_as
 
 from holoviz_mcp.config.models import DocsConfig
-from holoviz_mcp.config.models import EnvironmentConfig
 from holoviz_mcp.config.models import FolderConfig
 from holoviz_mcp.config.models import GitRepository
 from holoviz_mcp.config.models import HoloVizMCPConfig
@@ -182,57 +180,3 @@ class TestHoloVizMCPConfig:
             # We need to construct this in a way that bypasses type checking
             config_dict = {"server": {"name": "test"}, "docs": {"repositories": {}}, "resources": {}, "prompts": {}, "extra_field": "not allowed"}
             HoloVizMCPConfig(**config_dict)
-
-
-class TestEnvironmentConfig:
-    """Test EnvironmentConfig model."""
-
-    def test_from_environment_defaults(self, clean_environment):
-        """Test environment configuration with defaults."""
-        config = EnvironmentConfig.from_environment()
-
-        assert config.user_dir == Path.home() / ".config" / "holoviz-mcp"
-        assert "holoviz_mcp" in str(config.default_dir)
-        assert config.repos_dir == config.user_dir / "repos"
-
-    def test_from_environment_with_vars(self, clean_environment):
-        """Test environment configuration with environment variables."""
-        os.environ["HOLOVIZ_MCP_USER_DIR"] = "/custom/user"
-        os.environ["HOLOVIZ_MCP_DEFAULT_DIR"] = "/custom/default"
-        os.environ["HOLOVIZ_MCP_REPOS_DIR"] = "/custom/repos"
-
-        config = EnvironmentConfig.from_environment()
-
-        assert config.user_dir == Path("/custom/user")
-        assert config.default_dir == Path("/custom/default")
-        assert config.repos_dir == Path("/custom/repos")
-
-    def test_config_file_path(self):
-        """Test configuration file path."""
-        config = EnvironmentConfig(user_dir=Path("/test/user"), default_dir=Path("/test/default"), repos_dir=Path("/test/repos"))
-
-        assert config.config_file_path() == Path("/test/user/config.yaml")
-
-    def test_resources_dir(self):
-        """Test resources directory path."""
-        config = EnvironmentConfig(user_dir=Path("/test/user"), default_dir=Path("/test/default"), repos_dir=Path("/test/repos"))
-
-        assert config.resources_dir() == Path("/test/user/config/resources")
-        assert config.resources_dir("user") == Path("/test/user/config/resources")
-        assert config.resources_dir("default") == Path("/test/default/resources")
-
-    def test_prompts_dir(self):
-        """Test prompts directory path."""
-        config = EnvironmentConfig(user_dir=Path("/test/user"), default_dir=Path("/test/default"), repos_dir=Path("/test/repos"))
-
-        assert config.prompts_dir() == Path("/test/user/config/prompts")
-        assert config.prompts_dir("user") == Path("/test/user/config/prompts")
-        assert config.prompts_dir("default") == Path("/test/default/prompts")
-
-    def test_best_practices_dir(self):
-        """Test best practices directory path."""
-        config = EnvironmentConfig(user_dir=Path("/test/user"), default_dir=Path("/test/default"), repos_dir=Path("/test/repos"))
-
-        assert config.best_practices_dir() == Path("/test/user/config/resources/best-practices")
-        assert config.best_practices_dir("user") == Path("/test/user/config/resources/best-practices")
-        assert config.best_practices_dir("default") == Path("/test/default/resources/best-practices")

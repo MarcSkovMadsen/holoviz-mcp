@@ -8,7 +8,6 @@ import yaml
 
 from holoviz_mcp.config.loader import ConfigLoader
 from holoviz_mcp.config.loader import ConfigurationError
-from holoviz_mcp.config.models import EnvironmentConfig
 from holoviz_mcp.config.models import HoloVizMCPConfig
 
 
@@ -74,9 +73,9 @@ class TestConfigLoader:
         assert config.server.log_level == "ERROR"
         assert config.server.name == "env-server"
 
-    def test_invalid_yaml_file(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_invalid_yaml_file(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test handling of invalid YAML file."""
-        config_file = env_config.config_file_path()
+        config_file = test_config.config_file_path()
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Write invalid YAML
@@ -86,9 +85,9 @@ class TestConfigLoader:
         with pytest.raises(ConfigurationError, match="Invalid YAML"):
             config_loader.load_config()
 
-    def test_non_dict_yaml_file(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_non_dict_yaml_file(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test handling of non-dictionary YAML file."""
-        config_file = env_config.config_file_path()
+        config_file = test_config.config_file_path()
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Write non-dictionary YAML
@@ -98,9 +97,9 @@ class TestConfigLoader:
         with pytest.raises(ConfigurationError, match="must contain a YAML dictionary"):
             config_loader.load_config()
 
-    def test_invalid_configuration_validation(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_invalid_configuration_validation(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test validation of invalid configuration."""
-        config_file = env_config.config_file_path()
+        config_file = test_config.config_file_path()
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Write configuration with invalid values
@@ -120,14 +119,14 @@ class TestConfigLoader:
         # Should return the same instance
         assert config1 is config2
 
-    def test_config_reload(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_config_reload(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test configuration reloading."""
         # Load initial config
         config1 = config_loader.load_config()
         assert config1.server.name == "holoviz-mcp"
 
         # Create user config
-        config_file = env_config.config_file_path()
+        config_file = test_config.config_file_path()
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         user_config = {"server": {"name": "reloaded-server"}}
@@ -141,16 +140,16 @@ class TestConfigLoader:
         assert config2.server.name == "reloaded-server"
         assert config1 is not config2
 
-    def test_directory_paths(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_directory_paths(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test directory path methods."""
-        assert config_loader.get_repos_dir() == env_config.repos_dir
-        assert config_loader.get_resources_dir() == env_config.resources_dir()
-        assert config_loader.get_prompts_dir() == env_config.prompts_dir()
-        assert config_loader.get_best_practices_dir() == env_config.best_practices_dir()
+        assert config_loader.get_repos_dir() == test_config.repos_dir
+        assert config_loader.get_resources_dir() == test_config.resources_dir()
+        assert config_loader.get_prompts_dir() == test_config.prompts_dir()
+        assert config_loader.get_best_practices_dir() == test_config.best_practices_dir()
 
-    def test_create_user_config_template(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_create_user_config_template(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test creating user configuration template (now default user config)."""
-        config_file = env_config.config_file_path()
+        config_file = test_config.config_file_path()
 
         # File should not exist initially
         assert not config_file.exists()
@@ -169,9 +168,9 @@ class TestConfigLoader:
         assert "docs" in content
         assert "resources" in content
 
-    def test_create_user_config_template_no_overwrite(self, config_loader: ConfigLoader, env_config: EnvironmentConfig):
+    def test_create_user_config_template_no_overwrite(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test that default user config creation doesn't overwrite existing file."""
-        config_file = env_config.config_file_path()
+        config_file = test_config.config_file_path()
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Create existing config

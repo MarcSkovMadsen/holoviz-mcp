@@ -149,7 +149,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
     return ComponentDetails(
         name=cls.__name__,
         description=description,
-        package=cls.__module__.split(".")[0],
+        project=cls.__module__.split(".")[0],
         module_path=f"{cls.__module__}.{cls.__name__}",
         init_signature=init_signature,
         docstring=docstring,

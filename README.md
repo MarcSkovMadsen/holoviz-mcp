@@ -354,6 +354,48 @@ Install additional packages and restart the server to include them.
 
 </details>
 
+## ⚙️ User Configuration
+
+HoloViz MCP supports user configuration via a YAML file, allowing you to customize server behavior and documentation sources to fit your workflow.
+
+### Custom Configuration File
+
+You can provide a custom configuration file to override or extend the default settings. By default, configuration is loaded from `~/.holoviz-mcp/config.yaml`, but you can specify a different location using the `HOLOVIZ_MCP_USER_DIR` environment variable:
+
+```bash
+export HOLOVIZ_MCP_USER_DIR=/path/to/your/config_dir
+```
+
+### Adding Custom Documentation Repositories
+
+To add documentation from other libraries or your own projects, edit your configuration YAML and add entries under `docs.repositories`.
+
+#### Example: Adding Plotly and Altair Documentation
+
+```yaml
+docs:
+  repositories:
+    plotly:
+      url: "https://github.com/plotly/plotly.py.git"
+      branch: "main"
+      folders:
+        docs: {}
+      base_url: "https://plotly.com/python"
+    altair:
+      url: "https://github.com/altair-viz/altair.git"
+      branch: "main"
+      folders:
+        doc: {}
+      base_url: "https://altair-viz.github.io"
+```
+
+After updating your configuration:
+
+- update your index (`holoviz-mcp-update`)
+- restart the MCP server
+
+Your custom documentation repositories will now be available for search and reference within HoloViz MCP.
+
 ## 🔧 Troubleshooting
 
 ### Common Issues

@@ -262,6 +262,10 @@ filtered = filtered[
 
 - DO arrange vertically when displaying `CheckButtonGroup` in a sidebar `CheckButtonGroup(..., vertical=True)`.
 
+### Tabulator
+
+- DO set `Tabulator.disabled=True` unless you would like the user to be able to edit the table.
+
 ## Plotting
 
 - DO use bar charts over pie Charts.

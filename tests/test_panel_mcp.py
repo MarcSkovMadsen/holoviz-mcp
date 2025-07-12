@@ -1,11 +1,14 @@
 """
 Integration tests for the Panel MCP server.
 
-These tests verify the functionality of the panel_mcp server tools by
+These tests verify the functionali                # All components should be from the specified project
+                assert isinstance(result.data, list)
+                if len(result.data) > 0:
+                    assert all(comp["project"] == test_project for comp in result.data)f the panel_mcp server tools by
 using real Panel components and actual functionality without mocking.
 
 The tests cover:
-- All MCP tools: packages, components, search, component
+- All MCP tools: projects, components, search, component
 - Real data integration with actual Panel components
 - Filtering and search functionality
 - Error handling for edge cases
@@ -29,13 +32,13 @@ class TestPanelMCPIntegration:
     """Integration tests for the Panel MCP server."""
 
     @pytest.mark.asyncio
-    async def test_packages_tool_real_data(self):
-        """Test the packages tool with real data."""
+    async def test_projects_tool_real_data(self):
+        """Test the projects tool with real data."""
         client = Client(mcp)
         async with client:
             result = await client.call_tool("list_packages", {})
 
-        # Should return a list of package names
+        # Should return a list of project names
         assert isinstance(result.data, list)
         # Should at least contain 'panel' if it's installed
         assert len(result.data) > 0
@@ -57,34 +60,34 @@ class TestPanelMCPIntegration:
         component = result.data[0]
         assert isinstance(component, dict)
         assert "name" in component
-        assert "package" in component
+        assert "project" in component
         assert "module_path" in component
         assert "description" in component
 
         # All should be strings
         assert isinstance(component["name"], str)
-        assert isinstance(component["package"], str)
+        assert isinstance(component["project"], str)
         assert isinstance(component["module_path"], str)
         assert isinstance(component["description"], str)
 
     @pytest.mark.asyncio
-    async def test_components_tool_filter_by_package(self):
-        """Test the components tool filtering by package."""
+    async def test_components_tool_filter_by_project(self):
+        """Test the components tool filtering by project."""
         client = Client(mcp)
         async with client:
-            # First get all packages
-            packages_result = await client.call_tool("list_packages", {})
-            packages = packages_result.data
+            # First get all projects
+            projects_result = await client.call_tool("list_packages", {})
+            projects = projects_result.data
 
-            if len(packages) > 0:
-                # Filter by the first package
-                test_package = packages[0]
-                result = await client.call_tool("list_components", {"package": test_package})
+            if len(projects) > 0:
+                # Filter by the first project
+                test_project = projects[0]
+                result = await client.call_tool("list_components", {"project": test_project})
 
-                # All components should be from the specified package
+                # All components should be from the specified project
                 assert isinstance(result.data, list)
                 if len(result.data) > 0:
-                    assert all(comp["package"] == test_package for comp in result.data)
+                    assert all(comp["project"] == test_project for comp in result.data)
 
     @pytest.mark.asyncio
     async def test_components_tool_filter_by_name(self):
@@ -120,7 +123,7 @@ class TestPanelMCPIntegration:
             search_result = result.data[0]
             assert isinstance(search_result, dict)
             assert "name" in search_result
-            assert "package" in search_result
+            assert "project" in search_result
             assert "module_path" in search_result
             assert "description" in search_result
             assert "relevance_score" in search_result
@@ -141,23 +144,23 @@ class TestPanelMCPIntegration:
         assert len(result.data) <= 2
 
     @pytest.mark.asyncio
-    async def test_search_tool_with_package_filter(self):
-        """Test the search tool with package filter."""
+    async def test_search_tool_with_project_filter(self):
+        """Test the search tool with project filter."""
         client = Client(mcp)
         async with client:
-            # First get available packages
-            packages_result = await client.call_tool("list_packages", {})
-            packages = packages_result.data
+            # First get available projects
+            projects_result = await client.call_tool("list_packages", {})
+            projects = projects_result.data
 
-            if len(packages) > 0:
-                # Search within a specific package
-                test_package = packages[0]
-                result = await client.call_tool("search", {"query": "widget", "package": test_package})
+            if len(projects) > 0:
+                # Search within a specific project
+                test_project = projects[0]
+                result = await client.call_tool("search", {"query": "widget", "project": test_project})
 
-                # All results should be from the specified package
+                # All results should be from the specified project
                 assert isinstance(result.data, list)
                 if len(result.data) > 0:
-                    assert all(comp["package"] == test_package for comp in result.data)
+                    assert all(comp["project"] == test_project for comp in result.data)
 
     @pytest.mark.asyncio
     async def test_component_tool_real_data(self):
@@ -171,10 +174,10 @@ class TestPanelMCPIntegration:
                 # Find a component that should be unique (or use package filter)
                 test_component = all_components.data[0]
                 test_name = test_component["name"]
-                test_package = test_component["package"]
+                test_project = test_component["project"]
 
-                # Query for the specific component with package filter to ensure uniqueness
-                result = await client.call_tool("get_component", {"name": test_name, "package": test_package})
+                # Query for the specific component with project filter to ensure uniqueness
+                result = await client.call_tool("get_component", {"name": test_name, "project": test_project})
 
                 # Should return detailed component information
                 component = result.data
@@ -188,7 +191,7 @@ class TestPanelMCPIntegration:
                     component_dict = component
 
                 assert "name" in component_dict
-                assert "package" in component_dict
+                assert "project" in component_dict
                 assert "module_path" in component_dict
                 assert "description" in component_dict
                 assert "docstring" in component_dict
@@ -215,7 +218,7 @@ class TestPanelMCPIntegration:
         """Test the component tool with an ambiguous component name."""
         client = Client(mcp)
         async with client:
-            # First check if there are any components with the same name across packages
+            # First check if there are any components with the same name across projects
             all_components = await client.call_tool("list_components", {})
 
             # Group by name to find duplicates
@@ -273,18 +276,18 @@ class TestPanelMCPIntegration:
         """Test that data is consistent between different tools."""
         client = Client(mcp)
         async with client:
-            # Get packages and components
-            packages_result = await client.call_tool("list_packages", {})
+            # Get projects and components
+            projects_result = await client.call_tool("list_packages", {})
             components_result = await client.call_tool("list_components", {})
 
-            packages = set(packages_result.data)
-            component_packages = set(comp["package"] for comp in components_result.data)
+            projects = set(projects_result.data)
+            component_projects = set(comp["project"] for comp in components_result.data)
 
-            # All component packages should be in the packages list
-            assert component_packages.issubset(packages)
+            # All component projects should be in the projects list
+            assert component_projects.issubset(projects)
 
-            # All packages should have at least one component
-            assert packages.issubset(component_packages)
+            # All projects should have at least one component
+            assert projects.issubset(component_projects)
 
     @pytest.mark.asyncio
     async def test_search_ordering(self):
@@ -310,7 +313,7 @@ class TestPanelMCPIntegration:
             if len(components_result.data) > 0:
                 # Get detailed info for the first component
                 first_comp = components_result.data[0]
-                result = await client.call_tool("get_component", {"name": first_comp["name"], "package": first_comp["package"]})
+                result = await client.call_tool("get_component", {"name": first_comp["name"], "project": first_comp["project"]})
 
                 component = result.data
 

@@ -6,7 +6,6 @@ from .loader import get_config
 from .loader import get_config_loader
 from .loader import reload_config
 from .models import DocsConfig
-from .models import EnvironmentConfig
 from .models import GitRepository
 from .models import HoloVizMCPConfig
 from .models import PromptConfig
@@ -23,7 +22,6 @@ __all__ = [
     "reload_config",
     # Models
     "DocsConfig",
-    "EnvironmentConfig",
     "GitRepository",
     "HoloVizMCPConfig",
     "PromptConfig",
