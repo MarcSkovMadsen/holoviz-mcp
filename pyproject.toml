@@ -45,6 +45,8 @@ dependencies = [
     "packaging",
     "nbconvert",
     "panel",
+    "pydantic>=2.0",
+    "PyYAML",
     "sentence-transformers",
 ]
 

@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HoloViz MCP Configuration",
+  "description": "Configuration schema for HoloViz MCP server",
+  "type": "object",
+  "properties": {
+    "server": {
+      "type": "object",
+      "description": "Server configuration",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Server name",
+          "default": "holoviz-mcp"
+        },
+        "version": {
+          "type": "string",
+          "description": "Server version",
+          "default": "1.0.0"
+        },
+        "description": {
+          "type": "string",
+          "description": "Server description",
+          "default": "Model Context Protocol server for HoloViz ecosystem"
+        },
+        "log_level": {
+          "type": "string",
+          "description": "Logging level",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+          "default": "INFO"
+        },
+        "transport": {
+          "type": "string",
+          "description": "Transport protocol for MCP communication",
+          "enum": ["stdio", "http"],
+          "default": "stdio"
+        },
+        "anonymized_telemetry": {
+          "type": "boolean",
+          "description": "Enable anonymized telemetry",
+          "default": false
+        },
+        "jupyter_server_proxy_url": {
+          "type": "string",
+          "description": "Jupyter server proxy URL for Panel app integration",
+          "default": ""
+        },
+        "security": {
+          "type": "object",
+          "description": "Security configuration",
+          "properties": {
+            "allow_code_execution": {
+              "type": "boolean",
+              "description": "Allow LLM to execute arbitrary code (Python, bash, pytest, Panel apps, etc.)",
+              "default": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "docs": {
+      "type": "object",
+      "description": "Documentation configuration",
+      "properties": {
+        "repositories": {
+          "type": "object",
+          "description": "Repository configurations",
+          "patternProperties": {
+            "^[a-zA-Z0-9_-]+$": {
+              "type": "object",
+              "description": "Git repository configuration",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "Git repository URL",
+                  "pattern": "^(https://|http://|git://|ssh://)"
+                },
+                "branch": {
+                  "type": "string",
+                  "description": "Git branch to use"
+                },
+                "tag": {
+                  "type": "string",
+                  "description": "Git tag to use"
+                },
+                "commit": {
+                  "type": "string",
+                  "description": "Git commit hash to use"
+                },
+                "folders": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "description": "List of folders to index within the repository",
+                      "items": {
+                        "type": "string"
+                      },
+                      "default": ["doc"]
+                    },
+                    {
+                      "type": "object",
+                      "description": "Mapping of folder names to folder configurations",
+                      "patternProperties": {
+                        "^[a-zA-Z0-9_/-]+$": {
+                          "type": "object",
+                          "description": "Folder configuration",
+                          "properties": {
+                            "url_path": {
+                              "type": "string",
+                              "description": "URL path mapping for this folder",
+                              "default": ""
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "base_url": {
+                  "type": "string",
+                  "description": "Base URL for documentation links"
+                },
+                "reference_patterns": {
+                  "type": "array",
+                  "description": "Glob patterns for reference documentation files",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": ["examples/reference/**/*.md", "examples/reference/**/*.ipynb"]
+                }
+              },
+              "required": ["url"],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "index_patterns": {
+          "type": "array",
+          "description": "File patterns to include when indexing",
+          "items": {
+            "type": "string"
+          },
+          "default": ["**/*.md", "**/*.rst", "**/*.txt"]
+        },
+        "exclude_patterns": {
+          "type": "array",
+          "description": "File patterns to exclude when indexing",
+          "items": {
+            "type": "string"
+          },
+          "default": ["**/node_modules/**", "**/.git/**", "**/build/**"]
+        },
+        "max_file_size": {
+          "type": "integer",
+          "description": "Maximum file size in bytes to index",
+          "minimum": 0,
+          "default": 1048576
+        },
+        "update_interval": {
+          "type": "integer",
+          "description": "Update interval in seconds",
+          "minimum": 0,
+          "default": 86400
+        }
+      },
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "description": "Resources configuration",
+      "properties": {
+        "search_paths": {
+          "type": "array",
+          "description": "Additional resource search paths",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "prompts": {
+      "type": "object",
+      "description": "Prompts configuration",
+      "properties": {
+        "search_paths": {
+          "type": "array",
+          "description": "Additional prompt search paths",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

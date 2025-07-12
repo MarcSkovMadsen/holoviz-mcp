@@ -11,19 +11,19 @@ from holoviz_mcp.docs_mcp.server import mcp
 
 
 @pytest.mark.asyncio
-async def test_get_reference_guide_button_no_package():
-    """Test get_reference_guide for Button component across all packages."""
+async def test_get_reference_guide_button_no_project():
+    """Test get_reference_guide for Button component across all projects."""
     client = Client(mcp)
     async with client:
         result = await client.call_tool("get_reference_guide", {"component": "Button"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # Should find Button components from various packages
+        # Should find Button components from various projects
         for page in result.data:
             assert "title" in page
             assert "url" in page
-            assert "package" in page
+            assert "project" in page
             assert "path" in page
             assert "content" in page
             assert page["relevance_score"] == 1.0
@@ -34,16 +34,16 @@ async def test_get_reference_guide_button_no_package():
 
 @pytest.mark.asyncio
 async def test_get_reference_guide_button_panel_specific():
-    """Test get_reference_guide finds the one and only Button reference guide in Panel package specifically."""
+    """Test get_reference_guide finds the one and only Button reference guide in Panel project specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
         page = result.data[0]
         assert page["path"] == "examples/reference/widgets/Button.ipynb"
-        assert page["package"] == "panel"
+        assert page["project"] == "panel"
         assert page["title"] == "Button"
         assert page["url"] == "https://panel.holoviz.org/reference/widgets/Button.html"
         assert page["relevance_score"] == 1.0
@@ -51,16 +51,16 @@ async def test_get_reference_guide_button_panel_specific():
 
 @pytest.mark.asyncio
 async def test_get_reference_guide_button_panel_material_ui_specific():
-    """Test get_reference_guide finds the one and only Button reference guide in Panel Material UI package specifically."""
+    """Test get_reference_guide finds the one and only Button reference guide in Panel Material UI project specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel_material_ui"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel-material-ui"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
         page = result.data[0]
         assert page["path"] == "examples/reference/widgets/Button.ipynb"
-        assert page["package"] == "panel_material_ui"
+        assert page["project"] == "panel-material-ui"
         assert page["title"] == "Button"
         assert page["url"] == "https://panel-material-ui.holoviz.org/reference/widgets/Button.html"
         assert page["relevance_score"] == 1.0
@@ -68,33 +68,33 @@ async def test_get_reference_guide_button_panel_material_ui_specific():
 
 @pytest.mark.asyncio
 async def test_get_reference_guide_textinput_material_ui():
-    """Test get_reference_guide for TextInput component in Material UI package."""
+    """Test get_reference_guide for TextInput component in Material UI project."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "TextInput", "package": "panel_material_ui"})
+        result = await client.call_tool("get_reference_guide", {"component": "TextInput", "project": "panel-material-ui"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 1
 
         page = result.data[0]
-        assert page["package"] == "panel_material_ui"
+        assert page["project"] == "panel-material-ui"
         assert page["path"] == "examples/reference/widgets/TextInput.ipynb"
         assert page["relevance_score"] == 1.0
 
 
 @pytest.mark.asyncio
 async def test_get_reference_guide_bar_hvplot():
-    """Test get_reference_guide for bar chart component in hvPlot package."""
+    """Test get_reference_guide for bar chart component in hvPlot project."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "bar", "package": "hvplot"})
+        result = await client.call_tool("get_reference_guide", {"component": "bar", "project": "hvplot"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 2
 
-        # All results should be from hvplot package
+        # All results should be from hvplot project
         for page in result.data:
-            assert page["package"] == "hvplot"
+            assert page["project"] == "hvplot"
             assert page["path"].startswith("doc/reference")
             assert page["path"].endswith("bar.ipynb")
             assert page["is_reference"] == True
@@ -102,16 +102,16 @@ async def test_get_reference_guide_bar_hvplot():
 
 @pytest.mark.asyncio
 async def test_get_reference_guide_scatter_hvplot():
-    """Test get_reference_guide for scatter plot component in hvPlot package."""
+    """Test get_reference_guide for scatter plot component in hvPlot project."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "scatter", "package": "hvplot"})
+        result = await client.call_tool("get_reference_guide", {"component": "scatter", "project": "hvplot"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # All results should be from hvplot package
+        # All results should be from hvplot project
         for page in result.data:
-            assert page["package"] == "hvplot"
+            assert page["project"] == "hvplot"
 
         # Should find at least one result
         assert len(result.data) > 0
@@ -130,7 +130,7 @@ async def test_get_reference_guide_audio_no_content():
         for page in result.data:
             assert "title" in page
             assert "url" in page
-            assert "package" in page
+            assert "project" in page
             assert "path" in page
             # Should not include content when content=False
             assert page.get("content") is None
@@ -148,13 +148,13 @@ async def test_get_reference_guide_common_widgets():
         widgets = ["DiscreteSlider", "Select", "Checkbox", "Toggle", "DatePicker"]
 
         for widget in widgets:
-            result = await client.call_tool("get_reference_guide", {"component": widget, "package": "panel"})
+            result = await client.call_tool("get_reference_guide", {"component": widget, "project": "panel"})
             assert result.data
             assert isinstance(result.data, list)
 
             # Should find relevant documentation for each widget
             for page in result.data:
-                assert page["package"] == "panel"
+                assert page["project"] == "panel"
                 assert page["is_reference"]
 
             # Should find at least one result
@@ -176,8 +176,8 @@ async def test_get_reference_guide_edge_cases():
         # Should handle gracefully
         assert isinstance(result.data, list)
 
-        # Test with invalid package
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "nonexistent_package"})
+        # Test with invalid project
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "nonexistent_project"})
         # Should handle gracefully and return empty results
         assert isinstance(result.data, list)
         assert len(result.data) == 0
@@ -188,7 +188,7 @@ async def test_get_reference_guide_relevance_scoring():
     """Test that get_reference_guide returns results with relevance scores."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -209,7 +209,7 @@ async def test_get_reference_guide_return_structure():
     """Test that get_reference_guide returns properly structured Page objects."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -218,7 +218,7 @@ async def test_get_reference_guide_return_structure():
             # Required fields
             assert "title" in page
             assert "url" in page
-            assert "package" in page
+            assert "project" in page
             assert "path" in page
 
             # Optional fields
@@ -229,15 +229,15 @@ async def test_get_reference_guide_return_structure():
             # Type checks
             assert isinstance(page["title"], str)
             assert isinstance(page["url"], str)
-            assert isinstance(page["package"], str)
+            assert isinstance(page["project"], str)
             assert isinstance(page["path"], str)
 
             # URL should be valid
             assert page["url"].startswith("http")
 
-            # Package should be one of the known packages
-            known_packages = ["panel", "panel_material_ui", "hvplot", "param", "holoviews"]
-            assert page["package"] in known_packages
+            # Project should be one of the known projects
+            known_projects = ["panel", "panel_material_ui", "hvplot", "param", "holoviews"]
+            assert page["project"] in known_projects
 
 
 @pytest.mark.asyncio
@@ -263,7 +263,7 @@ async def test_get_reference_guide_no_duplicates():
     """Test that get_reference_guide doesn't return duplicate results."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -277,22 +277,22 @@ async def test_get_reference_guide_no_duplicates():
 
 
 @pytest.mark.asyncio
-async def test_get_reference_guide_multiple_packages():
-    """Test that get_reference_guide can find components across multiple packages."""
+async def test_get_reference_guide_multiple_projects():
+    """Test that get_reference_guide can find components across multiple projects."""
     client = Client(mcp)
     async with client:
-        # Search for Button across all packages
+        # Search for Button across all projects
         result = await client.call_tool("get_reference_guide", {"component": "Button"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # Should find Button components from different packages
-        packages_found = set(page["package"] for page in result.data)
-        assert len(packages_found) >= 1  # Should find at least one package with Button
+        # Should find Button components from different projects
+        projects_found = set(page["project"] for page in result.data)
+        assert len(projects_found) >= 1  # Should find at least one project with Button
 
-        # Common packages that should have Button components
-        expected_packages = {"panel", "panel_material_ui"}
-        assert len(packages_found.intersection(expected_packages)) > 0
+        # Common projects that should have Button components
+        expected_projects = {"panel", "panel_material_ui"}
+        assert len(projects_found.intersection(expected_projects)) > 0
 
 
 @pytest.mark.asyncio
@@ -301,7 +301,7 @@ async def test_get_reference_guide_exact_filename_matching():
     client = Client(mcp)
     async with client:
         # Test that searching for "Button" finds files with "Button" in the filename
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "package": "panel"})
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -314,6 +314,6 @@ async def test_get_reference_guide_exact_filename_matching():
             assert "Button" in first_page["path"]
             assert first_page["relevance_score"] == 1.0  # Highest priority score
 
-        # All results should be from panel package
+        # All results should be from panel project
         for page in result.data:
-            assert page["package"] == "panel"
+            assert page["project"] == "panel"

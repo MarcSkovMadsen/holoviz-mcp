@@ -1,0 +1,152 @@
+# Default configuration for HoloViz MCP server
+# This file provides the default settings that are used when no user configuration is provided.
+
+server:
+  name: holoviz-mcp
+  version: "1.0.0"
+  description: "Model Context Protocol server for HoloViz ecosystem"
+  log_level: INFO
+  transport: stdio
+  anonymized_telemetry: false
+  jupyter_server_proxy_url: ""
+  security:
+    allow_code_execution: false
+
+docs:
+  repositories:
+    panel:
+      url: https://github.com/holoviz/panel.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+        examples/reference:
+          url_path: "/reference"
+      base_url: https://panel.holoviz.org
+      reference_patterns:
+        - "examples/reference/**/*.md"
+        - "examples/reference/**/*.ipynb"
+        - "examples/reference/**/*.rst"
+    panel-material-ui:
+      url: https://github.com/panel-extensions/panel-material-ui.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+        examples/reference:
+          url_path: "/reference"
+      base_url: https://panel-material-ui.holoviz.org/
+      reference_patterns:
+        - "examples/reference/**/*.md"
+        - "examples/reference/**/*.ipynb"
+        - "examples/reference/**/*.rst"
+    hvplot:
+      url: https://github.com/holoviz/hvplot.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+      base_url: https://hvplot.holoviz.org
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
+    param:
+      url: https://github.com/holoviz/param.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+      base_url: https://param.holoviz.org
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
+    holoviews:
+      url: https://github.com/holoviz/holoviews.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+        examples/reference:
+          url_path: "/reference"
+      base_url: https://holoviews.org
+      reference_patterns:
+        - "examples/reference/**/*.md"
+        - "examples/reference/**/*.ipynb"
+        - "examples/reference/**/*.rst"
+    datashader:
+      url: https://github.com/holoviz/datashader.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+        examples:
+          url_path: "/examples"
+      base_url: https://datashader.org
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
+    geoviews:
+      url: https://github.com/holoviz/geoviews.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+        examples:
+          url_path: "/examples"
+      base_url: https://geoviews.org
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
+    colorcet:
+      url: https://github.com/holoviz/colorcet.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+      base_url: https://colorcet.holoviz.org
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
+    lumen:
+      url: https://github.com/holoviz/lumen.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+      base_url: https://lumen.holoviz.org
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
+
+  index_patterns:
+    - "**/*.md"
+    - "**/*.ipynb"
+    - "**/*.rst"
+
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/build/**"
+    - "**/__pycache__/**"
+    - "**/.pytest_cache/**"
+
+  max_file_size: 1048576  # 1MB
+  update_interval: 86400  # 24 hours
+
+resources:
+  search_paths: []  # Additional search paths for user resources
+  # Default search paths are automatically included:
+  # - Package default resources (src/holoviz_mcp/config/resources/)
+  # - User config resources (~/.holoviz_mcp/config/resources/)
+
+prompts:
+  search_paths: []  # Additional search paths for user prompts
+  # Default search paths are automatically included:
+  # - Package default prompts (src/holoviz_mcp/config/prompts/)
+  # - User config prompts (~/.holoviz_mcp/config/prompts/)

@@ -15,8 +15,6 @@ from pathlib import Path
 
 from panel.viewable import Viewable
 
-from holoviz_mcp.shared import config
-
 from .models import ComponentDetails
 from .models import ParameterInfo
 
@@ -151,7 +149,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
     return ComponentDetails(
         name=cls.__name__,
         description=description,
-        package=cls.__module__.split(".")[0],
+        project=cls.__module__.split(".")[0],
         module_path=f"{cls.__module__}.{cls.__name__}",
         init_signature=init_signature,
         docstring=docstring,
@@ -254,7 +252,7 @@ def load_components(filepath: str) -> list[ComponentDetails]:
     return [ComponentDetails(**item) for item in json_data]
 
 
-def to_proxy_url(url: str, jupyter_server_proxy_url: str = config.JUPYTER_SERVER_PROXY_URL) -> str:
+def to_proxy_url(url: str, jupyter_server_proxy_url: str = "") -> str:
     """
     Convert localhost URLs to Jupyter server proxy URLs when applicable.
 
