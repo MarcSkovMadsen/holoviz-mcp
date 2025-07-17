@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/marcskovmadsen-holoviz-mcp-badge.png)](https://mseep.ai/app/marcskovmadsen-holoviz-mcp)
+
 # ✨ HoloViz MCP
 
 [![CI](https://img.shields.io/github/actions/workflow/status/MarcSkovMadsen/holoviz-mcp/ci.yml?style=flat-square&branch=main)](https://github.com/MarcSkovMadsen/holoviz-mcp/actions/workflows/ci.yml)
