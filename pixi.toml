@@ -13,6 +13,7 @@ chromadb = "*"
 fastmcp = "*"
 GitPython = "*"
 nbconvert = "*"
+hvplot = "*"
 panel = "*"
 pydantic = ">=2.0"
 PyYAML = "*"
@@ -27,10 +28,10 @@ setuptools = ">=61"
 setuptools-scm = "*"
 
 [feature.test.dependencies]
+mypy = "*"
 pytest = ">=6"
 pytest-asyncio = "*"
 pytest-cov = "*"
-mypy = "*"
 types-PyYAML = "*"
 
 [feature.test.tasks]

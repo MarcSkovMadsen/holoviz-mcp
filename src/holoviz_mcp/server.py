@@ -6,7 +6,7 @@ including Panel and hvPlot following best practices.
 The server is composed of multiple sub-servers that provide various functionalities:
 
 - Documentation: Search and access HoloViz documentation as context
-- Panel Material UI: Tools, resources and prompts for using Panel Material UI
+- hvPlot: Tools, resources and prompts for using hvPlot to develop quick, interactive plots in Python
 - Panel: Tools, resources and prompts for using Panel Material UI
 """
 
@@ -16,6 +16,7 @@ from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.docs_mcp.server import mcp as docs_mcp
+from holoviz_mcp.hvplot_mcp.server import mcp as hvplot_mcp
 from holoviz_mcp.panel_mcp.server import mcp as panel_mcp
 
 mcp: FastMCP = FastMCP(
@@ -38,6 +39,7 @@ mcp: FastMCP = FastMCP(
 
     - Documentation: Search and access HoloViz documentation and reference guides
     - Panel: Tools, resources and prompts for using Panel and Panel Extension packages
+    - hvPlot: Tools, resources and prompts for using hvPlot to develop quick, interactive plots in Python
     """,
 )
 
@@ -49,6 +51,7 @@ async def setup_composed_server() -> None:
     from sub-servers into the main server with appropriate prefixes.
     """
     await mcp.import_server(docs_mcp, prefix="docs")
+    await mcp.import_server(hvplot_mcp, prefix="hvplot")
     await mcp.import_server(panel_mcp, prefix="panel")
 
 

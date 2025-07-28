@@ -20,6 +20,9 @@ async def test_server():
         tools = await client.list_tools()
         assert tools
 
+        result = await client.call_tool("hvplot_list_plot_types", {})
+        assert result.data
+
         result = await client.call_tool("panel_list_components", {})
         assert result.data
 
