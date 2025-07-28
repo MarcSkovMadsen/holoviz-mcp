@@ -10,6 +10,7 @@ Before developing this project, please #fetch the following:
 
 - https://raw.githubusercontent.com/holoviz/holoviz/refs/heads/main/README.md
 - https://gofastmcp.com/getting-started/welcome.md
+- https://gofastmcp.com/llms.txt
 
 Before adding tests to this project, please #fetch the following:
 
