@@ -33,6 +33,8 @@ Check out the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on youtub
 
 [![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
 
+Other videos: [hvPlot tools](https://youtu.be/jTe2ZqAAtR8).
+
 ## 🚀 Quick Start
 
 ### Requirements
