@@ -13,7 +13,7 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 
 **Documentation Access**: Search through comprehensive HoloViz documentation including tutorials, reference guides, how-to guides, and API references.
 
-**Component Intelligence**: Discover and understand 100+ Panel components with detailed parameter information, usage examples, and best practices.
+**Component Intelligence**: Discover and understand 100+ Panel components with detailed parameter information, usage examples, and best practices. Similar features are available for hvPlot.
 
 **Extension Support**: Automatic detection and information about Panel extensions like Material UI, Graphic Walker, and community packages.
 
@@ -261,6 +261,23 @@ The AI assistant provides accurate, contextual answers with:
 - **docs_search**: Search HoloViz documentation using semantic similarity
 - **docs_update_index**: Update the documentation index by re-cloning repositories and re-indexing content
 
+</details>
+
+<details>
+<summary><b>hvPlot</b></summary>
+
+The hvPlot MCP tools provide programmatic and AI-assisted access to the hvPlot plotting API and documentation. These tools allow you to:
+
+- List all available hvPlot plot types in your environment
+- Retrieve docstrings and usage details for any plot type (e.g., 'scatter', 'bar', 'ohlc')
+- Get the function signature for a plot type, including backend-specific options (e.g., for 'bokeh', 'matplotlib', or 'plotly')
+
+**hvPlot tool list:**
+- `hvplot_list_plot_types`: List all hvPlot plot types
+- `hvplot_get_docstring`: Get the docstring for a specific plot type
+- `hvplot_get_signature`: Get the function signature for a specific plot type (optionally for a specific backend)
+
+These tools make it easy to discover, understand, and use hvPlot's plotting API in your projects or via AI assistants.
 </details>
 
 <details>
