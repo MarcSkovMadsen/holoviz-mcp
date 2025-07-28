@@ -13,7 +13,6 @@ import logging
 import os
 import subprocess
 import threading
-import webbrowser
 from importlib.metadata import distributions
 from typing import Optional
 from typing import cast
@@ -41,6 +40,8 @@ mcp = FastMCP(
     DO use this server to search for specific Panel components and access detailed information including docstrings and parameter information.
     """,
 )
+
+_config = get_config()
 
 
 async def _list_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
@@ -446,97 +447,6 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     return component.parameters
 
 
-# Get configuration for conditional tool enabling
-_config = get_config()
-
-
-@mcp.tool(enabled=bool(_config.server.jupyter_server_proxy_url))
-def get_accessible_url(url: str) -> str:
-    """
-    Convert localhost URLs to accessible URLs in remote environments.
-
-    Use this tool to get the correct URL for accessing local Panel servers when running
-    in remote environments like JupyterHub, Binder, or cloud platforms. The tool automatically
-    converts localhost URLs to proxied URLs that work in these environments.
-
-    This tool is only enabled when a proxy configuration is detected.
-
-    Parameters
-    ----------
-    url : str
-        The original URL to convert. Should be a localhost or 127.0.0.1 URL.
-        Examples: "http://localhost:5007", "http://127.0.0.1:5007/dashboard"
-
-    Returns
-    -------
-    str
-        The accessible URL to use. If running locally, returns the original URL.
-        If running on a remote server, returns the proxied URL that works in that environment.
-
-    Examples
-    --------
-    Convert localhost URL to accessible URL:
-    >>> get_accessible_url("http://localhost:5007")
-    "https://my-jupyterhub-domain/user/alice/proxy/5007/"
-
-    Convert localhost URL with path:
-    >>> get_accessible_url("http://localhost:5007/dashboard")
-    "https://my-jupyterhub-domain/user/alice/proxy/5007/dashboard"
-
-    External URLs are returned unchanged:
-    >>> get_accessible_url("https://panel.holoviz.org")
-    "https://panel.holoviz.org"
-    """
-    config = get_config()
-    return to_proxy_url(url, config.server.jupyter_server_proxy_url)
-
-
-@mcp.tool
-def open_in_browser(url: str, new_tab: bool = True) -> str:
-    """
-    Open a URL in the user's web browser.
-
-    Use this tool to automatically open URLs in the browser instead of asking the user
-    to manually copy and paste URLs. This provides a better user experience.
-
-    The tool automatically handles URL conversion for remote environments - if the URL
-    is a localhost URL and a proxy is configured, it will be converted to a proxied URL
-    before opening.
-
-    Parameters
-    ----------
-    url : str
-        The URL to open in the browser. Can be localhost, 127.0.0.1, or any web URL.
-        Examples: "http://localhost:5007", "https://panel.holoviz.org"
-    new_tab : bool, optional
-        Whether to open in a new tab (True) or same window (False). Default is True.
-
-    Returns
-    -------
-    str
-        The URL that was actually opened (may be converted to a proxy URL if applicable).
-
-    Examples
-    --------
-    Open Panel app in new tab:
-    >>> open_in_browser("http://localhost:5007/dashboard")
-    "https://my-jupyterhub-domain/user/alice/proxy/5007/dashboard"
-
-    Open documentation in same window:
-    >>> open_in_browser("https://panel.holoviz.org", new_tab=False)
-    "https://panel.holoviz.org"
-    """
-    config = get_config()
-    url = to_proxy_url(url, config.server.jupyter_server_proxy_url)
-
-    if new_tab:
-        webbrowser.open_new_tab(url)
-    else:
-        webbrowser.open(url)
-
-    return url
-
-
 # Maps port to server state: { 'proc': Popen, 'log_path': str, 'log_file': file, 'proxy_url': str }
 _SERVERS = {}
 # Lock for thread safety
@@ -603,8 +513,7 @@ def _serve_impl(
         )
 
         url = f"http://localhost:{port}"
-        config = get_config()
-        proxy_url = to_proxy_url(url, config.server.jupyter_server_proxy_url)
+        proxy_url = to_proxy_url(url, _config.server.jupyter_server_proxy_url)
 
         _SERVERS[port] = {
             "proc": proc,
@@ -737,5 +646,4 @@ def close_server(port: int = 5007) -> None:
 
 
 if __name__ == "__main__":
-    config = get_config()
-    mcp.run(transport=config.server.transport)
+    mcp.run(transport=_config.server.transport)
