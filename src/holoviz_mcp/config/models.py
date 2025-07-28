@@ -119,9 +119,8 @@ class SecurityConfig(BaseModel):
     """Security configuration for code execution."""
 
     allow_code_execution: bool = Field(
-        default=False,
-        description="Allow LLM to execute arbitrary code (Python, bash, pytest, Panel apps, etc.). "
-        "This can be dangerous and should only be enabled in trusted environments.",
+        default=True,
+        description="Allow LLM to execute arbitrary code. " "This can be dangerous and should only be enabled in trusted environments.",
     )
 
 
