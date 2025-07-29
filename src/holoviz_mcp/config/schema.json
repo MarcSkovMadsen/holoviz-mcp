@@ -52,7 +52,7 @@
             "allow_code_execution": {
               "type": "boolean",
               "description": "Allow LLM to execute arbitrary code (Python, bash, pytest, Panel apps, etc.)",
-              "default": false
+              "default": true
             }
           },
           "additionalProperties": false

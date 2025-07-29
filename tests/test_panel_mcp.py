@@ -23,8 +23,6 @@ works correctly with actual Panel installations.
 import pytest
 from fastmcp import Client
 
-from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.panel_mcp.data import to_proxy_url
 from holoviz_mcp.panel_mcp.server import mcp
 
 
@@ -249,7 +247,7 @@ class TestPanelMCPIntegration:
             tools = await client.list_tools()
 
         tool_names = [tool.name for tool in tools]
-        expected_tools = ["list_packages", "list_components", "search", "get_component", "get_component_parameters", "open_in_browser"]
+        expected_tools = ["list_packages", "list_components", "search", "get_component", "get_component_parameters", "serve", "close_server", "get_server_logs"]
 
         for tool in expected_tools:
             assert tool in tool_names
@@ -331,32 +329,3 @@ class TestPanelMCPIntegration:
 
                 # Just check that the parameters attribute exists and is accessible
                 # The actual structure depends on the implementation
-
-
-@pytest.mark.asyncio
-async def test_proxy_url():
-    """Test that a proxy url can be found."""
-    config = get_config()
-    if not config.server.jupyter_server_proxy_url:
-        pytest.skip("Jupyter server proxy URL is not configured, skipping proxy URL test")
-
-    url = "http://localhost:5007/"
-    client = Client(mcp)
-    async with client:
-        result = await client.call_tool("get_accessible_url", {"url": url})
-
-    assert isinstance(result.data, str)
-    assert result.data == to_proxy_url(url, config.server.jupyter_server_proxy_url)
-
-
-@pytest.mark.asyncio
-async def test_open_in_browser():
-    """Test that a url can be opened."""
-    config = get_config()
-    url = "http://localhost:5007/"
-    client = Client(mcp)
-    async with client:
-        result = await client.call_tool("open_in_browser", {"url": url, "new_tab": True})
-
-    assert isinstance(result.data, str)
-    assert result.data == to_proxy_url(url, config.server.jupyter_server_proxy_url)

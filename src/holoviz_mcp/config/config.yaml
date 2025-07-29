@@ -10,7 +10,7 @@ server:
   anonymized_telemetry: false
   jupyter_server_proxy_url: ""
   security:
-    allow_code_execution: false
+    allow_code_execution: True
 
 docs:
   repositories:

@@ -113,7 +113,7 @@ class ConfigLoader:
                 "version": "1.0.0",
                 "description": "Model Context Protocol server for HoloViz ecosystem",
                 "log_level": "INFO",
-                "security": {"allow_code_execution": False},
+                "security": {"allow_code_execution": True},
             },
             "docs": {
                 "repositories": {},  # No more Python-side defaults!
@@ -250,7 +250,7 @@ class ConfigLoader:
 
         # Create default configuration
         template = {
-            "server": {"name": "holoviz-mcp", "log_level": "INFO", "security": {"allow_code_execution": False}},
+            "server": {"name": "holoviz-mcp", "log_level": "INFO", "security": {"allow_code_execution": True}},
             "docs": {
                 "repositories": {
                     "example-repo": {

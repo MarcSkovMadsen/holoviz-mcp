@@ -9,8 +9,13 @@ Use this server to access:
 - Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
-import webbrowser
+import logging
+import os
+import subprocess
+import threading
 from importlib.metadata import distributions
+from typing import Optional
+from typing import cast
 
 from fastmcp import Context
 from fastmcp import FastMCP
@@ -35,6 +40,8 @@ mcp = FastMCP(
     DO use this server to search for specific Panel components and access detailed information including docstrings and parameter information.
     """,
 )
+
+_config = get_config()
 
 
 async def _list_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
@@ -440,97 +447,203 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     return component.parameters
 
 
-# Get configuration for conditional tool enabling
-_config = get_config()
+# Maps port to server state: { 'proc': Popen, 'log_path': str, 'log_file': file, 'proxy_url': str }
+_SERVERS = {}
+# Lock for thread safety
+_SERVER_LOCK = threading.Lock()
 
 
-@mcp.tool(enabled=bool(_config.server.jupyter_server_proxy_url))
-def get_accessible_url(url: str) -> str:
+def _serve_impl(
+    file: str,
+    dev: bool = True,
+    show: bool = True,
+    port: int = 5007,
+    dependencies: Optional[list[str]] = None,
+    python: str | None = None,
+) -> str:
     """
-    Convert localhost URLs to accessible URLs in remote environments.
-
-    Use this tool to get the correct URL for accessing local Panel servers when running
-    in remote environments like JupyterHub, Binder, or cloud platforms. The tool automatically
-    converts localhost URLs to proxied URLs that work in these environments.
-
-    This tool is only enabled when a proxy configuration is detected.
+    Start the Panel server and serve the file in a new, isolated Python environment using uv.
 
     Parameters
     ----------
-    url : str
-        The original URL to convert. Should be a localhost or 127.0.0.1 URL.
-        Examples: "http://localhost:5007", "http://127.0.0.1:5007/dashboard"
+    file : str
+        Path to the Python script to serve.
+    dev : bool, optional
+        Whether to run in development mode (default: True).
+    show : bool, optional
+        Whether to open the application in a web browser (default: True).
+    port : int, optional
+        Port to serve the application on (default: 5007).
+    dependencies : list of str, optional
+        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas"].
+    python : str or None, optional
+        Python version to use for serving the application.
 
     Returns
     -------
     str
-        The accessible URL to use. If running locally, returns the original URL.
-        If running on a remote server, returns the proxied URL that works in that environment.
-
-    Examples
-    --------
-    Convert localhost URL to accessible URL:
-    >>> get_accessible_url("http://localhost:5007")
-    "https://my-jupyterhub-domain/user/alice/proxy/5007/"
-
-    Convert localhost URL with path:
-    >>> get_accessible_url("http://localhost:5007/dashboard")
-    "https://my-jupyterhub-domain/user/alice/proxy/5007/dashboard"
-
-    External URLs are returned unchanged:
-    >>> get_accessible_url("https://panel.holoviz.org")
-    "https://panel.holoviz.org"
+        Proxy-accessible URL where the application is served.
     """
-    config = get_config()
-    return to_proxy_url(url, config.server.jupyter_server_proxy_url)
+    DEFAULT_DEPENDENCIES = ["panel", "hvplot", "pandas"]
+    SERVER_START_TIMEOUT = 5  # seconds
+    SERVER_LOG_POLL_INTERVAL = 0.250  # seconds
+
+    if dependencies is None:
+        dependencies = DEFAULT_DEPENDENCIES.copy()
+    with _SERVER_LOCK:
+        if port in _SERVERS:
+            _close_server_impl(port)
+
+        cmd = ["uv", "run", "--no-project"]
+        for dep in dependencies:
+            cmd += ["--with", dep]
+        if python:
+            cmd += ["--python", python]
+        cmd += ["panel", "serve", file, "--port", str(port)]
+        if dev:
+            cmd.append("--dev")
+        # Do NOT use --show, we will open the browser ourselves after proxy URL resolution
+        logging.info(f"Panel server command: {cmd}")
+        log_path = f"/tmp/panel_server_{port}.log"
+        log_file = open(log_path, "w")
+        proc = subprocess.Popen(
+            cmd,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+        )
+
+        url = f"http://localhost:{port}"
+        proxy_url = to_proxy_url(url, _config.server.jupyter_server_proxy_url)
+
+        _SERVERS[port] = {
+            "proc": proc,
+            "log_path": log_path,
+            "log_file": log_file,
+            "proxy_url": proxy_url,
+        }
+
+    if show:
+        import time
+
+        start_time = time.time()
+        last_pos = 0
+        while time.time() - start_time < SERVER_START_TIMEOUT:
+            if os.path.exists(log_path):
+                with open(log_path, "r") as f:
+                    f.seek(last_pos)
+                    new_lines = f.readlines()
+                    if new_lines:
+                        for line in new_lines:
+                            logging.info(line.rstrip())
+                    last_pos = f.tell()
+                with open(log_path, "r") as f:
+                    if "Bokeh app running" in f.read():
+                        break
+            time.sleep(SERVER_LOG_POLL_INTERVAL)
+        import webbrowser
+
+        webbrowser.open_new_tab(proxy_url)
+    return proxy_url
 
 
-@mcp.tool
-def open_in_browser(url: str, new_tab: bool = True) -> str:
+@mcp.tool(enabled=bool(_config.server.security.allow_code_execution))
+def serve(
+    file: str,
+    dev: bool = True,
+    show: bool = True,
+    port: int = 5007,
+    dependencies: Optional[list[str]] = None,
+    python: str | None = None,
+) -> str:
     """
-    Open a URL in the user's web browser.
-
-    Use this tool to automatically open URLs in the browser instead of asking the user
-    to manually copy and paste URLs. This provides a better user experience.
-
-    The tool automatically handles URL conversion for remote environments - if the URL
-    is a localhost URL and a proxy is configured, it will be converted to a proxied URL
-    before opening.
+    Start the Panel server and serve the file in a new, isolated Python environment using uv.
 
     Parameters
     ----------
-    url : str
-        The URL to open in the browser. Can be localhost, 127.0.0.1, or any web URL.
-        Examples: "http://localhost:5007", "https://panel.holoviz.org"
-    new_tab : bool, optional
-        Whether to open in a new tab (True) or same window (False). Default is True.
+    file : str
+        Path to the Python script to serve.
+    dev : bool, optional
+        Whether to run in development mode (default: True).
+    show : bool, optional
+        Whether to open the application in a web browser (default: True).
+    port : int, optional
+        Port to serve the application on (default: 5007).
+    dependencies : list of str, optional
+        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas"].
+    python : str or None, optional
+        Python version to use for serving the application.
 
     Returns
     -------
     str
-        The URL that was actually opened (may be converted to a proxy URL if applicable).
-
-    Examples
-    --------
-    Open Panel app in new tab:
-    >>> open_in_browser("http://localhost:5007/dashboard")
-    "https://my-jupyterhub-domain/user/alice/proxy/5007/dashboard"
-
-    Open documentation in same window:
-    >>> open_in_browser("https://panel.holoviz.org", new_tab=False)
-    "https://panel.holoviz.org"
+        Proxy-accessible URL where the application is served.
     """
-    config = get_config()
-    url = to_proxy_url(url, config.server.jupyter_server_proxy_url)
+    return _serve_impl(file, dev, show, port, dependencies, python)
 
-    if new_tab:
-        webbrowser.open_new_tab(url)
-    else:
-        webbrowser.open(url)
 
-    return url
+def _get_server_logs_impl(port: int = 5007, tail: int = 100) -> str:
+    server = _SERVERS.get(port)
+    log_path = str(server["log_path"]) if server else None
+    if log_path and os.path.exists(log_path):
+        with open(log_path, "r") as f:
+            lines = f.readlines()
+            lines = [line for line in lines if "(FIXED_SIZING_MODE)" not in line and "Dropping a patch" not in line]
+            if tail is not None and tail > 0:
+                lines = lines[-tail:]
+            return "".join(lines)
+    return "No logs found."
+
+
+@mcp.tool(enabled=bool(_config.server.security.allow_code_execution))
+def get_server_logs(port: int = 5007, tail: int = 100) -> str:
+    """
+    Get the logs for the Panel application running on the given port.
+
+    For example after change a served 'file' or its dependencies, you can check the logs to see if the server
+    restarted successfully or you need to fix some errors or restart the server to add new dependencies.
+
+    Args:
+        port (int): Port where the application is served.
+        tail (int): Number of lines from the end of the log file to return. If <= 0, return all lines.
+
+    Returns
+    -------
+        str: Contents of the application logs.
+    """
+    return _get_server_logs_impl(port, tail)
+
+
+def _close_server_impl(port: int = 5007) -> None:
+    with _SERVER_LOCK:
+        server = _SERVERS.pop(port, None)
+        if not server:
+            return
+        proc = cast(subprocess.Popen, server.get("proc"))
+
+        log_file = server.get("log_file")
+        if proc:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except Exception:
+                proc.kill()
+        if log_file:
+            try:
+                log_file.close()  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+
+@mcp.tool(enabled=bool(_config.server.security.allow_code_execution))
+def close_server(port: int = 5007) -> None:
+    """
+    Close the Panel application server running on the given port and clean up the log file handle.
+
+    Args:
+        port (int): Port where the application is served.
+    """
+    return _close_server_impl(port)
 
 
 if __name__ == "__main__":
-    config = get_config()
-    mcp.run(transport=config.server.transport)
+    mcp.run(transport=_config.server.transport)

@@ -53,27 +53,31 @@ Other videos: [hvPlot tools](https://youtu.be/jTe2ZqAAtR8).
 <details>
 <summary><b>VS Code + GitHub Copilot</b></summary>
 
-Add this configuration to your VS Code `settings.json`:
+Add this configuration to your VS Code `mcp.json`:
 
 ```json
 {
-    "mcp": {
-        "servers": {
-           "holoviz": {
-                "type": "stdio",
-                "command": "uvx",
-                "args": [
-                    "--from",
-                    "git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
-                    "holoviz-mcp"
-                ]
-            }
-        }
-    }
+	"servers": {
+		"holoviz": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"--from",
+				"git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
+				"holoviz-mcp"
+			]
+		}
+	},
+	"inputs": []
 }
 ```
 
 Restart VS Code and start chatting with GitHub Copilot about Panel components!
+
+For more details please refer to the official [VS Code + Copilot MCP Server Guide](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
+
+Note: If you are developing remotely we recommend adding this to the "Remote" or "Workspace" mcp.json file instead of the "User" mcp.json file. Then the MCP server will be running on the remote server instead of the local machine.
+
 </details>
 
 <details>
@@ -244,51 +248,45 @@ The AI assistant provides accurate, contextual answers with:
 ## 🛠️ Available Tools
 
 <details>
-<summary><b>Panel Components</b></summary>
+<summary><b>Panel Tools</b></summary>
 
-- **panel_list_packages**: List all installed packages that provide Panel UI components
-- **panel_search**: Search for Panel components by name, module path, or description
-- **panel_list_components**: Get a summary list of Panel components without detailed parameter information
-- **panel_get_component**: Get complete details about a single Panel component including docstring and parameters
-- **panel_get_component_parameters**: Get detailed parameter information for a single Panel component
-
-</details>
-
-<details>
-<summary><b>Documentation</b></summary>
-
-- **docs_get_best_practices**: Get best practices for using a package with LLMs
-- **docs_get_reference_guide**: Find reference guides for specific HoloViz components
-- **docs_get_page**: Retrieve a specific documentation page by path and package
-- **docs_search**: Search HoloViz documentation using semantic similarity
-- **docs_update_index**: Update the documentation index by re-cloning repositories and re-indexing content
+- **list_packages**: List all installed packages that provide Panel UI components.
+- **search**: Search for Panel components by name, module path, or description.
+- **list_components**: Get a summary list of Panel components without detailed docstring and parameter information.
+- **get_component**: Get complete details about a single Panel component including docstring and parameters.
+- **get_component_parameters**: Get detailed parameter information for a single Panel component.
+- **serve**: Start a Panel server for a given file (if code execution is enabled).
+- **get_server_logs**: Get logs for a running Panel application server.
+- **close_server**: Close a running Panel application server.
 
 </details>
 
 <details>
-<summary><b>hvPlot</b></summary>
+<summary><b>Documentation Tools</b></summary>
 
-The hvPlot MCP tools provide programmatic and AI-assisted access to the hvPlot plotting API and documentation. These tools allow you to:
+- **get_best_practices**: Get best practices for using a project with LLMs.
+- **list_best_practices**: List all available best practices projects.
+- **get_reference_guide**: Find reference guides for specific HoloViz components.
+- **get_page**: Retrieve a specific documentation page by path and project.
+- **search**: Search HoloViz documentation using semantic similarity.
 
-- List all available hvPlot plot types in your environment
-- Retrieve docstrings and usage details for any plot type (e.g., 'scatter', 'bar', 'ohlc')
-- Get the function signature for a plot type, including backend-specific options (e.g., for 'bokeh', 'matplotlib', or 'plotly')
-
-**hvPlot tool list:**
-- `hvplot_list_plot_types`: List all hvPlot plot types
-- `hvplot_get_docstring`: Get the docstring for a specific plot type
-- `hvplot_get_signature`: Get the function signature for a specific plot type (optionally for a specific backend)
-
-These tools make it easy to discover, understand, and use hvPlot's plotting API in your projects or via AI assistants.
 </details>
 
 <details>
-<summary><b>Utilities</b></summary>
+<summary><b>hvPlot Tools</b></summary>
 
-- **panel_get_accessible_url**: Convert localhost URLs to accessible URLs in remote environments
-- **panel_open_in_browser**: Open a URL in the user's web browser
+- **list_plot_types**: List all available hvPlot plot types.
+- **get_docstring**: Get the docstring for a specific hvPlot plot type.
+- **get_signature**: Get the function signature for a specific hvPlot plot type.
 
 </details>
+
+To prevent tools like `panel_serve` from running arbitrary code, you can disable them by setting one of the following options:
+
+- In your YAML configuration file, set: `server.security.allow_code_execution: false`
+- Or, set the environment variable: `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false`
+
+This will block any features that allow execution of user-provided code.
 
 ## 📦 Installation
 
@@ -318,7 +316,7 @@ This includes packages like `panel-material-ui`, `panel-graphic-walker`, and oth
 holoviz-mcp
 ```
 
-For HTTP transport (useful for remote development):
+For HTTP transport:
 
 ```bash
 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
@@ -341,21 +339,16 @@ holoviz-mcp
 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
-For VS Code remote development, add to `settings.json`:
-```json
-"holoviz-dev": {
-    "type": "http",
-    "url": "http://127.0.0.1:8000/mcp/"
-}
-```
-
 </details>
 
 <details>
 <summary><b>Environment Variables</b></summary>
 
-- `HOLOVIZ_MCP_TRANSPORT`: Set transport mode (`stdio` or `http`)
-- `JUPYTER_SERVER_PROXY_URL`: Configure Jupyter proxy for remote environments
+- **HOLOVIZ_MCP_LOG_LEVEL**: Set the server log level (e.g., `INFO`, `DEBUG`, `WARNING`).
+- **HOLOVIZ_MCP_SERVER_NAME**: Override the server name.
+- **HOLOVIZ_MCP_TRANSPORT**: Set the transport mode (e.g., `stdio`, `http`).
+- **ANONYMIZED_TELEMETRY**: Enable or disable anonymized Chroma telemetry (`True` or `False` (default)).
+- **HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**: Allow or block code execution features (`True` (default) or `False`).
 
 </details>
 
@@ -366,10 +359,9 @@ The server automatically detects Panel-related packages in your environment:
 
 - `panel-material-ui`: Material Design components
 - `panel-graphic-walker`: Interactive data visualization
-- `awesome-panel-extensions`: Community extensions
-- Any package that depends on Panel
+- Any package that depends on the `panel` package.
 
-Install additional packages and restart the server to include them.
+Install additional packages and restart the mcp server to include them.
 
 </details>
 
@@ -466,12 +458,17 @@ For remote development with VS Code:
 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
-Add to VS Code `settings.json`:
+Add to VS Code workspace `.vscode/mcp.json`:
 
 ```json
-"holoviz-dev": {
-    "type": "http",
-    "url": "http://127.0.0.1:8000/mcp/"
+{
+	"servers": {
+		"holoviz": {
+			"type": "http",
+			"url": "http://127.0.0.1:8000/mcp/",
+		}
+	},
+	"inputs": []
 }
 ```
 

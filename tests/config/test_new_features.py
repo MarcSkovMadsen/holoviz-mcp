@@ -56,7 +56,7 @@ class TestSecurityConfig:
     def test_default_security_config(self):
         """Test default security configuration."""
         config = SecurityConfig()
-        assert config.allow_code_execution is False
+        assert config.allow_code_execution is True
 
     def test_custom_security_config(self):
         """Test custom security configuration."""
@@ -77,7 +77,7 @@ class TestServerConfigWithSecurity:
     def test_default_server_security(self):
         """Test default server security configuration."""
         config = ServerConfig()
-        assert config.security.allow_code_execution is False
+        assert config.security.allow_code_execution is True
 
 
 class TestEnvironmentVariableOverrides:
