@@ -349,6 +349,7 @@ HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 - **HOLOVIZ_MCP_TRANSPORT**: Set the transport mode (e.g., `stdio`, `http`).
 - **ANONYMIZED_TELEMETRY**: Enable or disable anonymized Chroma telemetry (`True` or `False` (default)).
 - **HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**: Allow or block code execution features (`True` (default) or `False`).
+- **JUPYTER_SERVER_PROXY_URL**: If set, Panel apps will open using this URL prefix (e.g., `.../proxy/5007/`) instead of `localhost:5007/`. This is useful when running remotely in a Jupyter Hub.
 
 </details>
 
