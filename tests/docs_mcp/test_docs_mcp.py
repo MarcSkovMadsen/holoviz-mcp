@@ -30,6 +30,17 @@ async def test_update_index():
 
 
 @pytest.mark.asyncio
+async def test_list_projects():
+    """Test that all projects are listed correctly."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("list_projects")
+
+    assert len(result.data) > 0
+    assert "panel" in result.data
+
+
+@pytest.mark.asyncio
 async def test_pages_semantic_search():
     """Test the pages tool with semantic search queries."""
     client = Client(mcp)

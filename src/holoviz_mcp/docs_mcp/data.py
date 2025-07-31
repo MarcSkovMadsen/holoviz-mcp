@@ -838,6 +838,39 @@ class DocumentationIndexer:
             raise ValueError(f"No page found for path '{path}' in project '{project}'.")
         return pages[0]
 
+    async def list_projects(self) -> list[str]:
+        """List all available projects with documentation in the index.
+
+        Returns
+        -------
+        list[str]: A list of project names that have documentation available.
+                   Names are returned in hyphenated format (e.g., "panel-material-ui").
+        """
+        await self.ensure_indexed()
+
+        try:
+            # Get all documents from the collection to extract unique project names
+            results = self.collection.get()
+
+            if not results["metadatas"]:
+                return []
+
+            # Extract unique project names
+            projects = set()
+            for metadata in results["metadatas"]:
+                project = metadata.get("project")
+                if project:
+                    # Convert underscored names to hyphenated format for consistency
+                    project_name = str(project).replace("_", "-")
+                    projects.add(project_name)
+
+            # Return sorted list
+            return sorted(projects)
+
+        except Exception as e:
+            logger.error(f"Failed to list projects: {e}")
+            return []
+
     async def _log_summary_table(self, ctx: Context | None = None):
         """Log a summary table showing document counts by repository."""
         try:
