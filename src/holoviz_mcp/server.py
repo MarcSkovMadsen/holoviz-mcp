@@ -11,6 +11,8 @@ The server is composed of multiple sub-servers that provide various functionalit
 """
 
 import asyncio
+import logging
+import os
 
 from fastmcp import FastMCP
 
@@ -18,6 +20,8 @@ from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.docs_mcp.server import mcp as docs_mcp
 from holoviz_mcp.hvplot_mcp.server import mcp as hvplot_mcp
 from holoviz_mcp.panel_mcp.server import mcp as panel_mcp
+
+logger = logging.getLogger(__name__)
 
 mcp: FastMCP = FastMCP(
     name="holoviz",
@@ -57,6 +61,8 @@ async def setup_composed_server() -> None:
 
 def main() -> None:
     """Set up and run the composed MCP server."""
+    pid = f"Process ID: {os.getpid()}"
+    print(pid)  # noqa: T201
 
     async def setup_and_run() -> None:
         await setup_composed_server()
