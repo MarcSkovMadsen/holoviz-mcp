@@ -111,20 +111,20 @@ async def get_reference_guide(component: str, project: str | None = None, conten
     return await indexer.search_get_reference_guide(component, project, content, ctx=ctx)
 
 
-# @mcp.tool
-# async def list_projects() -> list[str]:
-#     """List all available HoloViz projects with documentation.
+@mcp.tool
+async def list_projects() -> list[str]:
+    """List all available projects with documentation.
 
-#     This tool discovers all projects that have documentation available in the index,
-#     including both core HoloViz libraries and any additional user-defined projects.
+    This tool discovers all projects that have documentation available in the index,
+    including both core HoloViz libraries and any additional user-defined projects.
 
-#     Returns
-#     -------
-#         list[str]: A list of project names that have documentation available.
-#                    Names are returned in hyphenated format (e.g., "panel-material-ui").
-#     """
-#     indexer = get_indexer()
-#     return await indexer.list_projects()
+    Returns
+    -------
+        list[str]: A list of project names that have documentation available.
+                   Names are returned in hyphenated format (e.g., "panel-material-ui").
+    """
+    indexer = get_indexer()
+    return await indexer.list_projects()
 
 
 @mcp.tool
