@@ -430,7 +430,7 @@ alias holoviz-mcp="uvx holoviz-mcp"
 alias holoviz-mcp-update="uv tool update holoviz_mcp[panel-extensions];uvx --from holoviz-mcp holoviz-mcp-update"
 ```
 
-Then you can run
+After restarting your terminal, you can run:
 
 ```bash
 holoviz-mcp # to start the server
