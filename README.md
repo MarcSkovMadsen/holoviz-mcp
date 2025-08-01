@@ -9,27 +9,32 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 
 [![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)](https://holoviz.org)
 
+Please note:
+
+- This MCP server **can execute arbitrary Python code** when it serves Panel applications (this is configurable, and enabled by default).
+- This MCP server currently installs Python dependencies such as PyTorch, resulting in a large installation size (over 800 MB). We aim to reduce this footprint or make it configurable in the future.
+
 ## ✨ What This Provides
 
-**Documentation Access**: Search through comprehensive HoloViz documentation including tutorials, reference guides, how-to guides, and API references.
+**Documentation Access**: Search through comprehensive HoloViz documentation, including tutorials, reference guides, how-to guides, and API references.
 
 **Component Intelligence**: Discover and understand 100+ Panel components with detailed parameter information, usage examples, and best practices. Similar features are available for hvPlot.
 
-**Extension Support**: Automatic detection and information about Panel extensions like Material UI, Graphic Walker, and community packages.
+**Extension Support**: Automatic detection and information about Panel extensions such as Material UI, Graphic Walker, and other community packages.
 
 **Smart Context**: Get contextual code assistance that understands your development environment and available packages.
 
 ## 🎯 Why Use This?
 
-- **⚡ Faster Development**: No more hunting through docs - get instant, accurate component information
-- **🎨 Better Design**: AI suggests appropriate components and layout patterns for your use case
-- **🧠 Smart Context**: The assistant understands your environment and available Panel extensions
-- **📖 Always Updated**: Documentation stays current with the latest HoloViz ecosystem changes
-- **🔧 Zero Setup**: Works immediately with any MCP-compatible AI assistant
+- **⚡ Faster Development**: No more hunting through docs - get instant, accurate component information.
+- **🎨 Better Design**: AI suggests appropriate components and layout patterns for your use case.
+- **🧠 Smart Context**: The assistant understands your environment and available Panel extensions.
+- **📖 Always Updated**: Documentation stays current with the latest HoloViz ecosystem changes.
+- **🔧 Zero Setup**: Works immediately with any MCP-compatible AI assistant.
 
 ## Need more?
 
-Check out the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on youtube.
+Check out the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube.
 
 [![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
 
@@ -40,15 +45,45 @@ Other videos: [hvPlot tools](https://youtu.be/jTe2ZqAAtR8).
 ### Requirements
 
 - Python 3.11+ and [uv](https://docs.astral.sh/uv/)
-- VS Code with GitHub Copilot, Claude Desktop, Cursor, or other MCP-compatible client
+- VS Code with GitHub Copilot, Claude Desktop, Cursor, or any other MCP-compatible client
 
-### One-Click Install
+## Install as a Tool (Recommended)
+
+Due to its size, we strongly recommend installing HoloViz MCP once as a [uv tool](https://docs.astral.sh/uv/concepts/tools/):
+
+```bash
+uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]
+```
+
+This ensures the `holoviz-mcp` server is installed once, instead of each time it is run as a tool.
+
+Additionally, we highly recommend creating the documentation index (i.e., context) used by holoviz-mcp now, since this process can take up to 10 minutes:
+
+```bash
+uvx --from holoviz-mcp holoviz-mcp-update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
+```
+
+You may optionally verify you can start the server with the `sse` transport:
+
+```bash
+uvx holoviz-mcp
+```
+
+Or, optionally start it with the `http` transport:
+
+```bash
+HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+```
+
+Use `CTRL+C` to stop the server when you are finished.
+
+### One-Click Install (Recommended)
 
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522holoviz%2522%252C%2522command%2522%253A%2522uvx%2522%252C%2522args%2522%253A%255B%2522--from%2522%252C%2522git%252Bhttps%253A//github.com/MarcSkovMadsen/holoviz-mcp%255Bpanel-extensions%255D%2522%252C%2522holoviz-mcp%2522%255D%257D)
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install_Server-000000?style=flat-square)](cursor://settings/mcp)
 [![Claude Desktop](https://img.shields.io/badge/Claude_Desktop-Add_Server-FF6B35?style=flat-square)](#claude-desktop)
 
-### Manual Installation
+### Manual Installation (Alternative to One-Click Install)
 
 <details>
 <summary><b>VS Code + GitHub Copilot</b></summary>
@@ -74,9 +109,9 @@ Add this configuration to your VS Code `mcp.json`:
 
 Restart VS Code and start chatting with GitHub Copilot about Panel components!
 
-For more details please refer to the official [VS Code + Copilot MCP Server Guide](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
+For more details, please refer to the official [VS Code + Copilot MCP Server Guide](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
 
-Note: If you are developing remotely we recommend adding this to the "Remote" or "Workspace" mcp.json file instead of the "User" mcp.json file. Then the MCP server will be running on the remote server instead of the local machine.
+Note: If you are developing remotely, we recommend adding this to the "Remote" or "Workspace" mcp.json file instead of the "User" mcp.json file. This ensures the MCP server runs on the remote server instead of the local machine.
 
 </details>
 
@@ -297,29 +332,27 @@ The recommended way is to configure your AI assistant (VS Code + GitHub Copilot)
 ### Manual Installation
 
 ```bash
-pip install holoviz-mcp
+uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp
 ```
 
 ### With Panel Extensions
 
-Install with automatic detection of Panel extension packages:
+Install with support for community projects like `panel-material-ui`, `panel-graphic-walker` etc.:
 
 ```bash
-pip install holoviz-mcp[panel-extensions]
+uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]
 ```
-
-This includes packages like `panel-material-ui`, `panel-graphic-walker`, and other community extensions.
 
 ### Running the Server
 
 ```bash
-holoviz-mcp
+uvx holoviz-mcp
 ```
 
 For HTTP transport:
 
 ```bash
-HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
+HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 ```
 
 ## ⚙️ Configuration Options
@@ -331,12 +364,12 @@ The server supports different transport protocols:
 
 **Standard I/O (default):**
 ```bash
-holoviz-mcp
+uvx holoviz-mcp
 ```
 
 **HTTP (for remote development):**
 ```bash
-HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
+HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 ```
 
 </details>
@@ -365,6 +398,42 @@ The server automatically detects Panel-related packages in your environment:
 Install additional packages and restart the mcp server to include them.
 
 </details>
+
+## 🔄 Updates & Maintenance
+
+Keeping HoloViz MCP up to date ensures you have the latest features, bug fixes, and updated documentation.
+
+### Update the Python Package
+
+To update the holoviz-mcp Python package (including code and dependencies):
+
+```bash
+uv tool update holoviz_mcp[panel-extensions]
+```
+
+### Update the Documentation Index
+
+To refresh the searchable documentation index (recommended after package updates, or when new/updated docs are available):
+
+```bash
+uvx --from holoviz-mcp holoviz-mcp-update
+```
+
+## Tips & Tricks
+
+If you are a linux user, then you can make your life easier if you add the below to your .bashrc file
+
+```bash
+alias holoviz-mcp="uvx holoviz-mcp"
+alias holoviz-mcp-update="uv tool update holoviz_mcp[panel-extensions];uvx --from holoviz-mcp holoviz-mcp-update"
+```
+
+Then you can run
+
+```bash
+holoviz-mcp # to start the server
+holoviz-mcp-update # to update the python package AND the index
+```
 
 ## ⚙️ User Configuration
 
@@ -504,9 +573,10 @@ Run `pixi run pre-commit-install` to set up code quality checks.
 
 - [ ] Provide Panel and Panel Material UI best practices for both "beginners" and "intermediate" users. Current ones are for "intermediate users".
 - [ ] Find that "magic" prompt that makes the LLM run a development server with hot reload (`panel serve ... --dev`) while developing. Would make things more engaging. I've tried a lot.
-- [ ] Get [Panel #8018](https://github.com/holoviz/panel/issues/8018) fixed.
-- [ ] Make it configurable/ extensible enabling users to add other github repositories or their own best practice guides.
+
 - [ ] Try out [Playwright MCP](https://github.com/microsoft/playwright-mcp). Its probably worth recommending for taking screenshots and interacting with the app in the browser.
 - [ ] Provide reference guides for other HoloViz packages starting with hvPlot, param and HoloViews.
 - [ ] Base index on latest released versions instead of latest code (`Head`).
+- [ ] Add dev tools and agents! useful for HoloViz contributors.
+- [ ] Figure out if there is potential for integrating with or playing together with Lumen AI
 - [ ] Migrate to HoloViz organisation.
