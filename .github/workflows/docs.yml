@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Pixi
-        uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        uses: prefix-dev/setup-pixi@8ca4608ef7f4daeb54f5205b20d0b7cb42f11143 # v0.8.14
         with:
           environments: docs
 
