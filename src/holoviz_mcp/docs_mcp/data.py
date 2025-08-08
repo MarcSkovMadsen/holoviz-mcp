@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any
+from typing import Literal
 from typing import Optional
 
 import chromadb
@@ -22,6 +23,13 @@ from holoviz_mcp.config.models import GitRepository
 from holoviz_mcp.docs_mcp.models import Page
 
 logger = logging.getLogger(__name__)
+
+# Todo: Include source_url in Page model and add it to PageView._source_view
+# Todo: Add copy button to url and source view
+# Todo: Describe PageApp
+# Todo: Support theming
+# Todo: Avoid overflow-x in SearchApp sidebar
+# Todo: Add bokeh documentation to README extra config
 
 
 async def log_info(message: str, ctx: Context | None = None):
@@ -125,7 +133,7 @@ def list_best_practices() -> list[str]:
     return sorted(list(available_projects))
 
 
-def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
+def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transform: Literal["holoviz", "plotly", "datashader"] = "holoviz") -> str:
     """Convert a relative file path to a URL path.
 
     Converts file paths to web URLs by replacing file extensions with .html
@@ -134,6 +142,11 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
     Args:
         path: The file path to convert
         remove_first_part: Whether to remove the first path component (legacy compatibility)
+        url_transform: How to transform the file path into a URL:
+
+            - "holoviz": Replace file extension with .html (default)
+            - "plotly": Replace file extension with / (e.g., filename.md -> filename/)
+            - "datashader": Remove leading index and replace file extension with .html (e.g., 01_filename.md -> filename.html)
 
     Returns
     -------
@@ -145,6 +158,10 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
         "getting_started.html"
         >>> convert_path_to_url(Path("examples/reference/Button.ipynb"), False)
         "examples/reference/Button.html"
+        >>> convert_path_to_url(Path("/doc/python/3d-axes.md"), False, "plotly")
+        "/doc/python/3d-axes/"
+        >>> convert_path_to_url(Path("/examples/user_guide/10_Performance.ipynb"), False, "datashader")
+        "/examples/user_guide/Performance.html"
     """
     # Convert path to URL format
     parts = list(path.parts)
@@ -159,12 +176,20 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
     else:
         url_path = ""
 
-    # Replace file extensions with .html (simpler approach)
+    # Replace file extensions with suffix
     if url_path:
-        # Get the path without extension and add .html
         path_obj = Path(url_path)
-        if path_obj.suffix in {".md", ".ipynb", ".rst", ".txt"}:
-            url_path = str(path_obj.with_suffix(".html"))
+        if url_transform == "plotly":
+            url_path = str(path_obj.with_suffix(suffix="")) + "/"
+        elif url_transform == "datashader":
+            url_path = str(path_obj.with_suffix(suffix=".html"))
+            if "_" in path_obj.stem:
+                # Remove leading index and keep parent directories
+                parts = path_obj.stem.split("_", 1)
+                if len(parts) > 1:
+                    url_path = "/" + str(path_obj.with_name(parts[1] + ".html"))
+        else:
+            url_path = str(path_obj.with_suffix(suffix=".html"))
 
     return url_path
 
@@ -213,11 +238,14 @@ class DocumentationIndexer:
 
     def _initialize_embedding_model(self) -> SentenceTransformer:
         """Initialize the SentenceTransformer with SSL certificate handling."""
+        # "all-MiniLM-L6-v2"
+        # "Qwen/Qwen3-Embedding-0.6B"
+        # "mixedbread-ai/mxbai-embed-large-v1"
         model_name = os.getenv("HOLOVIZ_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
         try:
             # Try to load the model normally first
-            return SentenceTransformer(model_name)
+            return SentenceTransformer(model_name, truncate_dim=384)  # Chrome uses 384 dimensions
         except Exception as e:
             if "SSL" in str(e) or "certificate" in str(e).lower():
                 logger.warning(f"SSL certificate error encountered: {e}")
@@ -384,10 +412,10 @@ class DocumentationIndexer:
                 adjusted_path = Path(*path_parts) if path_parts else Path(".")
 
             # Don't remove first part since we already adjusted the path
-            doc_path = convert_path_to_url(adjusted_path, remove_first_part=False)
+            doc_path = convert_path_to_url(adjusted_path, remove_first_part=False, url_transform=repo_config.url_transform)
         else:
             # Convert file path to URL format normally (remove first part for legacy compatibility)
-            doc_path = convert_path_to_url(path, remove_first_part=True)
+            doc_path = convert_path_to_url(path, remove_first_part=True, url_transform=repo_config.url_transform)
 
         # Combine base URL, folder URL path, and document path
         if folder_url_path:
@@ -397,7 +425,8 @@ class DocumentationIndexer:
 
         return full_url.replace("//", "/").replace(":/", "://")  # Fix double slashes
 
-    def _extract_title_from_markdown(self, content: str, fallback_filename: str = "") -> str:
+    @staticmethod
+    def _extract_title_from_markdown(content: str, fallback_filename: str = "") -> str:
         """Extract title from markdown content, with filename fallback."""
         lines = content.split("\n")
         for line in lines:
@@ -405,37 +434,55 @@ class DocumentationIndexer:
             if line.startswith("# "):
                 # Return just the title text without the "# " prefix
                 return line[2:].strip()
+            if line.startswith("##"):
+                break
 
         # If no title found and fallback filename provided, use filename
         if fallback_filename:
             # Extract filename without extension and clean it up
             title = Path(fallback_filename).stem
             # Replace underscores with spaces and title case
-            title = title.replace("_", " ").title()
+            # Todo: strip initial numbering like holoviz examples/tutorial/02_Plotting.ipynb
+            title = title.replace("_", " ").replace("-", " ").title()
             return title
 
-        return ""
+        return "No Title"
 
-    def _extract_description_from_markdown(self, content: str) -> str:
+    @staticmethod
+    def _extract_description_from_markdown(content: str, max_length=200) -> str:
         """Extract description from markdown content."""
-        # Remove title and get first paragraph
+        content = content.strip()
+
+        # Plotly documents start with --- ... --- section. Skip the section
+        if content.startswith("---"):
+            content = content.split("---", 2)[-1].strip()
+
         lines = content.split("\n")
-        description_lines = []
-        found_title = False
+        clean_lines = []
+        in_code_block = False
 
         for line in lines:
-            line = line.strip()
-            if line.startswith("# "):
-                found_title = True
+            if line.strip().startswith("```"):
+                in_code_block = not in_code_block
                 continue
-            if found_title and line:
-                if line.startswith(("#", "```", "---")):
-                    break
-                description_lines.append(line)
-                if len(" ".join(description_lines)) > 200:
-                    break
 
-        return " ".join(description_lines)[:200] + "..." if description_lines else ""
+            if in_code_block or line.startswith(("#", "    ", "\t", "---", "___")):
+                continue
+
+            clean_lines.append(line)
+
+        # Join lines and clean up
+        clean_content = "\n".join(clean_lines).strip()
+
+        # Remove extra whitespace and limit length
+        clean_content = " ".join(clean_content.split())
+
+        if len(clean_content) > max_length:
+            clean_content = clean_content[:max_length].rsplit(" ", 1)[0]
+        if not clean_content.endswith("."):
+            clean_content += " ..."
+
+        return clean_content
 
     def convert_notebook_to_markdown(self, notebook_path: Path) -> str:
         """Convert a Jupyter notebook to markdown."""

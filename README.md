@@ -462,6 +462,7 @@ docs:
     plotly:
       url: "https://github.com/plotly/plotly.py.git"
       base_url: "https://plotly.com/python"
+      target_suffix: "plotly"
     altair:
       url: "https://github.com/altair-viz/altair.git"
       base_url: "https://altair-viz.github.io"
