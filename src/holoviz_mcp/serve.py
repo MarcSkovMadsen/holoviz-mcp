@@ -20,7 +20,8 @@ def main() -> None:
         logger.warning("No Panel apps found in apps directory")
         return
 
-    cmd = ["panel", "serve", *app_files, *sys.argv[1:]]
+    # Use python -m panel to ensure we use the same Python environment
+    cmd = [sys.executable, "-m", "panel", "serve", *app_files, *sys.argv[1:]]
     logger.info(f"Running: {' '.join(cmd)}")
 
     try:
