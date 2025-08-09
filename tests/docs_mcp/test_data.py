@@ -1,7 +1,9 @@
 from pathlib import Path
 
 import pytest
+from pydantic import AnyHttpUrl
 
+from holoviz_mcp.config import GitRepository
 from holoviz_mcp.docs_mcp.data import DocumentationIndexer
 from holoviz_mcp.docs_mcp.data import convert_path_to_url
 
@@ -189,3 +191,52 @@ def test_extract_title_from_markdown(content, filename, expected):
     indexer = DocumentationIndexer()
 
     assert indexer._extract_title_from_markdown(content, filename) == expected
+
+
+def test_to_title():
+    path = "examples/tutorial/02_Plotting.ipynb"
+    indexer = DocumentationIndexer
+    assert indexer._to_title(path) == "Plotting"
+
+
+def test_to_source_url_github():
+    repo_config = GitRepository(url=AnyHttpUrl("https://github.com/holoviz/panel.git"), base_url=AnyHttpUrl("https://panel.holoviz.org/"))
+    file_path = "examples/reference/widgets/Button.ipynb"
+    actual = DocumentationIndexer._to_source_url(Path(file_path), repo_config)
+    assert actual == "https://github.com/holoviz/panel/blob/main/examples/reference/widgets/Button.ipynb"
+
+
+def test_to_source_url_azure_devops():
+    repo_config = GitRepository(
+        url=AnyHttpUrl("https://dev.azure.com/test-organisation/TestProject/_git/test-repository"), base_url=AnyHttpUrl("https://panel.holoviz.org/")
+    )
+    file_path = "examples/reference/widgets/Button.ipynb"
+    actual = DocumentationIndexer._to_source_url(Path(file_path), repo_config)
+    assert actual == "https://dev.azure.com/test-organisation/TestProject/_git/test-repository?path=/examples/reference/widgets/Button.ipynb&version=GBmain"
+
+
+def test_to_source_url_github_raw():
+    repo_config = GitRepository(url=AnyHttpUrl("https://github.com/holoviz/panel.git"), base_url=AnyHttpUrl("https://panel.holoviz.org/"))
+    file_path = "examples/reference/widgets/Button.ipynb"
+    actual = DocumentationIndexer._to_source_url(Path(file_path), repo_config, raw=True)
+    assert actual == "https://raw.githubusercontent.com/holoviz/panel/refs/heads/main/examples/reference/widgets/Button.ipynb"
+
+
+def test_to_source_url_azure_devops_raw():
+    repo_config = GitRepository(
+        url=AnyHttpUrl("https://dev.azure.com/test-organisation/TestProject/_git/test-repository"), base_url=AnyHttpUrl("https://panel.holoviz.org/")
+    )
+    file_path = "examples/reference/widgets/Button.ipynb"
+    actual = DocumentationIndexer._to_source_url(Path(file_path), repo_config, raw=True)
+    assert (
+        actual
+        == "https://dev.azure.com/test-organisation/TestProject/_apis/sourceProviders/TfsGit/filecontents?repository=test-repository&path=/examples/reference/widgets/Button.ipynb&commitOrBranch=main&api-version=7.0"
+    )
+
+
+# Azure Devops
+#
+# https://dev.azure.com/dongenergy-p/TradingAnalytics/_git/mt-docs?path=/docs/guides/daily_operation_short_version.md
+# https://dev.azure.com/dongenergy-p/TradingAnalytics/_apis/sourceProviders/TfsGit/filecontents?repository=mt-docs&path=/docs/guides/daily_operation_short_version.md&commitOrBranch=main&api-version=7.0
+# From: https://dongenergy-p@dev.azure.com/dongenergy-p/TradingAnalytics/_git/mt-docs and /docs/guides/daily_operation_short_version.md
+# To: https://dev.azure.com/dongenergy-p/TradingAnalytics/_git/mt-docs?path=/docs/guides/daily_operation_short_version.md&version=GBmain

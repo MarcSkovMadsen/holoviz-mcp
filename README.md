@@ -304,7 +304,7 @@ The AI assistant provides accurate, contextual answers with:
 - **get_best_practices**: Get best practices for using a project with LLMs.
 - **list_best_practices**: List all available best practices projects.
 - **get_reference_guide**: Find reference guides for specific HoloViz components.
-- **get_page**: Retrieve a specific documentation page by path and project.
+- **get_document**: Retrieve a specific document by path and project.
 - **search**: Search HoloViz documentation using semantic similarity.
 
 </details>

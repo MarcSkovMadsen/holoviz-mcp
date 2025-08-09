@@ -41,8 +41,8 @@ async def test_list_projects():
 
 
 @pytest.mark.asyncio
-async def test_pages_semantic_search():
-    """Test the pages tool with semantic search queries."""
+async def test_semantic_search():
+    """Test the search tool."""
     client = Client(mcp)
     async with client:
         # Test basic semantic search across all projects
@@ -52,19 +52,20 @@ async def test_pages_semantic_search():
         # Should return up to 5 results by default
         assert len(result.data) <= 5
 
-        # Verify each result is a proper Page object
-        for page in result.data:
-            assert "title" in page
-            assert "url" in page
-            assert "project" in page
-            assert "path" in page
+        # Verify each result is a proper Document
+        for document in result.data:
+            assert "title" in document
+            assert "url" in document
+            assert "project" in document
+            assert "source_path" in document
+            assert "source_url" in document
             # Should include content by default
-            assert "content" in page
+            assert "content" in document
 
 
 @pytest.mark.asyncio
-async def test_pages_with_project_filter():
-    """Test the pages tool with project filtering."""
+async def test_search_by_project():
+    """Test the search tool with project filtering."""
     client = Client(mcp)
     async with client:
         # Test search with specific project filter
@@ -73,13 +74,13 @@ async def test_pages_with_project_filter():
         assert isinstance(result.data, list)
 
         # All results should be from hvplot project
-        for page in result.data:
-            assert page["project"] == "hvplot"
+        for document in result.data:
+            assert document["project"] == "hvplot"
 
 
 @pytest.mark.asyncio
-async def test_pages_with_custom_max_results():
-    """Test the pages tool with custom max_results parameter."""
+async def test_search_with_custom_max_results():
+    """Test the search tool with custom max_results parameter."""
     client = Client(mcp)
     async with client:
         # Test search with limited results
@@ -90,13 +91,13 @@ async def test_pages_with_custom_max_results():
         assert len(result.data) <= 3
 
         # All results should be from panel project
-        for page in result.data:
-            assert page["project"] == "panel"
+        for document in result.data:
+            assert document["project"] == "panel"
 
 
 @pytest.mark.asyncio
-async def test_pages_without_content():
-    """Test the pages tool with content=False for metadata only."""
+async def test_search_without_content():
+    """Test the search tool with content=False for metadata only."""
     client = Client(mcp)
     async with client:
         # Test search without content for faster response
@@ -105,18 +106,19 @@ async def test_pages_without_content():
         assert isinstance(result.data, list)
 
         # Verify each result has metadata but no content
-        for page in result.data:
-            assert "title" in page
-            assert "url" in page
-            assert "project" in page
-            assert "path" in page
+        for document in result.data:
+            assert "title" in document
+            assert "url" in document
+            assert "project" in document
+            assert "source_path" in document
+            assert "source_url" in document
             # Should not include content when content=False
-            assert page.get("content") is None
+            assert document.get("content") is None
 
 
 @pytest.mark.asyncio
-async def test_pages_material_ui_specific():
-    """Test the pages tool with Material UI specific query."""
+async def test_search_material_ui_specific():
+    """Test the search tool with Material UI specific query."""
     client = Client(mcp)
     async with client:
         # Test search for Material UI styling
@@ -125,13 +127,13 @@ async def test_pages_material_ui_specific():
         assert isinstance(result.data, list)
 
         # Results should be from panel-material-ui project
-        for page in result.data:
-            assert page["project"] == "panel-material-ui"
+        for document in result.data:
+            assert document["project"] == "panel-material-ui"
 
 
 @pytest.mark.asyncio
-async def test_pages_empty_query():
-    """Test the pages tool with edge cases."""
+async def test_search_empty_query():
+    """Test the search tool with edge cases."""
     client = Client(mcp)
     async with client:
         # Test with empty query
@@ -141,8 +143,8 @@ async def test_pages_empty_query():
 
 
 @pytest.mark.asyncio
-async def test_pages_invalid_project():
-    """Test the pages tool with invalid project name."""
+async def test_search_invalid_project():
+    """Test the search tool with invalid project name."""
     client = Client(mcp)
     async with client:
         # Test with non-existent project
@@ -153,11 +155,11 @@ async def test_pages_invalid_project():
 
 
 @pytest.mark.asyncio
-async def test_page():
-    """Test the page tool with project filtering."""
+async def test_search_with_project_filter():
+    """Test the search tool with project filtering."""
     client = Client(mcp)
     async with client:
         # Test search with specific project filter
-        result = await client.call_tool("get_page", {"path": "doc/index.md", "project": "hvplot"})
+        result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "hvplot"})
         assert result.data
         assert result.data.title == "hvPlot"

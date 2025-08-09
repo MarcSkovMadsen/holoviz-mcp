@@ -5,7 +5,28 @@ import panel_material_ui as pmui
 import param
 
 from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.models import Page
+from holoviz_mcp.docs_mcp.models import Document
+
+URL_CSS = """
+#url, .url {
+    display: inline-block;
+    margin-bottom: 8px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+#iframe {
+    height: calc(100% - 100px);
+    width: 100%;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+"""
 
 
 @pn.cache
@@ -14,11 +35,11 @@ def _get_indexer() -> DocumentationIndexer:
     return DocumentationIndexer()
 
 
-class SearchPagesConfig(param.Parameterized):
+class SearchConfiguration(param.Parameterized):
     """
     Configuration for the search application.
 
-    Parameters correspond to the arguments of the search_pages function.
+    Parameters correspond to the arguments of the search_documentation function.
     """
 
     query = param.String(default="What is HoloViz?", doc="Search text for semantic similarity search across the documentation")
@@ -29,149 +50,157 @@ class SearchPagesConfig(param.Parameterized):
         doc="Filter results to a specific project. Select 'all' for all projects.",
     )
 
-    content = param.Boolean(default=True, doc="Include full page content in results. Disable for smaller responses with metadata only.")
+    content = param.Boolean(default=True, doc="Include full document content in results. Disable for smaller responses with metadata only.")
 
     max_results = param.Integer(default=5, bounds=(1, 50), doc="Maximum number of search results to return")
 
     search = param.Event(doc="Event to trigger search when parameters change")
 
-    results = param.List(item_type=Page, doc="Search results as a list of Page objects", precedence=-1)
+    results = param.List(item_type=Document, doc="Search results as a list of Documents", precedence=-1)
 
     def __init__(self, **params):
-        """Initialize the SearchPagesConfig with default values."""
+        """Initialize the SearchConfiguration with default values."""
         super().__init__(**params)
 
     @param.depends("search", watch=True)
     async def _update_results(self):
         indexer = _get_indexer()
         project = self.project if self.project != "all" else None
-        self.results = await indexer.search_pages(self.query, project=project, content=self.content, max_results=self.max_results)
+        self.results = await indexer.search(self.query, project=project, content=self.content, max_results=self.max_results)
 
 
 async def _update_projects():
-    SearchPagesConfig.param.project.objects = ["all"] + await _get_indexer().list_projects()  # Ensure indexer is initialized
+    SearchConfiguration.param.project.objects = ["all"] + await _get_indexer().list_projects()  # Ensure indexer is initialized
 
 
-class PagesMenuList(pn.viewable.Viewer):
+class DocumentsMenuList(pn.viewable.Viewer):
     """
-    A Menu for selecting documentation pages.
+    A Menu for selecting a Document.
 
-    This menu allows users to select a page from a list of Page objects.
+    This menu allows users to select a Document from a list of Documents.
     """
 
     value = param.ClassSelector(
         default=None,
-        class_=Page,
+        class_=Document,
         allow_None=True,
         doc="""
-        Last clicked Page item.""",
+        Last clicked Document.""",
     )
 
-    pages = param.List(item_type=Page, doc="List of Page objects to display in the menu", allow_refs=True)
+    documents = param.List(item_type=Document, doc="List of Documents to display in the menu", allow_refs=True)
 
     def __panel__(self):
-        """Create the Panel layout for the PagesMenu."""
+        """Create the Panel layout."""
         menu = pmui.MenuList(items=self._items)
         pn.bind(self._update_value, menu.param.active, watch=True)
         return menu
 
-    @param.depends("pages", watch=True)
+    @param.depends("documents", watch=True)
     def _reset_value(self):
-        """Reset the value when pages change."""
-        if self.pages:
-            self.value = self.pages[0]
+        """Reset the value when the documents change."""
+        if self.documents:
+            self.value = self.documents[0]
         else:
             self.value = None
 
     def _update_value(self, event):
-        if event and self.pages:
+        if event and self.documents:
             index = event[0]
-            self.value = self.pages[index]
+            self.value = self.documents[index]
         else:
             self.value = None
 
     @staticmethod
-    def _to_secondary(page: Page):
-        """Convert a Page object to a secondary text for the menu item."""
-        return f"""{page.description}
+    def _to_secondary(document: Document):
+        """Convert a Document to a secondary text for the menu item."""
+        return f"""{document.description}
 
-Relevance Score: {page.relevance_score or 'N/A':0.2f}
+Relevance Score: {document.relevance_score or 'N/A':0.2f}
 """
 
-    @param.depends("pages")
+    @param.depends("documents")
     def _items(self):
-        return [{"label": f"{page.project}: {page.title}", "icon": None, "secondary": self._to_secondary(page)} for page in self.pages]
+        return [{"label": f"{document.project}: {document.title}", "icon": None, "secondary": self._to_secondary(document)} for document in self.documents]
 
 
-class PageView(pn.viewable.Viewer):
+class DocumentView(pn.viewable.Viewer):
     """
-    A Panel Material UI view for displaying a single documentation page.
+    A Panel Material UI view for displaying a single Document.
 
-    This view renders the content of a Page object in a tabbed interface.
+    This view renders the content of a Document in a tabbed interface.
     """
 
-    page = param.ClassSelector(class_=Page, doc="Page object to display", allow_refs=True)
+    document = param.ClassSelector(class_=Document, doc="Document to display", allow_refs=True)
 
     def __panel__(self):
-        """Create the Panel layout for the PageView."""
+        """Create the Panel layout."""
         return pmui.Tabs(
-            ("PAGE.URL", pmui.Column(self._url, pn.pane.HTML(self._url_view, sizing_mode="stretch_both"))),
+            ("URL", pn.pane.HTML(self._url_view, sizing_mode="stretch_both", stylesheets=[URL_CSS])),
             # Hack Column Scroll
-            ("PAGE.CONTENT", pmui.Column(self._source_url, pn.Column(pn.pane.Markdown(self._source_view, sizing_mode="stretch_both"), scroll=True))),
-            ("PAGE", pn.pane.JSON(self._json_view, sizing_mode="stretch_both")),
+            ("CONTENT", pn.Column(pn.pane.Markdown(self._source_view, sizing_mode="stretch_width", stylesheets=[URL_CSS]), sizing_mode="stretch_both", scroll=True)),
+            ("DOCUMENT", pn.Column(pn.pane.JSON(self._json_view, sizing_mode="stretch_both"), scroll=True)),
             dynamic=True,
         )
 
-    @param.depends("page")
+    @param.depends("document")
+    def _js_copy_url_to_clipboard(self):
+        return f"navigator.clipboard.writeText('{self._url()}');"
+
+    @param.depends("document")
     def _url(self):
-        """Get the URL of the page."""
-        if not self.page:
+        """Get the URL of the document."""
+        if not self.document:
             return ""
-        url = self.page.url
+        url = self.document.url
         return f"[{url}]({url})"
 
-    @param.depends("page")
+    @param.depends("document")
     def _source_url(self):
-        """Get the source URL of the page."""
-        if not self.page:
+        """Get the source URL of the document."""
+        if not self.document:
             return ""
-        # Hack use page instead
-        return f"[{self.page.path}]({self.page.path})"
+        return f"[{self.document.source_url}]({self.document.source_url})"
 
-    @param.depends("page")
+    @param.depends("document")
     def _json_view(self):
-        """Create a JSON view for the page."""
-        if not self.page:
+        """Create a JSON view for the document."""
+        if not self.document:
             return None
-        return self.page.model_dump_json()
+        return self.document.model_dump_json()
 
-    @param.depends("page")
+    @param.depends("document")
     def _source_view(self):
-        """Create a source view for the page."""
-        if not self.page:
-            return "No page selected."
-        if not self.page.content:
-            return "No content available for this page."
-        if self.page.path.endswith(".rst"):
+        """Create a source view for the document."""
+        if not self.document:
+            return "No document selected."
+        if not self.document.content:
+            return "No content available for this document."
+        if self.document.source_path.endswith(".rst"):
             language = "restructuredtext"
         else:
             language = "markdown"
 
         return f"""
+<a class="url" href="{self.document.source_url}" target="_blank">{self.document.source_url}</a>
+
 `````{language}
-{self.page.content}
+{self.document.content}
 `````
 """
 
-    @param.depends("page")
+    @param.depends("document")
     def _url_view(self):
-        """Create a URL view for the page."""
-        if not self.page:
-            return "No page selected."
-        if not self.page.url:
-            return "No URL available for this page."
+        """Create a URL view for the document."""
+        if not self.document:
+            return "No document selected."
+        if not self.document.url:
+            return "No URL available for this document."
 
-        return f"""<iframe src="{self.page.url}" width="100%" height="100%" style="border:none;box-shadow:none;overflow:hidden;border-radius:8px;"></iframe>"""
+        return f"""\
+    <a id="url" href="{self.document.url}" target="_blank">{self.document.url}</a>
+    <iframe id="iframe" src="{self.document.url}"></iframe>
+    """
 
 
 class SearchApp(pn.viewable.Viewer):
@@ -184,11 +213,11 @@ class SearchApp(pn.viewable.Viewer):
         - Integration with HoloViz MCP docs_search tool
     """
 
-    config = param.ClassSelector(class_=SearchPagesConfig, doc="Configuration for the search app")
+    config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):
         """Initialize the SearchApp with default configuration."""
-        params["config"] = params.get("config", SearchPagesConfig())
+        params["config"] = params.get("config", SearchConfiguration())
         super().__init__(**params)
 
     async def _config(self):
@@ -206,14 +235,14 @@ class SearchApp(pn.viewable.Viewer):
     def __panel__(self):
         """Create the Panel layout for the search app."""
         with pn.config.set(sizing_mode="stretch_width"):
-            menu = PagesMenuList(pages=self.config.param.results)
+            menu = DocumentsMenuList(documents=self.config.param.results)
 
             return pmui.Page(
                 title="HoloViz MCP - Search Tool",
                 site_url="./",
                 sidebar=[self._config, menu],
                 sidebar_width=400,
-                main=[pmui.Container(PageView(page=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
+                main=[pmui.Container(DocumentView(document=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
             )
 
 
