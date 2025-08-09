@@ -104,6 +104,7 @@ class ConfigViewer(param.Parameterized):
         page = pmui.Page(
             title="HoloViz MCP Configuration Viewer",
             main=[viewer.view()],
+            site_url="./",
         )
         viewer.dark_theme = page.param.dark_theme
         return page
