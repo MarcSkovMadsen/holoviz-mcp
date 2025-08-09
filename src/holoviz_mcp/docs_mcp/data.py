@@ -24,10 +24,7 @@ from holoviz_mcp.docs_mcp.models import Document
 
 logger = logging.getLogger(__name__)
 
-# Todo: Include source_url in Document model and add it to DocumentView._source_view
-# Todo: Add copy button to url and source view
 # Todo: Describe DocumentApp
-# Todo: Support theming
 # Todo: Avoid overflow-x in SearchApp sidebar
 # Todo: Add bokeh documentation to README extra config
 
@@ -429,7 +426,6 @@ class DocumentationIndexer:
     def _to_title(fallback_filename: str = "") -> str:
         """Extract title from a filename or return a default title."""
         title = Path(fallback_filename).stem
-        # Todo: strip initial numbering like holoviz examples/tutorial/02_Plotting.ipynb
         if "_" in title and title.split("_")[0].isdigit():
             title = title.split("_", 1)[-1]
         title = title.replace("_", " ").replace("-", " ").title()
@@ -854,6 +850,7 @@ class DocumentationIndexer:
 
             return documents
         except Exception as e:
+            raise e
             logger.error(f"Search failed for query '{query}': {e}")
             return []
 

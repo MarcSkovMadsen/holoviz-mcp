@@ -28,6 +28,40 @@ URL_CSS = """
 }
 """
 
+ALL = "ALL"
+
+ABOUT = """
+## Documentation Search Tool
+
+This tool provides powerful semantic search capabilities across the extended HoloViz documentation.
+
+### Search Parameters
+
+- **`query`**: Your search text - the tool uses semantic similarity to find the most relevant documents
+- **`project`**: Filter results by specific project (e.g., "panel", "hvplot", "datashader") or search across all projects
+- **`max_results`**: Control the number of results returned (1-50 documents)
+- **`content`**: Choose whether to include full document content or just metadata for faster responses
+
+### What's Indexed
+
+By default, the complete HoloViz ecosystem documentation is indexed and searchable, including:
+
+- [Panel](https://panel.holoviz.org), [HvPlot](https://hvplot.holoviz.org), [Datashader](https://datashader.holoviz.org), [HoloViews](https://holoviews.org), [GeoViews](https://geoviews.org)
+- [Param](https://param.holoviz.org), [Colorcet](https://colorcet.holoviz.org), and core HoloViz guides
+
+The system is extensible and can be configured to include additional projects like Altair, Bokeh, Pandas, Plotly, Polars or even your own custom documentation.
+
+### Why Use This Tool?
+
+Unlike simple keyword search, this tool understands context and meaning, helping you discover relevant information even when you don't know the exact terminology used in the documentation.
+
+For LLMs this tool provides a structured way to access and retrieve relevant documentation, when using the HoloViz ecosystem.
+
+### Learn More
+
+For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://github.com/MarcSkovMadsen/holoviz-mcp).
+"""  # noqa: E501
+
 
 @pn.cache
 def _get_indexer() -> DocumentationIndexer:
@@ -45,14 +79,16 @@ class SearchConfiguration(param.Parameterized):
     query = param.String(default="What is HoloViz?", doc="Search text for semantic similarity search across the documentation")
 
     project = param.Selector(
-        default="ALL",
-        objects=["ALL", "panel", "hvplot", "datashader", "holoviews", "geoviews", "param", "colorcet", "holoviz"],
+        default=ALL,
+        objects=[ALL, "panel", "hvplot", "datashader", "holoviews", "geoviews", "param", "colorcet", "holoviz"],
         doc="Filter results to a specific project. Select 'all' for all projects.",
     )
 
-    content = param.Boolean(default=True, doc="Include full document content in results. Disable for smaller responses with metadata only.")
-
     max_results = param.Integer(default=5, bounds=(1, 50), doc="Maximum number of search results to return")
+
+    content = param.Boolean(
+        default=True, label="Include Full Content", doc="Include full document content in results. Disable for faster and simpler responses with metadata only."
+    )
 
     search = param.Event(doc="Event to trigger search when parameters change")
 
@@ -62,15 +98,18 @@ class SearchConfiguration(param.Parameterized):
         """Initialize the SearchConfiguration with default values."""
         super().__init__(**params)
 
+        if pn.state.location:
+            pn.state.location.sync(self, parameters=["query", "project", "content", "max_results"])
+
     @param.depends("search", watch=True)
     async def _update_results(self):
         indexer = _get_indexer()
-        project = self.project if self.project != "all" else None
+        project = self.project if self.project != ALL else None
         self.results = await indexer.search(self.query, project=project, content=self.content, max_results=self.max_results)
 
 
-async def _update_projects():
-    SearchConfiguration.param.project.objects = ["all"] + await _get_indexer().list_projects()  # Ensure indexer is initialized
+async def _update_projects(self):
+    self.config.param.project.objects = [ALL] + await _get_indexer().list_projects()  # Ensure indexer is initialized
 
 
 class DocumentsMenuList(pn.viewable.Viewer):
@@ -221,7 +260,8 @@ class SearchApp(pn.viewable.Viewer):
         super().__init__(**params)
 
     async def _config(self):
-        await _update_projects()
+        await _update_projects(self)
+
         with pn.config.set(sizing_mode="stretch_width"):
             return pn.Param(
                 self.config,
@@ -237,12 +277,28 @@ class SearchApp(pn.viewable.Viewer):
         with pn.config.set(sizing_mode="stretch_width"):
             menu = DocumentsMenuList(documents=self.config.param.results)
 
+            about_button = pmui.IconButton(
+                label="About", icon="info", description="Click to learn about the Search Tool.", sizing_mode="fixed", color="light", margin=(10, 0)
+            )
+            about = pmui.Dialog(ABOUT, close_on_click=True, width=0)
+            about_button.js_on_click(args={"about": about}, code="about.data.open = true")
+
+            github_button = pmui.IconButton(
+                label="Github", icon="star", description="Give HoloViz-MCP a star on GitHub", sizing_mode="fixed", color="light", margin=(10, 0)
+            )
+            href = "https://github.com/MarcSkovMadsen/holoviz-mcp"
+            js_code_to_open_holoviz_mcp = f"window.open('{href}', '_blank')"
+            github_button.js_on_click(code=js_code_to_open_holoviz_mcp)
+
             return pmui.Page(
-                title="HoloViz MCP - Search Tool",
+                title="HoloViz MCP Search Tool",
                 site_url="./",
                 sidebar=[self._config, menu],
                 sidebar_width=400,
+                header=[pn.Row(about, about_button, github_button, align="end")],
                 main=[pmui.Container(DocumentView(document=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
+                # logo="https://holoviz.org/_static/holoviz-logo-unstacked.svg",
+                # stylesheets=[".logo {background: white;border-radius: 5px;margin: 15px 15px 5px 10px;padding:7px}"],
             )
 
 
