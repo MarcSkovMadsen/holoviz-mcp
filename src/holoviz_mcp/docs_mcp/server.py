@@ -14,7 +14,7 @@ from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.docs_mcp.data import DocumentationIndexer
 from holoviz_mcp.docs_mcp.data import get_best_practices as _get_best_practices
 from holoviz_mcp.docs_mcp.data import list_best_practices as _list_best_practices
-from holoviz_mcp.docs_mcp.models import Page
+from holoviz_mcp.docs_mcp.models import Document
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +75,10 @@ def list_best_practices() -> list[str]:
 
 
 @mcp.tool
-async def get_reference_guide(component: str, project: str | None = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
+async def get_reference_guide(component: str, project: str | None = None, content: bool = True, ctx: Context | None = None) -> list[Document]:
     """Find reference guides for specific HoloViz components.
 
-    Reference guides are a subset of all documentation pages that focus on specific UI components
+    Reference guides are a subset of all documents that focus on specific UI components
     or plot types, such as:
 
     - `panel`: "Button", "TextInput", ...
@@ -96,7 +96,7 @@ async def get_reference_guide(component: str, project: str | None = None, conten
 
     Returns
     -------
-        list[Page]: A list of reference guide pages for the component.
+        list[Document]: A list of reference guides for the component.
 
     Examples
     --------
@@ -128,22 +128,21 @@ async def list_projects() -> list[str]:
 
 
 @mcp.tool
-async def get_page(path: str, project: str, ctx: Context) -> Page:
-    # Change to imperative mode for docstring
-    """Retrieve a specific documentation page by path and project.
+async def get_document(path: str, project: str, ctx: Context) -> Document:
+    """Retrieve a specific document by path and project.
 
-    Use this tool to understand how to use a specific topic or feature of Panel Material UI.
+    Use this tool to look up a specific document within a project.
 
     Args:
-        path: The relative path to the documentation file (e.g., "index.md", "how_to/customize.md")
-        project: the name of the project (e.g., "panel", "panel_material_ui", "hvplot")
+        path: The relative path to the source document (e.g., "index.md", "how_to/customize.md")
+        project: the name of the project (e.g., "panel", "panel-material-ui", "hvplot")
 
     Returns
     -------
-        The markdown content of the specified page
+        The markdown content of the specified document.
     """
     indexer = get_indexer()
-    return await indexer.get_page(path, project, ctx=ctx)
+    return await indexer.get_document(path, project, ctx=ctx)
 
 
 @mcp.tool
@@ -153,7 +152,7 @@ async def search(
     content: bool = True,
     max_results: int = 5,
     ctx: Context | None = None,
-) -> list[Page]:
+) -> list[Document]:
     """Search HoloViz documentation using semantic similarity.
 
     Optimized for finding relevant documentation based on natural language queries.
@@ -171,18 +170,18 @@ async def search(
 
     Returns
     -------
-        list[Page]: A list of relevant documentation pages ordered by relevance.
+        list[Document]: A list of relevant documents ordered by relevance.
 
     Examples
     --------
-    >>> pages("How to style Material UI components?", "panel_material_ui")  # Semantic search in specific project
-    >>> pages("interactive plotting with widgets", "hvplot")  # Find hvplot interactive guides
-    >>> pages("dashboard layout best practices")  # Search across all projects
-    >>> pages("custom widgets", project="panel", max_results=3)  # Limit results
-    >>> pages("parameter handling", content=False)  # Get metadata only for overview
+    >>> search("How to style Material UI components?", "panel_material_ui")  # Semantic search in specific project
+    >>> search("interactive plotting with widgets", "hvplot")  # Find hvplot interactive guides
+    >>> search("dashboard layout best practices")  # Search across all projects
+    >>> search("custom widgets", project="panel", max_results=3)  # Limit results
+    >>> search("parameter handling", content=False)  # Get metadata only for overview
     """
     indexer = get_indexer()
-    return await indexer.search_pages(query, project, content, max_results, ctx=ctx)
+    return await indexer.search(query, project, content, max_results, ctx=ctx)
 
 
 @mcp.tool

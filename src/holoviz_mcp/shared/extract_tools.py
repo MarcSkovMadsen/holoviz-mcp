@@ -35,7 +35,7 @@ async def extract_tools():
                 tool_data["parameters"].append({"name": param_name, "type": param_type, "required": required, "description": desc})
 
         # Categorize tools
-        if any(x in tool_name for x in ["docs", "get_best_practices", "get_reference_guide", "get_page", "update_docs"]) or (
+        if any(x in tool_name for x in ["docs", "get_best_practices", "get_reference_guide", "get_document", "update_docs"]) or (
             tool_name == "search" and "component" not in str(tool_info)
         ):
             docs_tools.append(tool_data)

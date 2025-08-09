@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any
+from typing import Literal
 from typing import Optional
 
 import chromadb
@@ -19,9 +20,13 @@ from sentence_transformers import SentenceTransformer
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.config.models import FolderConfig
 from holoviz_mcp.config.models import GitRepository
-from holoviz_mcp.docs_mcp.models import Page
+from holoviz_mcp.docs_mcp.models import Document
 
 logger = logging.getLogger(__name__)
+
+# Todo: Describe DocumentApp
+# Todo: Avoid overflow-x in SearchApp sidebar
+# Todo: Add bokeh documentation to README extra config
 
 
 async def log_info(message: str, ctx: Context | None = None):
@@ -125,7 +130,7 @@ def list_best_practices() -> list[str]:
     return sorted(list(available_projects))
 
 
-def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
+def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transform: Literal["holoviz", "plotly", "datashader"] = "holoviz") -> str:
     """Convert a relative file path to a URL path.
 
     Converts file paths to web URLs by replacing file extensions with .html
@@ -134,6 +139,11 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
     Args:
         path: The file path to convert
         remove_first_part: Whether to remove the first path component (legacy compatibility)
+        url_transform: How to transform the file path into a URL:
+
+            - "holoviz": Replace file extension with .html (default)
+            - "plotly": Replace file extension with / (e.g., filename.md -> filename/)
+            - "datashader": Remove leading index and replace file extension with .html (e.g., 01_filename.md -> filename.html)
 
     Returns
     -------
@@ -145,6 +155,10 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
         "getting_started.html"
         >>> convert_path_to_url(Path("examples/reference/Button.ipynb"), False)
         "examples/reference/Button.html"
+        >>> convert_path_to_url(Path("/doc/python/3d-axes.md"), False, "plotly")
+        "/doc/python/3d-axes/"
+        >>> convert_path_to_url(Path("/examples/user_guide/10_Performance.ipynb"), False, "datashader")
+        "/examples/user_guide/Performance.html"
     """
     # Convert path to URL format
     parts = list(path.parts)
@@ -159,12 +173,20 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True) -> str:
     else:
         url_path = ""
 
-    # Replace file extensions with .html (simpler approach)
+    # Replace file extensions with suffix
     if url_path:
-        # Get the path without extension and add .html
         path_obj = Path(url_path)
-        if path_obj.suffix in {".md", ".ipynb", ".rst", ".txt"}:
-            url_path = str(path_obj.with_suffix(".html"))
+        if url_transform == "plotly":
+            url_path = str(path_obj.with_suffix(suffix="")) + "/"
+        elif url_transform == "datashader":
+            url_path = str(path_obj.with_suffix(suffix=".html"))
+            if "_" in path_obj.stem:
+                # Remove leading index and keep parent directories
+                parts = path_obj.stem.split("_", 1)
+                if len(parts) > 1:
+                    url_path = "/" + str(path_obj.with_name(parts[1] + ".html"))
+        else:
+            url_path = str(path_obj.with_suffix(suffix=".html"))
 
     return url_path
 
@@ -213,11 +235,14 @@ class DocumentationIndexer:
 
     def _initialize_embedding_model(self) -> SentenceTransformer:
         """Initialize the SentenceTransformer with SSL certificate handling."""
+        # "all-MiniLM-L6-v2"
+        # "Qwen/Qwen3-Embedding-0.6B"
+        # "mixedbread-ai/mxbai-embed-large-v1"
         model_name = os.getenv("HOLOVIZ_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
         try:
             # Try to load the model normally first
-            return SentenceTransformer(model_name)
+            return SentenceTransformer(model_name, truncate_dim=384)  # Chrome uses 384 dimensions
         except Exception as e:
             if "SSL" in str(e) or "certificate" in str(e).lower():
                 logger.warning(f"SSL certificate error encountered: {e}")
@@ -384,10 +409,10 @@ class DocumentationIndexer:
                 adjusted_path = Path(*path_parts) if path_parts else Path(".")
 
             # Don't remove first part since we already adjusted the path
-            doc_path = convert_path_to_url(adjusted_path, remove_first_part=False)
+            doc_path = convert_path_to_url(adjusted_path, remove_first_part=False, url_transform=repo_config.url_transform)
         else:
             # Convert file path to URL format normally (remove first part for legacy compatibility)
-            doc_path = convert_path_to_url(path, remove_first_part=True)
+            doc_path = convert_path_to_url(path, remove_first_part=True, url_transform=repo_config.url_transform)
 
         # Combine base URL, folder URL path, and document path
         if folder_url_path:
@@ -397,7 +422,17 @@ class DocumentationIndexer:
 
         return full_url.replace("//", "/").replace(":/", "://")  # Fix double slashes
 
-    def _extract_title_from_markdown(self, content: str, fallback_filename: str = "") -> str:
+    @staticmethod
+    def _to_title(fallback_filename: str = "") -> str:
+        """Extract title from a filename or return a default title."""
+        title = Path(fallback_filename).stem
+        if "_" in title and title.split("_")[0].isdigit():
+            title = title.split("_", 1)[-1]
+        title = title.replace("_", " ").replace("-", " ").title()
+        return title
+
+    @classmethod
+    def _extract_title_from_markdown(cls, content: str, fallback_filename: str = "") -> str:
         """Extract title from markdown content, with filename fallback."""
         lines = content.split("\n")
         for line in lines:
@@ -405,37 +440,49 @@ class DocumentationIndexer:
             if line.startswith("# "):
                 # Return just the title text without the "# " prefix
                 return line[2:].strip()
+            if line.startswith("##"):
+                break
 
-        # If no title found and fallback filename provided, use filename
         if fallback_filename:
-            # Extract filename without extension and clean it up
-            title = Path(fallback_filename).stem
-            # Replace underscores with spaces and title case
-            title = title.replace("_", " ").title()
-            return title
+            return cls._to_title(fallback_filename)
 
-        return ""
+        return "No Title"
 
-    def _extract_description_from_markdown(self, content: str) -> str:
+    @staticmethod
+    def _extract_description_from_markdown(content: str, max_length=200) -> str:
         """Extract description from markdown content."""
-        # Remove title and get first paragraph
+        content = content.strip()
+
+        # Plotly documents start with --- ... --- section. Skip the section
+        if content.startswith("---"):
+            content = content.split("---", 2)[-1].strip()
+
         lines = content.split("\n")
-        description_lines = []
-        found_title = False
+        clean_lines = []
+        in_code_block = False
 
         for line in lines:
-            line = line.strip()
-            if line.startswith("# "):
-                found_title = True
+            if line.strip().startswith("```"):
+                in_code_block = not in_code_block
                 continue
-            if found_title and line:
-                if line.startswith(("#", "```", "---")):
-                    break
-                description_lines.append(line)
-                if len(" ".join(description_lines)) > 200:
-                    break
 
-        return " ".join(description_lines)[:200] + "..." if description_lines else ""
+            if in_code_block or line.startswith(("#", "    ", "\t", "---", "___")):
+                continue
+
+            clean_lines.append(line)
+
+        # Join lines and clean up
+        clean_content = "\n".join(clean_lines).strip()
+
+        # Remove extra whitespace and limit length
+        clean_content = " ".join(clean_content.split())
+
+        if len(clean_content) > max_length:
+            clean_content = clean_content[:max_length].rsplit(" ", 1)[0]
+        if not clean_content.endswith("."):
+            clean_content += " ..."
+
+        return clean_content
 
     def convert_notebook_to_markdown(self, notebook_path: Path) -> str:
         """Convert a Jupyter notebook to markdown."""
@@ -449,46 +496,64 @@ class DocumentationIndexer:
             logger.error(f"Failed to convert notebook {notebook_path}: {e}")
             return str(e)
 
-    def process_file(self, file_path: Path, project: str, folder_name: str = "") -> Optional[dict[str, Any]]:
+    @staticmethod
+    def _to_source_url(file_path: Path, repo_config: GitRepository, raw: bool = False) -> str:
+        """Generate source URL for a file based on repository configuration."""
+        url = str(repo_config.url)
+        branch = repo_config.branch or "main"
+        if url.startswith("https://github.com") and url.endswith(".git"):
+            url = url.replace("https://github.com/", "").replace(".git", "")
+            project, repository = url.split("/")
+            if raw:
+                return f"https://raw.githubusercontent.com/{project}/{repository}/refs/heads/{branch}/{file_path}"
+
+            return f"https://github.com/{project}/{repository}/blob/{branch}/{file_path}"
+        if "dev.azure.com" in url:
+            organisation = url.split("/")[3].split("@")[0]
+            project = url.split("/")[-3]
+            repo_name = url.split("/")[-1]
+            if raw:
+                return f"https://dev.azure.com/{organisation}/{project}/_apis/sourceProviders/TfsGit/filecontents?repository={repo_name}&path=/{file_path}&commitOrBranch={branch}&api-version=7.0"
+
+            return f"https://dev.azure.com/{organisation}/{project}/_git/{repo_name}?path=/{file_path}&version=GB{branch}"
+
+        raise ValueError(f"Unsupported repository URL format: {url}. Please provide a valid GitHub or Azure DevOps URL.")
+
+    def process_file(self, file_path: Path, project: str, repo_config: GitRepository, folder_name: str = "") -> Optional[dict[str, Any]]:
         """Process a file and extract metadata."""
         try:
-            # Handle different file types
             if file_path.suffix == ".ipynb":
                 content = self.convert_notebook_to_markdown(file_path)
             elif file_path.suffix in [".md", ".rst", ".txt"]:
-                # Handle all text-based files uniformly
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
             else:
-                # Skip files that aren't supported
                 logger.debug(f"Skipping unsupported file type: {file_path}")
                 return None
 
-            # Extract title and description
             title = self._extract_title_from_markdown(content, file_path.name)
             if not title:
-                # Additional fallback to filename
                 title = file_path.stem.replace("_", " ").title()
 
             description = self._extract_description_from_markdown(content)
 
-            # Generate relative path for documentation
             repo_path = self.repos_dir / project
             relative_path = file_path.relative_to(repo_path)
 
-            # Create document ID that includes path for disambiguation
             doc_id = self._generate_doc_id(project, relative_path)
 
-            # Check if this is a reference document using configurable patterns
             is_reference = self._is_reference_document(file_path, project, folder_name)
+
+            source_url = self._to_source_url(relative_path, repo_config)
 
             return {
                 "id": doc_id,
                 "title": title,
                 "url": self._generate_doc_url(project, relative_path, folder_name),
                 "project": project,
-                "path": str(relative_path),
-                "path_stem": file_path.stem,
+                "source_path": str(relative_path),
+                "source_path_stem": file_path.stem,
+                "source_url": source_url,
                 "description": description,
                 "content": content,
                 "is_reference": is_reference,
@@ -532,7 +597,7 @@ class DocumentationIndexer:
                     except ValueError:
                         continue
 
-                doc_data = self.process_file(file, project, folder_name)
+                doc_data = self.process_file(file, project, repo_config, folder_name)
                 if doc_data:
                     docs.append(doc_data)
 
@@ -628,8 +693,9 @@ class DocumentationIndexer:
                     "title": doc["title"],
                     "url": doc["url"],
                     "project": doc["project"],
-                    "path": doc["path"],
-                    "path_stem": doc["path_stem"],
+                    "source_path": doc["source_path"],
+                    "source_path_stem": doc["source_path_stem"],
+                    "source_url": doc["source_url"],
                     "description": doc["description"],
                     "is_reference": doc["is_reference"],
                 }
@@ -654,14 +720,18 @@ class DocumentationIndexer:
             doc_id = doc["id"]
             if doc_id in seen_ids:
                 duplicates.append(
-                    {"id": doc_id, "first_doc": seen_ids[doc_id], "duplicate_doc": {"project": doc["project"], "path": doc["path"], "title": doc["title"]}}
+                    {
+                        "id": doc_id,
+                        "first_doc": seen_ids[doc_id],
+                        "duplicate_doc": {"project": doc["project"], "source_path": doc["source_path"], "title": doc["title"]},
+                    }
                 )
 
                 await log_warning(f"DUPLICATE ID FOUND: {doc_id}", ctx)
                 await log_warning(f"  First document: {seen_ids[doc_id]['project']}/{seen_ids[doc_id]['path']} - {seen_ids[doc_id]['title']}", ctx)
                 await log_warning(f"  Duplicate document: {doc['project']}/{doc['path']} - {doc['title']}", ctx)
             else:
-                seen_ids[doc_id] = {"project": doc["project"], "path": doc["path"], "title": doc["title"]}
+                seen_ids[doc_id] = {"project": doc["project"], "source_path": doc["source_path"], "title": doc["title"]}
 
         if duplicates:
             error_msg = f"Found {len(duplicates)} duplicate document IDs"
@@ -676,7 +746,7 @@ class DocumentationIndexer:
 
             raise ValueError(f"Document ID collision detected. {len(duplicates)} duplicate IDs found. Check logs for details.")
 
-    async def search_get_reference_guide(self, component: str, project: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Page]:
+    async def search_get_reference_guide(self, component: str, project: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Document]:
         """Search for reference guides for a specific component."""
         await self.ensure_indexed()
 
@@ -684,7 +754,7 @@ class DocumentationIndexer:
         filters: list[dict[str, Any]] = []
         if project:
             filters.append({"project": str(project)})
-        filters.append({"path_stem": str(component)})
+        filters.append({"source_path_stem": str(component)})
         filters.append({"is_reference": True})
         where_clause: dict[str, Any] = {"$and": filters} if len(filters) > 1 else filters[0]
 
@@ -706,27 +776,28 @@ class DocumentationIndexer:
                     # Give exact filename matches a high relevance score
                     relevance_score = 1.0  # Highest priority for exact filename matches
 
-                    page = Page(
+                    document = Document(
                         title=str(metadata["title"]),
                         url=HttpUrl(url_value),
                         project=str(metadata["project"]),
-                        path=str(metadata["path"]),
+                        source_path=str(metadata["source_path"]),
+                        source_url=HttpUrl(str(metadata.get("source_url", ""))),
                         description=str(metadata["description"]),
                         is_reference=bool(metadata["is_reference"]),
                         content=content_text,
                         relevance_score=relevance_score,
                     )
 
-                    if project and page.project != project:
-                        await log_exception(f"Project mismatch for component '{component}': expected '{project}', got '{page.project}'", ctx)
-                    elif metadata["path_stem"] != component:
-                        await log_exception(f"Path stem mismatch for component '{component}': expected '{component}', got '{metadata['path_stem']}'", ctx)
+                    if project and document.project != project:
+                        await log_exception(f"Project mismatch for component '{component}': expected '{project}', got '{document.project}'", ctx)
+                    elif metadata["source_path_stem"] != component:
+                        await log_exception(f"Path stem mismatch for component '{component}': expected '{component}', got '{metadata['source_path_stem']}'", ctx)
                     else:
-                        all_results.append(page)
+                        all_results.append(document)
         return all_results
 
-    async def search_pages(self, query: str, project: Optional[str] = None, content: bool = True, max_results: int = 5, ctx: Context | None = None) -> list[Page]:
-        """Search documentation pages using semantic similarity."""
+    async def search(self, query: str, project: Optional[str] = None, content: bool = True, max_results: int = 5, ctx: Context | None = None) -> list[Document]:
+        """Search the documentation using semantic similarity."""
         await self.ensure_indexed(ctx=ctx)
 
         # Build where clause for filtering
@@ -736,7 +807,7 @@ class DocumentationIndexer:
             # Perform vector similarity search
             results = self.collection.query(query_texts=[query], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
 
-            pages = []
+            documents = []
             if results["ids"] and results["ids"][0]:
                 for i, _ in enumerate(results["ids"][0]):
                     if results["metadatas"] and results["metadatas"][0]:
@@ -764,35 +835,37 @@ class DocumentationIndexer:
                             except (ValueError, TypeError):
                                 relevance_score = None
 
-                        page = Page(
+                        document = Document(
                             title=str(metadata["title"]),
                             url=HttpUrl(url_value),
                             project=str(metadata["project"]),
-                            path=str(metadata["path"]),
+                            source_path=str(metadata["source_path"]),
+                            source_url=HttpUrl(str(metadata.get("source_url", ""))),
                             description=str(metadata["description"]),
                             is_reference=bool(metadata["is_reference"]),
                             content=content_text,
                             relevance_score=relevance_score,
                         )
-                        pages.append(page)
+                        documents.append(document)
 
-            return pages
+            return documents
         except Exception as e:
+            raise e
             logger.error(f"Search failed for query '{query}': {e}")
             return []
 
-    async def get_page(self, path: str, project: str, ctx: Context | None = None) -> Page:
-        """Search documentation pages using semantic similarity."""
+    async def get_document(self, path: str, project: str, ctx: Context | None = None) -> Document:
+        """Get a specific document."""
         await self.ensure_indexed(ctx=ctx)
 
         # Build where clause for filtering
-        filters: list[dict[str, str]] = [{"project": str(project)}, {"path": str(path)}]
+        filters: list[dict[str, str]] = [{"project": str(project)}, {"source_path": str(path)}]
         where_clause: dict[str, Any] = {"$and": filters}
 
         # Perform vector similarity search
         results = self.collection.query(query_texts=[""], n_results=3, where=where_clause)
 
-        pages = []
+        documents = []
         if results["ids"] and results["ids"][0]:
             for i, _ in enumerate(results["ids"][0]):
                 if results["metadatas"] and results["metadatas"][0]:
@@ -820,23 +893,24 @@ class DocumentationIndexer:
                         except (ValueError, TypeError):
                             relevance_score = None
 
-                    page = Page(
+                    document = Document(
                         title=str(metadata["title"]),
                         url=HttpUrl(url_value),
                         project=str(metadata["project"]),
-                        path=str(metadata["path"]),
+                        source_path=str(metadata["source_path"]),
+                        source_url=HttpUrl(str(metadata.get("source_url", ""))),
                         description=str(metadata["description"]),
                         is_reference=bool(metadata["is_reference"]),
                         content=content_text,
                         relevance_score=relevance_score,
                     )
-                    pages.append(page)
+                    documents.append(document)
 
-        if len(pages) > 1:
-            raise ValueError(f"Multiple pages found for path '{path}' in project '{project}'. Please ensure unique paths.")
-        elif len(pages) == 0:
-            raise ValueError(f"No page found for path '{path}' in project '{project}'.")
-        return pages[0]
+        if len(documents) > 1:
+            raise ValueError(f"Multiple documents found for path '{path}' in project '{project}'. Please ensure unique paths.")
+        elif len(documents) == 0:
+            raise ValueError(f"No document found for path '{path}' in project '{project}'.")
+        return documents[0]
 
     async def list_projects(self) -> list[str]:
         """List all available projects with documentation in the index.

@@ -304,7 +304,7 @@ The AI assistant provides accurate, contextual answers with:
 - **get_best_practices**: Get best practices for using a project with LLMs.
 - **list_best_practices**: List all available best practices projects.
 - **get_reference_guide**: Find reference guides for specific HoloViz components.
-- **get_page**: Retrieve a specific documentation page by path and project.
+- **get_document**: Retrieve a specific document by path and project.
 - **search**: Search HoloViz documentation using semantic similarity.
 
 </details>
@@ -430,7 +430,7 @@ alias holoviz-mcp="uvx holoviz-mcp"
 alias holoviz-mcp-update="uv tool update holoviz_mcp[panel-extensions];uvx --from holoviz-mcp holoviz-mcp-update"
 ```
 
-Then you can run
+After restarting your terminal, you can run:
 
 ```bash
 holoviz-mcp # to start the server
@@ -462,6 +462,7 @@ docs:
     plotly:
       url: "https://github.com/plotly/plotly.py.git"
       base_url: "https://plotly.com/python"
+      target_suffix: "plotly"
     altair:
       url: "https://github.com/altair-viz/altair.git"
       base_url: "https://altair-viz.github.io"

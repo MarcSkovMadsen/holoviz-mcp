@@ -35,7 +35,7 @@ class DocumentationIndexer:
 
         # Add filtering to where clause
         if path:
-            where_clause["path"] = {"$regex": path}
+            where_clause["source_path"] = {"$regex": path}
 
         if name:
             # Exact filename matching, not regex

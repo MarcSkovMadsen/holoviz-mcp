@@ -34,6 +34,15 @@ class GitRepository(BaseModel):
         description="Folders to index within the repository. Can be a list of folder names or a dict mapping folder names to FolderConfig objects",
     )
     base_url: AnyHttpUrl = Field(..., description="Base URL for documentation links")
+    url_transform: Literal["holoviz", "plotly", "datashader"] = Field(
+        default="holoviz",
+        description="""How to transform file path into URL:
+
+        - holoViz transform suffix to .html: filename.md -> filename.html
+        - plotly transform suffix to /: filename.md -> filename/
+        - datashader removes leading index and transform suffix to .html: 01_filename.md -> filename.html
+        """,
+    )
     reference_patterns: list[str] = Field(
         default_factory=lambda: ["examples/reference/**/*.md", "examples/reference/**/*.ipynb"], description="Glob patterns for reference documentation files"
     )

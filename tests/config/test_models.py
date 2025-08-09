@@ -80,11 +80,12 @@ class TestDocsConfig:
         """Test docs configuration with repositories."""
         config = DocsConfig(
             repositories={
-                "test-repo": GitRepository(url="https://github.com/test/repo.git", base_url="https://example.com/")  # type: ignore
+                "test-repo": GitRepository(url="https://github.com/test/repo.git", base_url="https://example.com/", url_transform="plotly")  # type: ignore
             }
         )
         assert "test-repo" in config.repositories
         assert str(config.repositories["test-repo"].url) == "https://github.com/test/repo.git"
+        assert str(config.repositories["test-repo"].url_transform) == "plotly"
 
 
 class TestResourceConfig:

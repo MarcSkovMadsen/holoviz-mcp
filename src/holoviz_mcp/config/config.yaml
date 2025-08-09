@@ -75,6 +75,20 @@ docs:
         - "examples/reference/**/*.md"
         - "examples/reference/**/*.ipynb"
         - "examples/reference/**/*.rst"
+    holoviz:
+      url: https://github.com/holoviz/holoviz.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+        examples/tutorial:
+          url_path: "/tutorial"
+      base_url: https://holoviz.org
+      url_transform: "datashader"
+      reference_patterns:
+        - "doc/reference/**/*.md"
+        - "doc/reference/**/*.ipynb"
+        - "doc/reference/**/*.rst"
     datashader:
       url: https://github.com/holoviz/datashader.git
       branch: main
@@ -82,8 +96,9 @@ docs:
         doc:
           url_path: ""
         examples:
-          url_path: "/examples"
+          url_path: ""
       base_url: https://datashader.org
+      url_transform: "datashader"
       reference_patterns:
         - "doc/reference/**/*.md"
         - "doc/reference/**/*.ipynb"
@@ -95,7 +110,7 @@ docs:
         doc:
           url_path: ""
         examples:
-          url_path: "/examples"
+          url_path: "/"
       base_url: https://geoviews.org
       reference_patterns:
         - "doc/reference/**/*.md"

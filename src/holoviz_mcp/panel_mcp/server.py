@@ -475,7 +475,7 @@ def _serve_impl(
     port : int, optional
         Port to serve the application on (default: 5007).
     dependencies : list of str, optional
-        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas"].
+        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas", "watchfiles"].
     python : str or None, optional
         Python version to use for serving the application.
 
@@ -484,7 +484,7 @@ def _serve_impl(
     str
         Proxy-accessible URL where the application is served.
     """
-    DEFAULT_DEPENDENCIES = ["panel", "hvplot", "pandas"]
+    DEFAULT_DEPENDENCIES = ["panel", "hvplot", "pandas", "watchfiles"]
     SERVER_START_TIMEOUT = 5  # seconds
     SERVER_LOG_POLL_INTERVAL = 0.250  # seconds
 
@@ -538,6 +538,7 @@ def _serve_impl(
                     last_pos = f.tell()
                 with open(log_path, "r") as f:
                     if "Bokeh app running" in f.read():
+                        time.sleep(0.1)  # from experience
                         break
             time.sleep(SERVER_LOG_POLL_INTERVAL)
         import webbrowser
@@ -569,7 +570,7 @@ def serve(
     port : int, optional
         Port to serve the application on (default: 5007).
     dependencies : list of str, optional
-        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas"].
+        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas", "watchfiles"].
     python : str or None, optional
         Python version to use for serving the application.
 
