@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -130,6 +131,12 @@ def list_best_practices() -> list[str]:
     return sorted(list(available_projects))
 
 
+def remove_leading_number_sep_from_path(p: Path) -> Path:
+    """Remove a leading number + underscore or hyphen from the last path component."""
+    new_name = re.sub(r"^\d+[_-]", "", p.name)
+    return p.with_name(new_name)
+
+
 def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transform: Literal["holoviz", "plotly", "datashader"] = "holoviz") -> str:
     """Convert a relative file path to a URL path.
 
@@ -160,6 +167,9 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
         >>> convert_path_to_url(Path("/examples/user_guide/10_Performance.ipynb"), False, "datashader")
         "/examples/user_guide/Performance.html"
     """
+    if url_transform in ["holoviz", "datashader"]:
+        path = remove_leading_number_sep_from_path(path)
+
     # Convert path to URL format
     parts = list(path.parts)
 
@@ -178,13 +188,6 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
         path_obj = Path(url_path)
         if url_transform == "plotly":
             url_path = str(path_obj.with_suffix(suffix="")) + "/"
-        elif url_transform == "datashader":
-            url_path = str(path_obj.with_suffix(suffix=".html"))
-            if "_" in path_obj.stem:
-                # Remove leading index and keep parent directories
-                parts = path_obj.stem.split("_", 1)
-                if len(parts) > 1:
-                    url_path = "/" + str(path_obj.with_name(parts[1] + ".html"))
         else:
             url_path = str(path_obj.with_suffix(suffix=".html"))
 
@@ -242,7 +245,7 @@ class DocumentationIndexer:
 
         try:
             # Try to load the model normally first
-            return SentenceTransformer(model_name, truncate_dim=384)  # Chrome uses 384 dimensions
+            return SentenceTransformer(model_name, truncate_dim=384)  # Chroma uses 384 dimensions
         except Exception as e:
             if "SSL" in str(e) or "certificate" in str(e).lower():
                 logger.warning(f"SSL certificate error encountered: {e}")
@@ -805,7 +808,8 @@ class DocumentationIndexer:
 
         try:
             # Perform vector similarity search
-            results = self.collection.query(query_texts=[query], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
+            embedding = self.embedding_model.encode(query).tolist()
+            results = self.collection.query(query_embeddings=[embedding], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
 
             documents = []
             if results["ids"] and results["ids"][0]:
