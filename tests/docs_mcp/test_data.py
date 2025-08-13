@@ -36,7 +36,12 @@ def test_convert_path_to_url_plotly():
 
 def test_convert_path_to_url_datashader():
     url = convert_path_to_url(Path("/examples/user_guide/10_Performance.ipynb"), url_transform="datashader")
-    assert url == "/examples/user_guide/Performance.html"
+    assert url == "examples/user_guide/Performance.html"
+
+
+def test_convert_path_to_url_holoviz():
+    url = convert_path_to_url(Path("examples/user_guide/10-Indexing_and_Selecting_Data.ipynb"), url_transform="datashader")
+    assert url == "user_guide/Indexing_and_Selecting_Data.html"
 
 
 # https://github.com/holoviz/panel/blob/main/examples/reference/layouts/Card.ipynb
