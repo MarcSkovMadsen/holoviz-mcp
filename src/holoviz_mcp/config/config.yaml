@@ -68,8 +68,8 @@ docs:
       folders:
         doc:
           url_path: ""
-        examples/reference:
-          url_path: "/reference"
+        examples:
+          url_path: ""
       base_url: https://holoviews.org
       reference_patterns:
         - "examples/reference/**/*.md"
