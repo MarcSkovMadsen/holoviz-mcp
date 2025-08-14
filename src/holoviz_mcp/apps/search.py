@@ -101,6 +101,9 @@ class SearchConfiguration(param.Parameterized):
         if pn.state.location:
             pn.state.location.sync(self, parameters=["query", "project", "content", "max_results"])
 
+        if self.query:
+            self.param.trigger("search")
+
     @param.depends("search", watch=True)
     async def _update_results(self):
         indexer = _get_indexer()
