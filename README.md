@@ -12,7 +12,6 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 Please note:
 
 - This MCP server **can execute arbitrary Python code** when it serves Panel applications (this is configurable, and enabled by default).
-- This MCP server currently installs Python dependencies such as PyTorch, resulting in a large installation size (over 800 MB). We aim to reduce this footprint or make it configurable in the future.
 
 ## ✨ What This Provides
 
