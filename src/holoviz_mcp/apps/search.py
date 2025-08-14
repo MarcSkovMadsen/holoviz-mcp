@@ -160,7 +160,10 @@ Relevance Score: {document.relevance_score or 'N/A':0.2f}
 
     @param.depends("documents")
     def _items(self):
-        return [{"label": f"{document.project}: {document.title}", "icon": None, "secondary": self._to_secondary(document)} for document in self.documents]
+        return [
+            {"label": f"{index+1}. {document.project}: {document.title}", "icon": None, "secondary": self._to_secondary(document)}
+            for index, document in enumerate(self.documents)
+        ]
 
 
 class DocumentView(pn.viewable.Viewer):

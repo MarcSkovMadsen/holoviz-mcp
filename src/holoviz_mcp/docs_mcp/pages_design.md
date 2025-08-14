@@ -301,7 +301,6 @@ The `path` parameter supports regex patterns for flexible path matching:
 DATA_DIR = Path(os.getenv("HOLOVIZ_DATA_DIR", "~/holoviz_mcp/data")).expanduser()
 CONFIG_FILE = os.getenv("HOLOVIZ_CONFIG_FILE", "")
 DOCS_UPDATE_INTERVAL = int(os.getenv("HOLOVIZ_DOCS_UPDATE_INTERVAL", "86400"))  # 24 hours
-EMBEDDING_MODEL = os.getenv("HOLOVIZ_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 ```
 
 #### Configuration File Format
