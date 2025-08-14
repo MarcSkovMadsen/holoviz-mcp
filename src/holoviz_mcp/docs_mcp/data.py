@@ -11,12 +11,11 @@ from typing import Optional
 
 import chromadb
 import git
-import numpy as np
+from chromadb.api.collection_configuration import CreateCollectionConfiguration
 from fastmcp import Context
 from nbconvert import MarkdownExporter
 from nbformat import read as nbread
 from pydantic import HttpUrl
-from sentence_transformers import SentenceTransformer
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.config.models import FolderConfig
@@ -28,6 +27,14 @@ logger = logging.getLogger(__name__)
 # Todo: Describe DocumentApp
 # Todo: Avoid overflow-x in SearchApp sidebar
 # Todo: Add bokeh documentation to README extra config
+
+_CROMA_CONFIGURATION = CreateCollectionConfiguration(
+    hnsw={
+        "space": "cosine",
+        "ef_construction": 200,
+        "ef_search": 200,
+    }
+)
 
 
 async def log_info(message: str, ctx: Context | None = None):
@@ -225,52 +232,13 @@ class DocumentationIndexer:
 
         # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(path=str(vector_db_path))
-        self.collection = self.chroma_client.get_or_create_collection("holoviz_docs")
-
-        # Initialize embedding model with SSL certificate handling
-        self.embedding_model = self._initialize_embedding_model()
+        self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
 
         # Initialize notebook converter
         self.nb_exporter = MarkdownExporter()
 
         # Load documentation config from the centralized config system
         self.config = get_config().docs
-
-    def _initialize_embedding_model(self) -> SentenceTransformer:
-        """Initialize the SentenceTransformer with SSL certificate handling."""
-        # "all-MiniLM-L6-v2"
-        # "Qwen/Qwen3-Embedding-0.6B"
-        # "mixedbread-ai/mxbai-embed-large-v1"
-        model_name = os.getenv("HOLOVIZ_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-
-        try:
-            # Try to load the model normally first
-            return SentenceTransformer(model_name, truncate_dim=384)  # Chroma uses 384 dimensions
-        except Exception as e:
-            if "SSL" in str(e) or "certificate" in str(e).lower():
-                logger.warning(f"SSL certificate error encountered: {e}")
-                logger.info("Attempting to configure SSL certificates...")
-
-                # Try to set SSL certificate path using certifi
-                try:
-                    import certifi
-
-                    cert_path = certifi.where()
-                    # Set both environment variables for maximum compatibility
-                    os.environ["SSL_CERT_FILE"] = cert_path
-                    os.environ["REQUESTS_CA_BUNDLE"] = cert_path
-                    logger.info(f"Set SSL_CERT_FILE and REQUESTS_CA_BUNDLE to: {cert_path}")
-
-                    # Retry loading the model
-                    return SentenceTransformer(model_name)
-                except Exception as cert_error:
-                    logger.error(f"Failed to configure SSL certificates: {cert_error}")
-                    logger.warning("Please ensure your SSL certificates are properly configured.")
-                    logger.warning("For Windows users, try setting REQUESTS_CA_BUNDLE environment variable.")
-                    raise
-            else:
-                # Re-raise non-SSL related errors
-                raise
 
     def is_indexed(self) -> bool:
         """Check if documentation index exists and is valid."""
@@ -612,31 +580,6 @@ class DocumentationIndexer:
 
         return docs
 
-    async def create_embeddings(self, docs: list[dict[str, Any]], ctx=None) -> np.ndarray:
-        """Create embeddings for documentation content."""
-        await log_info(f"Creating embeddings for {len(docs)} documents...", ctx)
-
-        # Prepare text for embedding (title + description + content preview)
-        texts = []
-        for doc in docs:
-            text_parts = [doc["title"]]
-            if doc["description"]:
-                text_parts.append(doc["description"])
-            if doc["content"]:
-                text_parts.append(doc["content"])
-            texts.append(" ".join(text_parts))
-
-        # Create embeddings
-        try:
-            embeddings = self.embedding_model.encode(texts)
-            embeddings = np.asarray(embeddings, dtype="float32")
-        except Exception as e:
-            await log_warning(f"Embedding creation failed: {e}", ctx)
-            raise
-
-        await log_info(f"Created {len(embeddings)} embeddings", ctx)
-        return embeddings
-
     async def index_documentation(self, ctx: Context | None = None):
         """Indexes all documentation."""
         await log_info("Starting documentation indexing...", ctx)
@@ -661,9 +604,6 @@ class DocumentationIndexer:
         # Validate for duplicate IDs and log details
         await self._validate_unique_ids(all_docs)
 
-        # Create embeddings
-        embeddings = await self.create_embeddings(all_docs, ctx)
-
         # Clear existing collection
         await log_info("Clearing existing index...", ctx)
 
@@ -680,7 +620,7 @@ class DocumentationIndexer:
             # If clearing fails, recreate the collection
             try:
                 self.chroma_client.delete_collection("holoviz_docs")
-                self.collection = self.chroma_client.get_or_create_collection("holoviz_docs")
+                self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
             except Exception as e2:
                 await log_exception(f"Failed to recreate collection: {e2}", ctx)
                 raise
@@ -689,7 +629,6 @@ class DocumentationIndexer:
         await log_info(f"Adding {len(all_docs)} documents to index...", ctx)
 
         self.collection.add(
-            embeddings=embeddings,
             documents=[doc["content"] for doc in all_docs],
             metadatas=[
                 {
@@ -808,8 +747,7 @@ class DocumentationIndexer:
 
         try:
             # Perform vector similarity search
-            embedding = self.embedding_model.encode(query).tolist()
-            results = self.collection.query(query_embeddings=[embedding], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
+            results = self.collection.query(query_texts=[query], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
 
             documents = []
             if results["ids"] and results["ids"][0]:
@@ -835,7 +773,7 @@ class DocumentationIndexer:
                             and len(results["distances"][0]) > i
                         ):
                             try:
-                                relevance_score = 1.0 - float(results["distances"][0][i])
+                                relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
                             except (ValueError, TypeError):
                                 relevance_score = None
 
@@ -851,12 +789,9 @@ class DocumentationIndexer:
                             relevance_score=relevance_score,
                         )
                         documents.append(document)
-
             return documents
         except Exception as e:
             raise e
-            logger.error(f"Search failed for query '{query}': {e}")
-            return []
 
     async def get_document(self, path: str, project: str, ctx: Context | None = None) -> Document:
         """Get a specific document."""
