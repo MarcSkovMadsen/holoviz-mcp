@@ -41,7 +41,7 @@ class ConfigViewer(param.Parameterized):
         Loads environment config and config loader.
         """
         super().__init__(**params)
-        self._env_config = HoloVizMCPConfig.from_environment()
+        self._env_config = HoloVizMCPConfig()
         self._loader = get_config_loader()
 
     @param.depends("config_source")

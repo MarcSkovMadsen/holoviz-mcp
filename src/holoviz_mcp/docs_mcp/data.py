@@ -204,12 +204,13 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
 class DocumentationIndexer:
     """Handles cloning, processing, and indexing of documentation."""
 
-    def __init__(self, data_dir: Optional[Path] = None, repos_dir: Optional[Path] = None):
+    def __init__(self, *, data_dir: Optional[Path] = None, repos_dir: Optional[Path] = None, vector_dir: Optional[Path] = None):
         """Initialize the DocumentationIndexer.
 
         Args:
             data_dir: Directory to store index data. Defaults to user config directory.
             repos_dir: Directory to store cloned repositories. Defaults to HOLOVIZ_MCP_REPOS_DIR.
+            vector_dir: Directory to store vector database. Defaults to config.vector_dir
         """
         # Use unified config for default paths
         config = get_config()
@@ -221,9 +222,8 @@ class DocumentationIndexer:
         self.repos_dir = repos_dir or config.repos_dir
         self.repos_dir.mkdir(parents=True, exist_ok=True)
 
-        # Use config logic to resolve vector DB path
-        config = get_config()
-        vector_db_path = config.server.resolve_vector_db_path(config.user_dir)
+        # Use configurable directory for vector database path
+        vector_db_path = vector_dir or config.server.vector_db_path
         vector_db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Disable ChromaDB telemetry based on config
@@ -577,7 +577,6 @@ class DocumentationIndexer:
         regular_count = len(docs) - reference_count
 
         await log_info(f"  📄 {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)", ctx)
-
         return docs
 
     async def index_documentation(self, ctx: Context | None = None):
@@ -591,7 +590,6 @@ class DocumentationIndexer:
         # Clone/update repositories and extract documentation
         for repo_name, repo_config in self.config.repositories.items():
             await log_info(f"Processing {repo_name}...", ctx)
-
             repo_path = await self.clone_or_update_repo(repo_name, repo_config)
             if repo_path:
                 docs = await self.extract_docs_from_repo(repo_path, repo_name, ctx)
@@ -934,34 +932,32 @@ class DocumentationIndexer:
         except Exception as e:
             await log_warning(f"Failed to generate summary table: {e}", ctx)
 
+    def run(self):
+        """Update the DocumentationIndexer."""
+        # Configure logging for the CLI
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", handlers=[logging.StreamHandler()])
 
-def main():
-    """Update the DocumentationIndexer."""
-    # Configure logging for the CLI
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", handlers=[logging.StreamHandler()])
-
-    logger.info("🚀 HoloViz MCP Documentation Indexer")
-    logger.info("=" * 50)
-
-    async def run_indexer():
-        indexer = DocumentationIndexer()
-        logger.info(f"📁 Repository directory: {indexer.repos_dir}")
-        logger.info(f"💾 Vector database: {indexer.data_dir / 'chroma'}")
-        logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")
-        logger.info("")
-
-        await indexer.index_documentation()
-
-        # Final summary
-        count = indexer.collection.count()
-        logger.info("")
-        logger.info("=" * 50)
-        logger.info("✅ Indexing completed successfully!")
-        logger.info(f"📊 Total documents in database: {count}")
+        logger.info("🚀 HoloViz MCP Documentation Indexer")
         logger.info("=" * 50)
 
-    asyncio.run(run_indexer())
+        async def run_indexer(indexer=self):
+            logger.info(f"📁 Repository directory: {indexer.repos_dir}")
+            logger.info(f"💾 Vector database: {indexer.data_dir / 'chroma'}")
+            logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")
+            logger.info("")
+
+            await indexer.index_documentation()
+
+            # Final summary
+            count = indexer.collection.count()
+            logger.info("")
+            logger.info("=" * 50)
+            logger.info("✅ Indexing completed successfully!")
+            logger.info(f"📊 Total documents in database: {count}")
+            logger.info("=" * 50)
+
+        asyncio.run(run_indexer())
 
 
 if __name__ == "__main__":
-    main()
+    DocumentationIndexer().run()
