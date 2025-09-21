@@ -16,6 +16,16 @@ from pydantic import PositiveInt
 from pydantic import field_validator
 
 
+def _holoviz_mcp_user_dir() -> Path:
+    """Get the default user directory for HoloViz MCP."""
+    return Path(os.environ.get("HOLOVIZ_MCP_USER_DIR", Path.home() / ".holoviz-mcp"))
+
+
+def _holoviz_mcp_default_dir() -> Path:
+    """Get the default configuration directory for HoloViz MCP."""
+    return Path(os.environ.get("HOLOVIZ_MCP_DEFAULT_DIR", Path(__file__).parent.parent / "config"))
+
+
 class FolderConfig(BaseModel):
     """Configuration for a folder within a repository."""
 
@@ -144,21 +154,9 @@ class ServerConfig(BaseModel):
     anonymized_telemetry: bool = Field(default=False, description="Enable anonymized telemetry")
     jupyter_server_proxy_url: str = Field(default="", description="Jupyter server proxy URL for Panel app integration")
     security: SecurityConfig = Field(default_factory=SecurityConfig, description="Security configuration")
-    vector_db_path: Path = Field(default_factory=lambda: Path.home() / ".holoviz-mcp" / "vector_db" / "chroma", description="Path to the Chroma vector database.")
-
-    def resolve_vector_db_path(self, user_dir: Path) -> Path:
-        """Resolve the path to the Chroma vector database.
-
-        This method ensures the vector_db_path is properly expanded.
-
-        Args:
-            user_dir: User directory (for compatibility, but not used since vector_db_path is now always set)
-
-        Returns
-        -------
-            Resolved path to the vector database
-        """
-        return Path(self.vector_db_path).expanduser()
+    vector_db_path: Path = Field(
+        default_factory=lambda: (_holoviz_mcp_user_dir() / "vector_db" / "chroma").expanduser(), description="Path to the Chroma vector database."
+    )
 
 
 class HoloVizMCPConfig(BaseModel):
@@ -170,28 +168,11 @@ class HoloVizMCPConfig(BaseModel):
     prompts: PromptConfig = Field(default_factory=PromptConfig)
 
     # Environment paths - merged from EnvironmentConfig with defaults
-    user_dir: Path = Field(default_factory=lambda: Path.home() / ".holoviz-mcp", description="User configuration directory")
-    default_dir: Path = Field(default_factory=lambda: Path(__file__).parent.parent / "config", description="Default configuration directory")
-    repos_dir: Path = Field(default_factory=lambda: Path.home() / ".holoviz-mcp" / "repos", description="Repository download directory")
+    user_dir: Path = Field(default_factory=_holoviz_mcp_user_dir, description="User configuration directory")
+    default_dir: Path = Field(default_factory=_holoviz_mcp_default_dir, description="Default configuration directory")
+    repos_dir: Path = Field(default_factory=lambda: _holoviz_mcp_user_dir() / "repos", description="Repository download directory")
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
-
-    @classmethod
-    def from_environment(cls) -> HoloVizMCPConfig:
-        """Create configuration from environment variables with defaults."""
-        user_dir = Path(os.environ.get("HOLOVIZ_MCP_USER_DIR", Path.home() / ".holoviz-mcp"))
-        default_dir = Path(os.environ.get("HOLOVIZ_MCP_DEFAULT_DIR", Path(__file__).parent.parent / "config"))
-        repos_dir = Path(os.environ.get("HOLOVIZ_MCP_REPOS_DIR", user_dir / "repos"))
-
-        return cls(
-            server=ServerConfig(),
-            docs=DocsConfig(),
-            resources=ResourceConfig(),
-            prompts=PromptConfig(),
-            user_dir=user_dir,
-            default_dir=default_dir,
-            repos_dir=repos_dir,
-        )
 
     def config_file_path(self, location: Literal["user", "default"] = "user") -> Path:
         """Get the path to the configuration file.

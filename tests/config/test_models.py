@@ -181,3 +181,11 @@ class TestHoloVizMCPConfig:
             # We need to construct this in a way that bypasses type checking
             config_dict = {"server": {"name": "test"}, "docs": {"repositories": {}}, "resources": {}, "prompts": {}, "extra_field": "not allowed"}
             HoloVizMCPConfig(**config_dict)
+
+    def test_with_environment_variables(self, monkeypatch):
+        """Test configuration with environment variables."""
+        monkeypatch.setenv("HOLOVIZ_MCP_USER_DIR", "/test/dir")
+        config = HoloVizMCPConfig()
+        assert config.user_dir == Path("/test/dir")
+        assert config.server.vector_db_path == Path("/test/dir") / "vector_db" / "chroma"
+        assert config.repos_dir == Path("/test/dir") / "repos"

@@ -258,6 +258,7 @@ class SearchApp(pn.viewable.Viewer):
         - Integration with HoloViz MCP docs_search tool
     """
 
+    title = param.String(default="HoloViz MCP Search Tool", doc="Title of the search app")
     config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):
@@ -297,7 +298,7 @@ class SearchApp(pn.viewable.Viewer):
             github_button.js_on_click(code=js_code_to_open_holoviz_mcp)
 
             return pmui.Page(
-                title="HoloViz MCP Search Tool",
+                title=self.title,
                 site_url="./",
                 sidebar=[self._config, menu],
                 sidebar_width=400,

@@ -52,7 +52,7 @@ class ConfigLoader:
         if self._env_config is not None:
             env_config = self._env_config
         else:
-            env_config = HoloVizMCPConfig.from_environment()
+            env_config = HoloVizMCPConfig()
 
         # Start with default configuration dict
         config_dict = self._get_default_config()
