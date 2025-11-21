@@ -62,9 +62,17 @@ class TestDockerInstallation:
             assert result.returncode == 0, f"Failed to start container: {result.stderr}"
 
             # Wait for container to initialize
-            time.sleep(8)  # Increased wait time for container initialization
+            time.sleep(10)
 
-            # Check logs for successful startup
+            # Check container status (may have exited for stdio, which is ok)
+            status = subprocess.run(
+                ["docker", "ps", "-a", "-f", f"name={container_name}", "--format", "{{.Status}}"],
+                capture_output=True,
+                text=True,
+            )
+            assert status.stdout.strip(), f"Container {container_name} not found"
+
+            # Check logs for successful startup (container may exit with stdio transport, that's expected)
             logs = subprocess.run(
                 ["docker", "logs", container_name],
                 capture_output=True,
@@ -72,7 +80,8 @@ class TestDockerInstallation:
             )
 
             combined_output = logs.stdout + logs.stderr
-            assert "FastMCP" in combined_output, "Server banner not found in logs"
+            assert combined_output.strip(), f"No logs found. Container status: {status.stdout}"
+            assert "FastMCP" in combined_output, f"Server banner not found in logs. Output: {combined_output[:500]}"
             assert "Transport:   STDIO" in combined_output, "STDIO transport not detected"
             assert "Starting MCP server 'holoviz'" in combined_output
 
@@ -105,8 +114,16 @@ class TestDockerInstallation:
             )
             assert result.returncode == 0, f"Failed to start container: {result.stderr}"
 
-            # Wait for container to initialize
-            time.sleep(5)
+            # Wait for container to initialize and check status
+            time.sleep(10)
+
+            # Check if container is still running
+            status = subprocess.run(
+                ["docker", "ps", "-f", f"name={container_name}", "--format", "{{.Status}}"],
+                capture_output=True,
+                text=True,
+            )
+            assert status.stdout.strip(), f"Container {container_name} is not running"
 
             # Check logs for successful startup
             logs = subprocess.run(
@@ -116,7 +133,8 @@ class TestDockerInstallation:
             )
 
             combined_output = logs.stdout + logs.stderr
-            assert "FastMCP" in combined_output, "Server banner not found in logs"
+            assert combined_output.strip(), f"No logs found. Container status: {status.stdout}"
+            assert "FastMCP" in combined_output, f"Server banner not found in logs. Output: {combined_output[:500]}"
             assert "Transport:   HTTP" in combined_output, "HTTP transport not detected"
             # Server can bind to either 127.0.0.1 or 0.0.0.0 depending on configuration
             assert "http://127.0.0.1:8000/mcp" in combined_output or "http://0.0.0.0:8000/mcp" in combined_output, "Server URL not found in logs"
@@ -154,7 +172,15 @@ class TestDockerInstallation:
             assert result.returncode == 0, f"Failed to start container: {result.stderr}"
 
             # Wait for initialization
-            time.sleep(5)
+            time.sleep(10)
+
+            # Check if container is still running
+            status = subprocess.run(
+                ["docker", "ps", "-f", f"name={container_name}", "--format", "{{.Status}}"],
+                capture_output=True,
+                text=True,
+            )
+            assert status.stdout.strip(), f"Container {container_name} is not running"
 
             # Check logs
             logs = subprocess.run(
@@ -164,8 +190,9 @@ class TestDockerInstallation:
             )
 
             combined_output = logs.stdout + logs.stderr
+            assert combined_output.strip(), f"No logs found. Container status: {status.stdout}"
             # HTTP transport should be active
-            assert "Transport:   HTTP" in combined_output
+            assert "Transport:   HTTP" in combined_output, f"HTTP transport not detected. Logs: {combined_output[:500]}"
 
         finally:
             # Cleanup
