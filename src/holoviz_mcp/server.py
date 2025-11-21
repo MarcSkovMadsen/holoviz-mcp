@@ -69,12 +69,14 @@ def main() -> None:
         config = get_config()
 
         # Pass host and port for HTTP transport
-        transport_kwargs = {}
         if config.server.transport == "http":
-            transport_kwargs["host"] = config.server.host
-            transport_kwargs["port"] = config.server.port
-
-        await mcp.run_async(transport=config.server.transport, **transport_kwargs)
+            await mcp.run_async(
+                transport=config.server.transport,
+                host=config.server.host,
+                port=config.server.port,
+            )
+        else:
+            await mcp.run_async(transport=config.server.transport)
 
     asyncio.run(setup_and_run())
 
