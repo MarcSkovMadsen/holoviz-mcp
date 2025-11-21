@@ -1,0 +1,68 @@
+# Inherit patterns from .gitignore
+# (these are already excluded from git, also exclude from Docker)
+**/__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pixi/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+.direnv
+.envrc
+
+# Docker-specific exclusions (not in .gitignore, but don't need in image)
+# Development/documentation files
+docs/
+mkdocs.yml
+.copier-answers.yml
+.github/
+.claude/
+.pre-commit-config.yaml
+tests/
+
+# Markdown files except README
+*.md
+!README.md
+
+# Git metadata files
+.gitignore
+.gitattributes
+
+# Misc
+.prettierrc
+Dockerfile
+.dockerignore
+DOCKER.md

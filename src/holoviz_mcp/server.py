@@ -67,7 +67,16 @@ def main() -> None:
     async def setup_and_run() -> None:
         await setup_composed_server()
         config = get_config()
-        await mcp.run_async(transport=config.server.transport)
+
+        # Pass host and port for HTTP transport
+        if config.server.transport == "http":
+            await mcp.run_async(
+                transport=config.server.transport,
+                host=config.server.host,
+                port=config.server.port,
+            )
+        else:
+            await mcp.run_async(transport=config.server.transport)
 
     asyncio.run(setup_and_run())
 

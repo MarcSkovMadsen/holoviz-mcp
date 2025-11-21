@@ -196,6 +196,14 @@ class ConfigLoader:
         if "HOLOVIZ_MCP_TRANSPORT" in os.environ:
             config.setdefault("server", {})["transport"] = os.environ["HOLOVIZ_MCP_TRANSPORT"]
 
+        # Host override (for HTTP transport)
+        if "HOLOVIZ_MCP_HOST" in os.environ:
+            config.setdefault("server", {})["host"] = os.environ["HOLOVIZ_MCP_HOST"]
+
+        # Port override (for HTTP transport)
+        if "HOLOVIZ_MCP_PORT" in os.environ:
+            config.setdefault("server", {})["port"] = int(os.environ["HOLOVIZ_MCP_PORT"])
+
         # Telemetry override
         if "ANONYMIZED_TELEMETRY" in os.environ:
             config.setdefault("server", {})["anonymized_telemetry"] = os.environ["ANONYMIZED_TELEMETRY"].lower() in ("true", "1", "yes", "on")
