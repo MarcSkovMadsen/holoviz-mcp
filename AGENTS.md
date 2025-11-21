@@ -671,5 +671,5 @@ BSD 3-Clause License - See [LICENSE.txt](LICENSE.txt) for details.
 
 ---
 
-**Last Updated**: 2025-01-21
+**Last Updated**: 2025-11-21
 **For Agent Use**: This file is specifically designed to help AI coding agents understand and contribute to the HoloViz MCP project effectively.
