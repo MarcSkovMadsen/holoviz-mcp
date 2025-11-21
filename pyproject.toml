@@ -47,6 +47,7 @@ dependencies = [
     "panel",
     "pydantic>=2.0",
     "PyYAML",
+    "sentence-transformers",
 ]
 
 [project.urls]
