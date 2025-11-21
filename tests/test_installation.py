@@ -118,7 +118,10 @@ class TestDockerInstallation:
             combined_output = logs.stdout + logs.stderr
             assert "FastMCP" in combined_output, "Server banner not found in logs"
             assert "Transport:   HTTP" in combined_output, "HTTP transport not detected"
-            assert "http://127.0.0.1:8000/mcp" in combined_output, "Server URL not found"
+            # Server can bind to either 127.0.0.1 or 0.0.0.0 depending on configuration
+            assert (
+                "http://127.0.0.1:8000/mcp" in combined_output or "http://0.0.0.0:8000/mcp" in combined_output
+            ), "Server URL not found in logs"
             assert "Uvicorn running" in combined_output
 
         finally:
