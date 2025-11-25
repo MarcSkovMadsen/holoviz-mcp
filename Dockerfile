@@ -52,8 +52,10 @@ ENV PATH="/root/.pixi/bin:${PATH}"
 # Set working directory
 WORKDIR /app
 
-# Copy the entire application from builder
-COPY --from=builder /app /app
+# Copy only necessary application files from builder (exclude .git)
+COPY --from=builder /app/src /app/src
+COPY --from=builder /app/pyproject.toml /app/README.md /app/LICENSE.txt /app/
+# Add any other necessary runtime files here
 
 # Expose default MCP port (if using HTTP transport)
 EXPOSE 8000
