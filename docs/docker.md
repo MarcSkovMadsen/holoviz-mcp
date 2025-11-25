@@ -448,8 +448,8 @@ docker ps
 # Verify port mapping
 docker port holoviz-mcp
 
-# Test connection
-curl http://localhost:8000/health
+# Test connection to MCP endpoint
+curl http://localhost:8000/mcp/
 ```
 
 ### Out of Memory Errors
