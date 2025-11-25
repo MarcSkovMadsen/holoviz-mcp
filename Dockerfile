@@ -23,7 +23,7 @@ WORKDIR /app
 # Copy project files
 COPY pixi.toml pixi.lock pyproject.toml README.md LICENSE.txt MANIFEST.in ./
 COPY src/ ./src/
-COPY .git/ ./.git/
+# COPY .git/ ./.git/   # Removed to avoid copying full git history; use build args or env vars for version info if needed
 
 # Install dependencies using Pixi
 RUN pixi install --locked
