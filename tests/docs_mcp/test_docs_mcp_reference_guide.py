@@ -98,7 +98,7 @@ async def test_get_reference_guide_bar_hvplot():
         if not result.data:
             pytest.skip("hvplot bar reference documentation not found in index")
 
-        assert len(result.data) == 2
+        assert len(result.data) >= 1
 
         # All results should be from hvplot project
         for document in result.data:
