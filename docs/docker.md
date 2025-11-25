@@ -166,7 +166,7 @@ docker run -it --rm \
 1. Start the Docker container with HTTP transport:
 
 ```bash
-docker run -d --rm \
+docker run -d \
   --name holoviz-mcp \
   -p 8000:8000 \
   -e HOLOVIZ_MCP_TRANSPORT=http \
