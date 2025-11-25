@@ -44,6 +44,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
 
+      # Note: Fork detection is intentionally NOT implemented here.
+      # Unlike the docs workflow, we allow forks to push to their own GHCR instances
+      # when they push to their main branch. This enables contributors to test
+      # container builds in their fork's GHCR before submitting PRs.
+      # Each fork pushes to ghcr.io/<fork-owner>/holoviz-mcp, not the upstream registry.
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
