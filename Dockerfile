@@ -42,8 +42,6 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install UV in final stage
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy Pixi installation from builder
 COPY --from=builder /root/.pixi /root/.pixi
