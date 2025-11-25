@@ -269,13 +269,21 @@ class TestPackageStructure:
         """Verify all required dependencies are in pyproject.toml."""
         import tomllib
         from pathlib import Path
+        from packaging.requirements import Requirement
 
         pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
         with open(pyproject_path, "rb") as f:
             pyproject = tomllib.load(f)
 
         dependencies = pyproject.get("project", {}).get("dependencies", [])
-        dep_names = [dep.split("[")[0].split(">=")[0].split("<")[0].split("==")[0] for dep in dependencies]
+        dep_names = []
+        for dep in dependencies:
+            try:
+                req = Requirement(dep)
+                dep_names.append(req.name)
+            except Exception:
+                # Fallback for unparseable dependencies
+                dep_names.append(dep.split("[")[0].split(">=")[0].split("==")[0].strip())
 
         required_deps = ["fastmcp", "panel", "chromadb", "pydantic", "sentence-transformers"]
 
