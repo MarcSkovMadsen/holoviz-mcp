@@ -66,19 +66,26 @@ class TestDockerInstallation:
             max_wait = 10
             interval = 0.5
             elapsed = 0
+            status = None
             while elapsed < max_wait:
                 status = subprocess.run(
                     ["docker", "ps", "-a", "-f", f"name={container_name}", "--format", "{{.Status}}"],
                     capture_output=True,
                     text=True,
                 )
-                if status.stdout.strip():
+                container_status = status.stdout.strip()
+                # Accept if container is present and in a known state (Up, Exited, or Created)
+                if container_status and (
+                    container_status.startswith("Up")
+                    or container_status.startswith("Exited")
+                    or container_status.startswith("Created")
+                ):
                     break
                 time.sleep(interval)
                 elapsed += interval
 
             # Check container status (may have exited for stdio, which is ok)
-            assert status.stdout.strip(), f"Container {container_name} not found after {max_wait} seconds"
+            assert status is not None and status.stdout.strip(), f"Container {container_name} not found or not ready after {max_wait} seconds"
 
             # Check logs for successful startup (container may exit with stdio transport, that's expected)
             logs = subprocess.run(
