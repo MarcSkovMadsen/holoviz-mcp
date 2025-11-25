@@ -91,7 +91,7 @@ docker run -it --rm \
 ### Environment Variables
 
 - **HOLOVIZ_MCP_TRANSPORT**: Set the transport mode (`stdio` or `http`). Default: `stdio`
-- **HOLOVIZ_MCP_HOST**: Host to bind to for HTTP transport. Default: `0.0.0.0` (Docker), `127.0.0.1` (local)
+- **HOLOVIZ_MCP_HOST**: Host to bind to for HTTP transport. Default: `127.0.0.1` (overridden to `0.0.0.0` in Docker images)
 - **HOLOVIZ_MCP_PORT**: Port to bind to for HTTP transport. Default: `8000`
 - **HOLOVIZ_MCP_LOG_LEVEL**: Set the server log level (`INFO`, `DEBUG`, `WARNING`). Default: `INFO`
 - **HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**: Allow or block code execution features (`true` or `false`). Default: `true`
