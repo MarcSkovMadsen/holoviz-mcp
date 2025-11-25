@@ -3,5 +3,7 @@
 # For writing commands that will be executed after the container is created
 set -e
 
-sudo chown vscode .pixi
+if [ -d .pixi ]; then
+    sudo chown -R vscode .pixi
+fi
 pixi install --all

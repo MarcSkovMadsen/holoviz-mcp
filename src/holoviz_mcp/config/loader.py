@@ -202,7 +202,14 @@ class ConfigLoader:
 
         # Port override (for HTTP transport)
         if "HOLOVIZ_MCP_PORT" in os.environ:
-            config.setdefault("server", {})["port"] = int(os.environ["HOLOVIZ_MCP_PORT"])
+            port_str = os.environ["HOLOVIZ_MCP_PORT"]
+            try:
+                port = int(port_str)
+                if not (1 <= port <= 65535):
+                    raise ValueError(f"Port must be between 1 and 65535, got {port}")
+                config.setdefault("server", {})["port"] = port
+            except ValueError as e:
+                raise ConfigurationError(f"Invalid HOLOVIZ_MCP_PORT: {port_str}") from e
 
         # Telemetry override
         if "ANONYMIZED_TELEMETRY" in os.environ:

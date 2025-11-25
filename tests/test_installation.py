@@ -7,6 +7,7 @@ These tests verify that the server can be installed and run using:
 Note: These tests require uv and docker to be installed and available on the system.
 """
 
+import shutil
 import subprocess
 import time
 
@@ -14,7 +15,7 @@ import pytest
 
 
 @pytest.mark.skipif(
-    subprocess.run(["which", "docker"], capture_output=True).returncode != 0,
+    shutil.which("docker") is None,
     reason="Docker not available",
 )
 class TestDockerInstallation:
@@ -61,16 +62,23 @@ class TestDockerInstallation:
             )
             assert result.returncode == 0, f"Failed to start container: {result.stderr}"
 
-            # Wait for container to initialize
-            time.sleep(10)
+            # Wait for container to initialize (with retry)
+            max_wait = 10
+            interval = 0.5
+            elapsed = 0
+            while elapsed < max_wait:
+                status = subprocess.run(
+                    ["docker", "ps", "-a", "-f", f"name={container_name}", "--format", "{{.Status}}"],
+                    capture_output=True,
+                    text=True,
+                )
+                if status.stdout.strip():
+                    break
+                time.sleep(interval)
+                elapsed += interval
 
             # Check container status (may have exited for stdio, which is ok)
-            status = subprocess.run(
-                ["docker", "ps", "-a", "-f", f"name={container_name}", "--format", "{{.Status}}"],
-                capture_output=True,
-                text=True,
-            )
-            assert status.stdout.strip(), f"Container {container_name} not found"
+            assert status.stdout.strip(), f"Container {container_name} not found after {max_wait} seconds"
 
             # Check logs for successful startup (container may exit with stdio transport, that's expected)
             logs = subprocess.run(
@@ -114,8 +122,20 @@ class TestDockerInstallation:
             )
             assert result.returncode == 0, f"Failed to start container: {result.stderr}"
 
-            # Wait for container to initialize and check status
-            time.sleep(10)
+            # Wait for container to initialize (with retry)
+            max_wait = 10
+            interval = 0.5
+            elapsed = 0
+            while elapsed < max_wait:
+                status_check = subprocess.run(
+                    ["docker", "ps", "-f", f"name={container_name}", "--format", "{{.Status}}"],
+                    capture_output=True,
+                    text=True,
+                )
+                if status_check.stdout.strip():
+                    break
+                time.sleep(interval)
+                elapsed += interval
 
             # Check if container is still running
             status = subprocess.run(
@@ -201,7 +221,7 @@ class TestDockerInstallation:
 
 
 @pytest.mark.skipif(
-    subprocess.run(["which", "uvx"], capture_output=True).returncode != 0,
+    shutil.which("uvx") is None,
     reason="UV not available",
 )
 class TestUVInstallation:
