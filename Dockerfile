@@ -61,6 +61,7 @@ WORKDIR /app
 # Copy only necessary application files from builder (exclude .git)
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/pyproject.toml /app/README.md /app/LICENSE.txt /app/
+COPY --from=builder /app/pixi.toml /app/pixi.lock /app/
 # Add any other necessary runtime files here
 
 # Expose default MCP port (if using HTTP transport)
