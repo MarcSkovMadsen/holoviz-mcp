@@ -65,7 +65,7 @@ class TestDockerInstallation:
             # Wait for container to initialize (with retry)
             max_wait = 10
             interval = 0.5
-            elapsed = 0
+            elapsed = 0.0
             status = None
             while elapsed < max_wait:
                 status = subprocess.run(
@@ -132,7 +132,7 @@ class TestDockerInstallation:
             # Wait for container to initialize (with retry)
             max_wait = 10
             interval = 0.5
-            elapsed = 0
+            elapsed = 0.0
             while elapsed < max_wait:
                 status_check = subprocess.run(
                     ["docker", "ps", "-f", f"name={container_name}", "--format", "{{.Status}}"],

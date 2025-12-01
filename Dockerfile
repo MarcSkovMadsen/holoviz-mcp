@@ -1,4 +1,5 @@
 # Multi-stage build for HoloViz MCP Server
+# Updated: 2025-12-01
 FROM python:3.11-slim AS builder
 
 # Install system dependencies
@@ -65,8 +66,18 @@ ENV HOLOVIZ_MCP_TRANSPORT=stdio \
     HOLOVIZ_MCP_LOG_LEVEL=INFO \
     HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=true
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Update documentation index if requested\n\
+if [ "$UPDATE_DOCS" = "true" ]; then\n\
+    echo "Updating documentation index..."\n\
+    pixi run -e default holoviz-mcp-update\n\
+fi\n\
+\n\
+# Start the MCP server\n\
+exec pixi run -e default holoviz-mcp "$@"\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
