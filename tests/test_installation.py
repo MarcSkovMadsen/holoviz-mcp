@@ -99,6 +99,9 @@ class TestDockerInstallation:
             # Check container status (may have exited for stdio, which is ok)
             assert status is not None and status.stdout.strip(), f"Container {container_name} not found or not ready after {max_wait} seconds"
 
+            # Wait a moment for the application to start and write logs
+            time.sleep(5)
+
             # Check logs for successful startup (container may exit with stdio transport, that's expected)
             logs = subprocess.run(
                 ["docker", "logs", container_name],
@@ -183,6 +186,9 @@ class TestDockerInstallation:
                 text=True,
             )
             assert status.stdout.strip(), f"Container {container_name} is not running"
+
+            # Wait a moment for the application to start and write logs
+            time.sleep(5)
 
             # Check logs for successful startup
             logs = subprocess.run(
