@@ -187,8 +187,8 @@ class TestDockerInstallation:
             )
             assert status.stdout.strip(), f"Container {container_name} is not running"
 
-            # Wait a moment for the application to start and write logs
-            time.sleep(5)
+            # Wait for the HTTP server to start and write logs (HTTP takes longer than STDIO)
+            time.sleep(10)
 
             # Check logs for successful startup
             logs = subprocess.run(
