@@ -75,11 +75,7 @@ class TestDockerInstallation:
                 )
                 container_status = status.stdout.strip()
                 # Accept if container is present and in a known state (Up, Exited, or Created)
-                if container_status and (
-                    container_status.startswith("Up")
-                    or container_status.startswith("Exited")
-                    or container_status.startswith("Created")
-                ):
+                if container_status and container_status.startswith(("Up", "Exited", "Created")):
                     break
                 time.sleep(interval)
                 elapsed += interval
@@ -276,6 +272,7 @@ class TestPackageStructure:
         """Verify all required dependencies are in pyproject.toml."""
         import tomllib
         from pathlib import Path
+
         from packaging.requirements import Requirement
 
         pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
@@ -289,7 +286,7 @@ class TestPackageStructure:
                 req = Requirement(dep)
                 dep_names.append(req.name)
             except Exception:
-                # Fallback for unparseable dependencies
+                # Fallback for unparsable dependencies
                 dep_names.append(dep.split("[")[0].split(">=")[0].split("==")[0].strip())
 
         required_deps = ["fastmcp", "panel", "chromadb", "pydantic", "sentence-transformers"]
