@@ -2,6 +2,10 @@
 # Updated: 2025-12-01
 FROM python:3.11-slim AS builder
 
+# Build argument for version (can be set during build)
+ARG VERSION=0.0.0+docker
+ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_HOLOVIZ_MCP=${VERSION}
+
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
