@@ -28,13 +28,16 @@ WORKDIR /app
 # Copy project files
 COPY pixi.toml pixi.lock pyproject.toml README.md LICENSE.txt MANIFEST.in ./
 COPY src/ ./src/
-# COPY .git/ ./.git/   # Removed to avoid copying full git history; use build args or env vars for version info if needed
+COPY .git/ ./.git/
 
 # Install dependencies using Pixi
 RUN pixi install --locked
 
-# Install the package using UV
+# Install the package using pip (editable mode, will use git for version)
 RUN pixi run -e default postinstall
+
+# Clean up .git to reduce image size after installation
+RUN rm -rf .git
 
 # Final stage
 FROM python:3.11-slim
