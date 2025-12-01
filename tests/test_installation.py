@@ -99,20 +99,29 @@ class TestDockerInstallation:
             # Check container status (may have exited for stdio, which is ok)
             assert status is not None and status.stdout.strip(), f"Container {container_name} not found or not ready after {max_wait} seconds"
 
-            # Wait a moment for the application to start and write logs
-            time.sleep(5)
+            # Wait for logs to appear with retry logic (logs may take time due to buffering)
+            max_log_wait = 15  # Maximum 15 seconds to wait for logs
+            log_check_interval = 1
+            log_elapsed = 0
+            combined_output = ""
 
-            # Check logs for successful startup (container may exit with stdio transport, that's expected)
-            logs = subprocess.run(
-                ["docker", "logs", container_name],
-                capture_output=True,
-                text=True,
-            )
+            while log_elapsed < max_log_wait:
+                time.sleep(log_check_interval)
+                log_elapsed += log_check_interval
 
-            combined_output = logs.stdout + logs.stderr
+                logs = subprocess.run(
+                    ["docker", "logs", container_name],
+                    capture_output=True,
+                    text=True,
+                )
+                combined_output = logs.stdout + logs.stderr
 
-            # Add diagnostic info if logs are empty
-            if not combined_output.strip():
+                # Check if we have the expected log content
+                if "Starting MCP server 'holoviz'" in combined_output:
+                    break
+
+            # Add diagnostic info if logs are still incomplete after waiting
+            if not combined_output.strip() or "Starting MCP server 'holoviz'" not in combined_output:
                 # Get additional diagnostic info
                 inspect = subprocess.run(
                     ["docker", "inspect", container_name],
@@ -125,8 +134,9 @@ class TestDockerInstallation:
                     text=True,
                 )
                 diagnostic_msg = (
-                    f"No logs found. Container status: {status.stdout}\n"
+                    f"Logs incomplete after {log_elapsed}s. Container status: {status.stdout}\n"
                     f"Docker ps output:\n{ps_output.stdout}\n"
+                    f"Actual logs ({len(combined_output)} chars):\n{combined_output[:1000]}\n"
                     f"Container inspect (last 500 chars):\n{inspect.stdout[-500:]}"
                 )
                 pytest.fail(diagnostic_msg)
@@ -187,18 +197,31 @@ class TestDockerInstallation:
             )
             assert status.stdout.strip(), f"Container {container_name} is not running"
 
-            # Wait for the HTTP server to start and write logs (HTTP takes longer than STDIO)
-            time.sleep(10)
+            # Wait for logs to appear with retry logic (HTTP server takes time to start)
+            max_log_wait = 20  # HTTP needs more time than STDIO
+            log_check_interval = 1
+            log_elapsed = 0
+            combined_output = ""
 
-            # Check logs for successful startup
-            logs = subprocess.run(
-                ["docker", "logs", container_name],
-                capture_output=True,
-                text=True,
-            )
+            while log_elapsed < max_log_wait:
+                time.sleep(log_check_interval)
+                log_elapsed += log_check_interval
 
-            combined_output = logs.stdout + logs.stderr
-            assert combined_output.strip(), f"No logs found. Container status: {status.stdout}"
+                logs = subprocess.run(
+                    ["docker", "logs", container_name],
+                    capture_output=True,
+                    text=True,
+                )
+                combined_output = logs.stdout + logs.stderr
+
+                # Check if we have the expected log content
+                if "Uvicorn running" in combined_output:
+                    break
+
+            # Verify logs contain expected content
+            if not combined_output.strip():
+                pytest.fail(f"No logs found after {log_elapsed}s. Container status: {status.stdout}")
+
             assert "FastMCP" in combined_output, f"Server banner not found in logs. Output: {combined_output[:500]}"
             assert "Transport:   HTTP" in combined_output, "HTTP transport not detected"
             # Server can bind to either 127.0.0.1 or 0.0.0.0 depending on configuration
