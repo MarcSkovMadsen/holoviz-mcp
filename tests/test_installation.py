@@ -14,9 +14,25 @@ import time
 import pytest
 
 
+def is_docker_available():
+    """Check if Docker is available and the daemon is running."""
+    if shutil.which("docker") is None:
+        return False
+    try:
+        result = subprocess.run(
+            ["docker", "ps"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
 @pytest.mark.skipif(
-    shutil.which("docker") is None,
-    reason="Docker not available",
+    not is_docker_available(),
+    reason="Docker not available or daemon not running",
 )
 class TestDockerInstallation:
     """Test Docker-based installation and execution."""
@@ -91,7 +107,27 @@ class TestDockerInstallation:
             )
 
             combined_output = logs.stdout + logs.stderr
-            assert combined_output.strip(), f"No logs found. Container status: {status.stdout}"
+
+            # Add diagnostic info if logs are empty
+            if not combined_output.strip():
+                # Get additional diagnostic info
+                inspect = subprocess.run(
+                    ["docker", "inspect", container_name],
+                    capture_output=True,
+                    text=True,
+                )
+                ps_output = subprocess.run(
+                    ["docker", "ps", "-a", "-f", f"name={container_name}"],
+                    capture_output=True,
+                    text=True,
+                )
+                diagnostic_msg = (
+                    f"No logs found. Container status: {status.stdout}\n"
+                    f"Docker ps output:\n{ps_output.stdout}\n"
+                    f"Container inspect (last 500 chars):\n{inspect.stdout[-500:]}"
+                )
+                pytest.fail(diagnostic_msg)
+
             assert "FastMCP" in combined_output, f"Server banner not found in logs. Output: {combined_output[:500]}"
             assert "Transport:   STDIO" in combined_output, "STDIO transport not detected"
             assert "Starting MCP server 'holoviz'" in combined_output
