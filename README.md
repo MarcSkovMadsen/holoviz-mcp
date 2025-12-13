@@ -122,7 +122,7 @@ Ask your AI assistant questions like:
 
 Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to see it in action.
 
-[![HoloViz MCP Introduction](doc/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
+[![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
 
 ## 📚 Learn More
 
