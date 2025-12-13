@@ -94,12 +94,13 @@ nav:
     - Tutorials:
         - Getting Started: tutorials/getting-started.md
     - How-To Guides:
-        - Installation: how-to/installation.md
-        - IDE Configuration: how-to/ide-configuration.md
-        - Docker Setup: how-to/docker.md
-        - Configuration: how-to/configuration.md
-        - Updates & Maintenance: how-to/updates.md
-        - Troubleshooting: how-to/troubleshooting.md
+        - Install: how-to/installation.md
+        - Configure your IDE: how-to/ide-configuration.md
+        - Setup Docker: how-to/docker.md
+        - Configure holoviz-mcp: how-to/configuration.md
+        - Serve Apps: how-to/serve-apps.md
+        - Maintain: how-to/updates.md
+        - Troubleshoot: how-to/troubleshooting.md
     - Explanation:
         - Architecture: explanation/architecture.md
         - Available Tools: explanation/tools.md
