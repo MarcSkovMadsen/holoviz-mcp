@@ -54,7 +54,7 @@ Or use [Docker](#-docker-installation) for a containerized setup.
 If you have [uv](https://docs.astral.sh/uv/) installed, we recommend installing HoloViz MCP as a [uv tool](https://docs.astral.sh/uv/concepts/tools/):
 
 ```bash
-uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]
+uv tool install holoviz-mcp[panel-extensions]
 ```
 
 This ensures the `holoviz-mcp` server is installed once, instead of each time it is run as a tool.
@@ -65,13 +65,13 @@ Additionally, we highly recommend creating the documentation index (i.e., contex
 uvx --from holoviz-mcp holoviz-mcp-update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
 ```
 
-You may optionally verify you can start the server with the `sse` transport:
+You may optionally verify you can start the server with the default [`stdio`](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio) transport used for local mcp servers:
 
 ```bash
 uvx holoviz-mcp
 ```
 
-Or, optionally start it with the `http` transport:
+Or, optionally start it with the [`http`](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport used for a shared mcp server:
 
 ```bash
 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
@@ -745,15 +745,3 @@ We welcome contributions! Here's how to get started:
 - **GitHub Actions** for CI/CD
 
 Run `pixi run pre-commit-install` to set up code quality checks.
-
-## Roadmap
-
-- [ ] Provide Panel and Panel Material UI best practices for both "beginners" and "intermediate" users. Current ones are for "intermediate users".
-- [ ] Find that "magic" prompt that makes the LLM run a development server with hot reload (`panel serve ... --dev`) while developing. Would make things more engaging. I've tried a lot.
-
-- [ ] Try out [Playwright MCP](https://github.com/microsoft/playwright-mcp). Its probably worth recommending for taking screenshots and interacting with the app in the browser.
-- [ ] Provide reference guides for other HoloViz packages starting with hvPlot, param and HoloViews.
-- [ ] Base index on latest released versions instead of latest code (`Head`).
-- [ ] Add dev tools and agents! useful for HoloViz contributors.
-- [ ] Figure out if there is potential for integrating with or playing together with Lumen AI
-- [ ] Migrate to HoloViz organisation.
