@@ -44,7 +44,7 @@ uv tool update holoviz-mcp[panel-extensions] && uvx --from holoviz-mcp holoviz-m
 
 ### Create an Alias
 
-Add to your `.bashrc` or `.zshrc`:
+If using *bash*, add this to your `.bashrc` or `.zshrc`:
 
 ```bash
 alias holoviz-mcp-update="uv tool update holoviz-mcp[panel-extensions] && uvx --from holoviz-mcp holoviz-mcp-update"
@@ -120,6 +120,7 @@ The documentation index includes version information in `~/.holoviz-mcp/`.
 ### When to Update
 
 Update when:
+
 - New HoloViz releases are announced
 - You encounter bugs that may be fixed in newer versions
 - New Panel extensions are released

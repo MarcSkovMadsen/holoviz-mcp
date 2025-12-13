@@ -4,7 +4,7 @@ Welcome to the HoloViz MCP documentation! This comprehensive guide will help you
 
 ## What is HoloViz MCP?
 
-HoloViz MCP is a [Model Context Protocol](https://modelcontextprotocol.io/introduction) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem. It enables AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [Lumen](https://lumen.holoviz.org/), [Datashader](https://datashader.org/) and your favorite Python libraries.
+HoloViz MCP is a [Model Context Protocol](https://modelcontextprotocol.io/introduction) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem. It enables AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [Lumen](https://lumen.holoviz.org/), [Datashader](https://datashader.org/), the rest of the [HoloViz](https://holoviz.org/) ecosystem and your favorite Python libraries.
 
 ### Key Features
 
@@ -16,7 +16,7 @@ HoloViz MCP is a [Model Context Protocol](https://modelcontextprotocol.io/introd
 ### Why Use HoloViz MCP?
 
 - **⚡ Faster Development**: Get instant, accurate component information
-- **�� Better Design**: AI suggests appropriate components for your use case
+- **🎨 Better Design**: AI suggests appropriate components for your use case
 - **🧠 Smart Context**: Understands your environment and available extensions
 - **📖 Always Updated**: Documentation stays current with the ecosystem
 - **🔧 Zero Setup**: Works immediately with MCP-compatible AI assistants

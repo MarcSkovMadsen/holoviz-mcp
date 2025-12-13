@@ -4,7 +4,7 @@ This guide provides comprehensive information about running HoloViz MCP Server u
 
 ## Overview
 
-Docker provides the easiest way to run HoloViz MCP Server with all dependencies pre-installed and properly configured. The Docker image is automatically built and published to GitHub Container Registry for both AMD64 and ARM64 architectures (Apple Silicon, Raspberry Pi, etc.).
+Docker provides a very easy way to run HoloViz MCP Server with all dependencies pre-installed and properly configured. The Docker image is automatically built and published to GitHub Container Registry for both AMD64 and ARM64 architectures (Apple Silicon, Raspberry Pi, etc.).
 
 ### Benefits of Using Docker
 
@@ -82,7 +82,7 @@ Configure the server behavior using environment variables:
 | `HOLOVIZ_MCP_PORT` | Port to bind (HTTP mode) | `8000` | Any valid port |
 | `HOLOVIZ_MCP_LOG_LEVEL` | Logging level | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION` | Enable code execution | `true` | `true`, `false` |
-| `UPDATE_DOCS` | Update docs on startup | `false` | `true`, `false` |
+| `UPDATE_DOCS` | Update documentation index on startup | `false` | `true`, `false` |
 | `JUPYTER_SERVER_PROXY_URL` | URL prefix for Panel apps | - | URL path |
 
 ### Example Configuration

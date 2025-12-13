@@ -48,6 +48,7 @@ dependencies = [
     "panel",
     "pydantic>=2.0",
     "PyYAML",
+    "watchfiles",
 ]
 
 [project.urls]
@@ -67,7 +68,6 @@ dev = [
     "pytest-xdist",
     "pytest",
     "types-PyYAML",
-    "watchfiles",
 ]
 mypy = [
     "mypy",

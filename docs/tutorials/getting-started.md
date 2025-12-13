@@ -16,10 +16,10 @@ Before you begin, ensure you have:
 - **Python 3.11 or newer** installed on your system
 - **[uv](https://docs.astral.sh/uv/)** package installer
 - An **MCP-compatible AI assistant**:
-  - VS Code with GitHub Copilot extension
-  - Claude Desktop application
-  - Cursor IDE
-  - Or any other MCP-compatible client
+    - VS Code with GitHub Copilot extension
+    - Claude Desktop application
+    - Cursor IDE
+    - Or any other MCP-compatible client
 
 ## Step 1: Install HoloViz MCP
 
@@ -70,7 +70,8 @@ Choose your AI assistant and follow the appropriate configuration:
 
 4. Save the file and restart VS Code
 
-**For remote development**: Add this to your Workspace or Remote `mcp.json` instead of User settings to ensure the server runs on the remote machine.
+**For remote development**: Add this to your Remote `mcp.json` instead of User settings to ensure the server runs on the remote machine.
+**For Workspace customization**: Add this to your Workspace `mcp.json` to override the User or Remote settings.
 
 ### Claude Desktop
 
@@ -131,14 +132,11 @@ Open a chat with your AI assistant and try these questions:
    What Panel components are available for user input?
    ```
 
+  Note: In VS Code, you can prefix your prompt with `#holoviz` to explicitly request that the AI use the `holoviz-mcp` server tools for your query.
+
 2. **Component Details**:
    ```
    What parameters does the Panel Button component accept?
-   ```
-
-3. **Build Something**:
-   ```
-   Create a simple Panel dashboard with a slider and a plot that updates based on the slider value
    ```
 
 If your AI assistant provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
@@ -155,10 +153,20 @@ Now that everything is set up, let's build a simple dashboard:
 
 3. Your AI assistant will provide code using HoloViz MCP's knowledge of Panel components!
 
-4. Run the dashboard:
-   ```bash
-   panel serve app.py --show
+4. Ask your AI assistant:
    ```
+   Using the holoviz-mcp tools serve the app
+   ```
+
+5. Ask your AI assistant:
+   ```
+   Get the panel server logs
+   ```
+
+6. Ask your AI Assistant
+  ```
+  Close the panel server
+  ```
 
 ## What's Next?
 
@@ -185,7 +193,7 @@ Now that you have HoloViz MCP running, explore more:
 
 **Problem**: AI assistant doesn't recognize Panel components
 
-**Solution**: 
+**Solution**:
 1. Check that the documentation index completed (Step 2)
 2. Verify your configuration file is correct
 3. Restart your IDE
@@ -207,10 +215,10 @@ For more help, see the [Troubleshooting Guide](../how-to/troubleshooting.md) or 
 
 In this tutorial, you:
 
-✅ Installed HoloViz MCP using uv  
-✅ Created the documentation index  
-✅ Configured your AI assistant  
-✅ Verified the installation  
-✅ Built your first Panel dashboard  
+✅ Installed HoloViz MCP using uv
+✅ Created the documentation index
+✅ Configured your AI assistant
+✅ Verified the installation
+✅ Built your first Panel dashboard
 
 You're now ready to use HoloViz MCP to accelerate your Panel development! Happy coding! 🚀

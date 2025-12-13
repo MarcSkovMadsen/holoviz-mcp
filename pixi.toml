@@ -89,8 +89,8 @@ mkdocstrings-python = "*"
 mkdocs-pycafe = "*"
 
 [feature.docs.tasks]
-docs = "mkdocs serve"
-docs-build = "mkdocs build"
+serve = "mkdocs serve"
+build = "mkdocs build"
 
 [environments]
 default = ["test"]

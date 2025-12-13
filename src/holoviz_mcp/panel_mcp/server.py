@@ -139,17 +139,17 @@ async def list_packages(ctx: Context) -> list[str]:
     -------
     list[str]
         List of package names that provide Panel components, sorted alphabetically.
-        Examples: ["panel"], ["panel", "panel_material_ui"], ["panel", "awesome_panel_extensions"]
+        Examples: ["panel"] or ["panel", "panel_material_ui"]
 
     Examples
     --------
     Use this tool to see available packages:
     >>> list_packages()
-    ["panel", "panel_material_ui", "awesome_panel_extensions"]
+    ["panel", "panel_material_ui"]
 
     Then use those package names in other tools:
-    >>> list_components(package="panel_material_ui")
-    >>> search("button", package="panel")
+    >>> list_components(project="panel-material-ui")
+    >>> search("button", project="panel")
     """
     return sorted(set(component.project for component in await _get_all_components(ctx)))
 
@@ -169,9 +169,9 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
     query : str
         Search term to look for. Can be component names, functionality keywords, or descriptions.
         Examples: "button", "input", "text", "chart", "plot", "slider", "select"
-    package : str, optional
-        Package name to filter results. If None, searches all packages.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+    project : str, optional
+        Project name to filter results. If None, searches all packages.
+        Examples: "hvplot", "panel", or "panel-material-ui"
     limit : int, optional
         Maximum number of results to return. Default is 10.
 
@@ -188,12 +188,12 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
     [ComponentSummarySearchResult(name="Button", package="panel", relevance_score=80, ...)]
 
     Search within a specific package:
-    >>> search("input", package="panel_material_ui")
-    [ComponentSummarySearchResult(name="TextInput", package="panel_material_ui", ...)]
+    >>> search("input", project="panel-material-ui")
+    [ComponentSummarySearchResult(name="TextInput", project="panel-material-ui", ...)]
 
     Find chart components with limited results:
     >>> search("chart", limit=5)
-    [ComponentSummarySearchResult(name="Bokeh", package="panel", ...)]
+    [ComponentSummarySearchResult(name="Bokeh", project="panel", ...)]
     """
     query_lower = query.lower()
 
@@ -280,29 +280,29 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
     module_path : str, optional
         Module path prefix to filter by. If None, returns all components.
         Examples: "panel.widgets" to get all widgets, "panel.pane" to get all panes
-    package : str, optional
+    project : str, optional
         Package name to filter by. If None, returns all components.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+        Examples: "hvplot", "panel" or "panel-material-ui"
 
     Returns
     -------
     list[ComponentSummary]
-        List of component summaries containing name, package, description, and module path.
+        List of component summaries containing name, project, description, and module path.
         No parameter details are included for faster responses.
 
     Examples
     --------
     Get all available components:
     >>> list_components()
-    [ComponentSummary(name="Button", package="panel", description="A clickable button widget", ...)]
+    [ComponentSummary(name="Button", project="panel", description="A clickable button widget", ...)]
 
     Get all Material UI components:
-    >>> list_components(package="panel_material_ui")
-    [ComponentSummary(name="Button", package="panel_material_ui", ...)]
+    >>> list_components(project="panel-material-ui")
+    [ComponentSummary(name="Button", project="panel-material-ui", ...)]
 
-    Get all Button components from all packages:
+    Get all Button components from all projects:
     >>> list_components(name="Button")
-    [ComponentSummary(name="Button", package="panel", ...), ComponentSummary(name="Button", package="panel_material_ui", ...)]
+    [ComponentSummary(name="Button", project="panel", ...), ComponentSummary(name="Button", project="panel-material-ui", ...)]
     """
     components_list = []
 
@@ -340,9 +340,9 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     module_path : str, optional
         Full module path to match. If None, uses name and package to find component.
         Examples: "panel.widgets.Button", "panel_material_ui.Button"
-    package : str, optional
-        Package name to filter by. If None, searches all packages.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+    project : str, optional
+        Project name to filter by. If None, searches all projects.
+        Examples: "hvplot", "panel" or "panel-material-ui"
 
     Returns
     -------
@@ -357,12 +357,12 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     Examples
     --------
     Get Panel's Button component:
-    >>> get_component(name="Button", package="panel")
-    ComponentDetails(name="Button", package="panel", docstring="A clickable button...", parameters={...})
+    >>> get_component(name="Button", project="panel")
+    ComponentDetails(name="Button", project="panel", docstring="A clickable button...", parameters={...})
 
     Get Material UI Button component:
-    >>> get_component(name="Button", package="panel_material_ui")
-    ComponentDetails(name="Button", package="panel_material_ui", ...)
+    >>> get_component(name="Button", project="panel-material-ui")
+    ComponentDetails(name="Button", project="panel-material-ui", ...)
 
     Get component by exact module path:
     >>> get_component(module_path="panel.widgets.button.Button")
@@ -402,9 +402,9 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     module_path : str, optional
         Full module path to match. If None, uses name and package to find component.
         Examples: "panel.widgets.Button", "panel_material_ui.Button"
-    package : str, optional
-        Package name to filter by. If None, searches all packages.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+    project : str, optional
+        Project name to filter by. If None, searches all projects.
+        Examples: "hvplot", "panel" or "panel-material-ui"
 
     Returns
     -------
@@ -424,11 +424,11 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     Examples
     --------
     Get Button parameters:
-    >>> get_component_parameters(name="Button", package="panel")
+    >>> get_component_parameters(name="Button", project="panel")
     {"name": ParameterInfo(type="String", default="Button", doc="The text displayed on the button"), ...}
 
     Get TextInput parameters:
-    >>> get_component_parameters(name="TextInput", package="panel")
+    >>> get_component_parameters(name="TextInput", project="panel")
     {"value": ParameterInfo(type="String", default="", doc="The current text value"), ...}
 
     Get parameters by exact module path:

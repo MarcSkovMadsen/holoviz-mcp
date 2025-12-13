@@ -8,7 +8,7 @@ This guide covers configuring HoloViz MCP with different IDEs and AI assistants.
 
 Click to install automatically:
 
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522holoviz%2522%252C%2522command%2522%253A%2522uvx%2522%252C%2522args%2522%253A%255B%2522--from%2522%252C%2522git%252Bhttps%253A//github.com/MarcSkovMadsen/holoviz-mcp%255Bpanel-extensions%255D%2522%252C%2522holoviz-mcp%2522%255D%257D)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522holoviz%2522%252C%2522command%2522%253A%2522uvx%2522%252C%2522args%2522%253A%255B%2522holoviz-mcp%255Bpanel-extensions%255D%2522%255D%257D)
 
 ### Manual Configuration
 
@@ -45,30 +45,6 @@ Click to install automatically:
 1. Open Output panel: `View` → `Output`
 2. Select "MCP: holoviz" from the dropdown
 3. View server logs and status messages
-
-### Using HTTP Transport (Remote Development)
-
-For remote development, you may want to use HTTP transport:
-
-1. Start the server with HTTP transport:
-
-```bash
-HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
-```
-
-2. Configure VS Code `mcp.json`:
-
-```json
-{
-  "servers": {
-    "holoviz": {
-      "type": "http",
-      "url": "http://127.0.0.1:8000/mcp/"
-    }
-  },
-  "inputs": []
-}
-```
 
 ## Claude Desktop
 
