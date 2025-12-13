@@ -939,8 +939,8 @@ class DocumentationIndexer:
         logger.info("=" * 50)
 
         async def run_indexer(indexer=self):
-            logger.info(f"📦 Default config: {indexer._holoviz_mcp_config.config_file_path(location="default")}")
-            logger.info(f"🏠 User config: {indexer._holoviz_mcp_config.config_file_path(location="user")}")
+            logger.info(f"📦 Default config: {indexer._holoviz_mcp_config.config_file_path(location='default')}")
+            logger.info(f"🏠 User config: {indexer._holoviz_mcp_config.config_file_path(location='user')}")
             logger.info(f"📁 Repository directory: {indexer.repos_dir}")
             logger.info(f"💾 Vector database: {indexer.data_dir / 'chroma'}")
             logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")
