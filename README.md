@@ -5,14 +5,13 @@
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/holoviz-mcp?logoColor=white&logo=conda-forge&style=flat-square)](https://prefix.dev/channels/conda-forge/packages/holoviz-mcp)
 [![pypi-version](https://img.shields.io/pypi/v/holoviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/holoviz-mcp)
 [![python-version](https://img.shields.io/pypi/pyversions/holoviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/holoviz-mcp)
+[![docs](https://img.shields.io/badge/docs-read-blue?style=flat-square)](https://marcskovmadsen.github.io/holoviz-mcp/)
 
 A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem, enabling AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [Lumen](https://lumen.holoviz.org/), [Datashader](https://datashader.org/) and your favorite Python libraries.
 
 [![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)](https://holoviz.org)
 
-Please note:
-
-- This MCP server **can execute arbitrary Python code** when it serves Panel applications (this is configurable, and enabled by default).
+**📖 [Full Documentation](https://marcskovmadsen.github.io/holoviz-mcp/)** | **🚀 [Quick Start](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)** | **🐳 [Docker Guide](https://marcskovmadsen.github.io/holoviz-mcp/how-to/docker/)**
 
 ## ✨ What This Provides
 
@@ -32,14 +31,6 @@ Please note:
 - **📖 Always Updated**: Documentation stays current with the latest HoloViz ecosystem changes.
 - **🔧 Zero Setup**: Works immediately with any MCP-compatible AI assistant.
 
-## Need more?
-
-Check out the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube.
-
-[![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
-
-Other videos: [hvPlot tools](https://youtu.be/jTe2ZqAAtR8).
-
 ## 🚀 Quick Start
 
 ### Requirements
@@ -47,701 +38,118 @@ Other videos: [hvPlot tools](https://youtu.be/jTe2ZqAAtR8).
 - Python 3.11+ and [uv](https://docs.astral.sh/uv/)
 - VS Code with GitHub Copilot, Claude Desktop, Cursor, or any other MCP-compatible client
 
-Or use [Docker](#-docker-installation) for a containerized setup.
+### Installation
 
-## Install with uv
-
-If you have [uv](https://docs.astral.sh/uv/) installed, we recommend installing HoloViz MCP as a [uv tool](https://docs.astral.sh/uv/concepts/tools/):
+Install HoloViz MCP as a [uv tool](https://docs.astral.sh/uv/concepts/tools/):
 
 ```bash
 uv tool install holoviz-mcp[panel-extensions]
 ```
 
-This ensures the `holoviz-mcp` server is installed once, instead of each time it is run as a tool.
-
-Additionally, we highly recommend creating the documentation index (i.e., context) used by holoviz-mcp now, since this process can take up to 10 minutes:
+Create the documentation index (takes up to 10 minutes on first run):
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
+uvx --from holoviz-mcp holoviz-mcp-update
 ```
 
-You may optionally verify you can start the server with the default [`stdio`](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio) transport used for local mcp servers:
+### Configure Your IDE
 
-```bash
-uvx holoviz-mcp
-```
-
-Or, optionally start it with the [`http`](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) transport used for a shared mcp server:
-
-```bash
-HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
-```
-
-Use `CTRL+C` to stop the server when you are finished.
-
-## 🐳 Install with Docker
-
-An easy way to run HoloViz MCP is using Docker. This is the recommended way for users at [uw-ssec](https://github.com/uw-ssec).
-
-### Quick Start with Docker
-
-```bash
-# Pull the latest image.
-docker pull ghcr.io/marcskovmadsen/holoviz-mcp:latest
-
-# Run with default settings (STDIO transport)
-docker run -it --rm \
-  -v ~/.holoviz-mcp:/root/.holoviz-mcp \
-  ghcr.io/marcskovmadsen/holoviz-mcp:latest
-
-# Or run with HTTP transport (accessible at http://localhost:8000/mcp/)
-docker run -it --rm \
-  -p 8000:8000 \
-  -e HOLOVIZ_MCP_TRANSPORT=http \
-  -v ~/.holoviz-mcp:/root/.holoviz-mcp \
-  ghcr.io/marcskovmadsen/holoviz-mcp:latest
-```
-
-<details>
-<summary><b>Docker Configuration Options</b></summary>
-
-### Environment Variables
-
-- **HOLOVIZ_MCP_TRANSPORT**: Set the transport mode (`stdio` or `http`). Default: `stdio`
-- **HOLOVIZ_MCP_HOST**: Host to bind to for HTTP transport. Default: `127.0.0.1` (overridden to `0.0.0.0` in Docker images)
-- **HOLOVIZ_MCP_PORT**: Port to bind to for HTTP transport. Default: `8000`
-- **HOLOVIZ_MCP_LOG_LEVEL**: Set the server log level (`INFO`, `DEBUG`, `WARNING`). Default: `INFO`
-- **HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**: Allow or block code execution features (`true` or `false`). Default: `true`
-- **UPDATE_DOCS**: Update documentation index on container start (`true` or `false`). Default: `false`
-- **JUPYTER_SERVER_PROXY_URL**: URL prefix for Panel apps when running remotely
-
-Example with custom configuration:
-
-```bash
-docker run -it --rm \
-  -p 8000:8000 \
-  -e HOLOVIZ_MCP_TRANSPORT=http \
-  -e HOLOVIZ_MCP_LOG_LEVEL=DEBUG \
-  -e HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false \
-  -v ~/.holoviz-mcp:/root/.holoviz-mcp \
-  ghcr.io/marcskovmadsen/holoviz-mcp:latest
-```
-
-### Volume Mounts
-
-Mount the `~/.holoviz-mcp` directory to persist documentation index, configuration files, and user data:
-
-```bash
--v ~/.holoviz-mcp:/root/.holoviz-mcp
-```
-
-### Update Documentation Index on Startup
-
-To automatically update the documentation index when the container starts:
-
-```bash
-docker run -it --rm \
-  -e UPDATE_DOCS=true \
-  -v ~/.holoviz-mcp:/root/.holoviz-mcp \
-  ghcr.io/marcskovmadsen/holoviz-mcp:latest
-```
-
-**Note**: This process can take 5-10 minutes on first run.
-
-### Running with Docker Compose
-
-Create a `docker-compose.yml` file:
-
-```yaml
-services:
-  holoviz-mcp:
-    image: ghcr.io/marcskovmadsen/holoviz-mcp:latest
-    ports:
-      - "8000:8000"
-    environment:
-      - HOLOVIZ_MCP_TRANSPORT=http
-      - HOLOVIZ_MCP_LOG_LEVEL=INFO
-      - HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=true
-    volumes:
-      - ~/.holoviz-mcp:/root/.holoviz-mcp
-    restart: unless-stopped
-```
-
-Then run:
-
-```bash
-docker-compose up -d
-```
-
-### Using with VS Code Remote Development
-
-Add this configuration to your VS Code `mcp.json`:
+**VS Code + GitHub Copilot**: Add this configuration to your `mcp.json`:
 
 ```json
 {
   "servers": {
     "holoviz": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp/"
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["holoviz-mcp"]
     }
   },
   "inputs": []
 }
 ```
 
-Start the Docker container with HTTP transport:
+**Claude Desktop**: Add to your configuration file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "holoviz": {
+      "command": "uvx",
+      "args": ["holoviz-mcp"]
+    }
+  }
+}
+```
+
+**Cursor**: Go to `Cursor Settings` → `Features` → `Model Context Protocol` → `Add Server`:
+
+```json
+{
+  "name": "holoviz",
+  "command": "uvx",
+  "args": ["holoviz-mcp"]
+}
+```
+
+Restart your IDE and start asking about Panel components!
+
+### Using Docker
+
+For containerized deployment:
 
 ```bash
-docker run -d --rm \
-  --name holoviz-mcp \
+# Pull the latest image
+docker pull ghcr.io/marcskovmadsen/holoviz-mcp:latest
+
+# Run with HTTP transport
+docker run -it --rm \
   -p 8000:8000 \
   -e HOLOVIZ_MCP_TRANSPORT=http \
   -v ~/.holoviz-mcp:/root/.holoviz-mcp \
   ghcr.io/marcskovmadsen/holoviz-mcp:latest
 ```
 
-### Available Tags
+See the [Docker Guide](https://marcskovmadsen.github.io/holoviz-mcp/how-to/docker/) for more details.
 
-The Docker image is available with the following tags:
+## 💡 Example Usage
 
-- `latest`: Latest build from the main branch
-- `YYYY.MM.DD`: Date-based tags (e.g., `2025.01.15`)
-- `vX.Y.Z`: Semantic version tags (e.g., `v1.0.0`)
-- `X.Y`: Major.minor version (e.g., `1.0`)
-- `X`: Major version (e.g., `1`)
+Ask your AI assistant questions like:
 
-### Building Locally
+- *"What Panel components are available for user input?"*
+- *"Show me how to create a dashboard with Panel Material UI components"*
+- *"What parameters does the Button component accept?"*
+- *"How do I deploy a Panel application?"*
 
-To build the Docker image locally:
+Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to see it in action.
 
-```bash
-docker build -t holoviz-mcp:local .
-```
+[![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
 
-The image supports both AMD64 and ARM64 architectures (Apple Silicon, Raspberry Pi, etc.).
+## 📚 Learn More
 
-</details>
+Check out the [`holoviz-mcp` documentation](https://marcskovmadsen.github.io/holoviz-mcp/):
 
-### One-Click IDE Installation with uv
-
-Click the appropriate badge below to install it for usage with a MCP client:
-
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522holoviz%2522%252C%2522command%2522%253A%2522uvx%2522%252C%2522args%2522%253A%255B%2522--from%2522%252C%2522git%252Bhttps%253A//github.com/MarcSkovMadsen/holoviz-mcp%255Bpanel-extensions%255D%2522%252C%2522holoviz-mcp%2522%255D%257D)
-[![Install in Cursor](https://img.shields.io/badge/Cursor-Install_Server-000000?style=flat-square)](cursor://settings/mcp)
-[![Claude Desktop](https://img.shields.io/badge/Claude_Desktop-Add_Server-FF6B35?style=flat-square)](#claude-desktop)
-
-### Manual IDE Installation
-
-<details>
-<summary><b>VS Code + GitHub Copilot</b></summary>
-
-Add this configuration to your VS Code `mcp.json`:
-
-```json
-{
-	"servers": {
-		"holoviz": {
-			"type": "stdio",
-			"command": "uvx",
-			"args": [
-				"holoviz-mcp"
-			]
-		}
-	},
-	"inputs": []
-}
-```
-
-Restart VS Code and start chatting with GitHub Copilot about Panel components!
-
-For more details, please refer to the official [VS Code + Copilot MCP Server Guide](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
-
-Note: If you are developing remotely, we recommend adding this to the "Remote" or "Workspace" mcp.json file instead of the "User" mcp.json file. This ensures the MCP server runs on the remote server instead of the local machine.
-
-</details>
-
-<details>
-<summary><b>Claude Desktop</b></summary>
-
-Add to your Claude Desktop configuration file:
-
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-    "mcpServers": {
-        "holoviz": {
-            "command": "uvx",
-            "args": [
-                "holoviz-mcp"
-            ]
-        }
-    }
-}
-```
-
-Restart Claude Desktop and start asking about Panel components!
-</details>
-
-<details>
-<summary><b>Cursor</b></summary>
-
-Go to `Cursor Settings` → `Features` → `Model Context Protocol` → `Add Server`:
-
-```json
-{
-    "name": "holoviz",
-    "command": "uvx",
-    "args": [
-        "holoviz-mcp"
-    ]
-}
-```
-
-Restart Cursor and start building Panel dashboards with AI assistance!
-</details>
-
-<details>
-<summary><b>Windsurf</b></summary>
-
-Add to your Windsurf MCP configuration:
-
-```json
-{
-    "mcpServers": {
-        "holoviz": {
-            "command": "uvx",
-            "args": [
-                "holoviz-mcp"
-            ]
-        }
-    }
-}
-```
-</details>
-
-<details>
-<summary><b>Other MCP Clients</b></summary>
-
-For other MCP-compatible clients, use the standard MCP configuration:
-
-```json
-{
-    "name": "holoviz",
-    "command": "uvx",
-    "args": [
-        "holoviz-mcp"
-    ]
-}
-```
-</details>
-
-**That's it!** Start asking questions about Panel components, and your AI assistant will have access to comprehensive documentation and component details.
-
-### ⏱️ First-Time Setup
-
-**Installation**: The first installation may take 1-2 minutes as dependencies are downloaded and configured.
-
-**Documentation Indexing**: The first time you search documentation, the system will automatically download and index HoloViz documentation from GitHub. This process takes 5-10 minutes but only happens once. Subsequent searches will be instant.
-
-**Progress Monitoring**: In VS Code, you can monitor progress in `OUTPUT → MCP: holoviz` to see indexing status and any potential issues.
-
-![OUTPUT](docs/assets/images/vs-code-output-holoviz.png)
-
-## 💡 What You Can Ask
-
-<details>
-<summary><b>🔍 Component Discovery</b></summary>
-
-**Ask:** *"What Panel components are available for user input?"*
-
-**AI Response:** The assistant will search through all available input components and provide a comprehensive list with descriptions, such as TextInput, Slider, Select, FileInput, etc.
-
-**Ask:** *"Show me Panel Material UI components"*
-
-**AI Response:** Lists all Material UI components if the package is installed, with their specific design system features.
-
-</details>
-
-<details>
-<summary><b>📋 Component Details</b></summary>
-
-**Ask:** *"What parameters does the Button component accept?"*
-
-**AI Response:** Returns all 20+ parameters with their types, defaults, and descriptions:
-- `name` (str): The text displayed on the button
-- `button_type` (str): Button style ('default', 'primary', 'light')
-- `clicks` (int): Number of times button has been clicked
-- And many more...
-
-</details>
-
-<details>
-<summary><b>📚 Best Practices</b></summary>
-
-**Ask:** *"What are the best practices for Panel layouts?"*
-
-**AI Response:** Provides comprehensive layout guidelines, performance tips, and architectural recommendations based on the official documentation.
-
-**Ask:** *"How should I structure a Panel application?"*
-
-**AI Response:** Offers detailed guidance on application architecture, state management, and component organization.
-
-</details>
-
-<details>
-<summary><b>🚀 Building Tools, Dashboards and Applications</b></summary>
-
-**Ask:** *"How do I build a minimal, Hello World data dashboard with Panel?"*
-
-**AI Response:** Provides basic application architecture with layout components, data connections, and interactive widgets.
-
-**Ask:** *"How do I create a minimal, dashboard with Panel Material UI sliders and plots?"*
-
-**AI Response:** Provides complete code examples with proper Panel layout structure and Panel Material UI component integration.
-
-**Ask:** *"Build a sales dashboard for data analysis using Panel Material UI components. Follow the Panel and Panel Material UI best practices. Create tests and make sure issues are identified and fixed."*
-
-**AI Response:** Provides code for interactive tools with dynamic filtering, real-time updates, and responsive layouts that work across devices.
-
-**Ask:** *"How do I deploy a Panel application?"*
-
-**AI Response:** Offers deployment strategies for various platforms (Heroku, AWS, local server) with configuration examples and best practices for production environments.
-
-</details>
-
-The AI assistant provides accurate, contextual answers with:
-- **Detailed component information** including all parameters and types
-- **Usage examples** and copy-pasteable code snippets
-- **Best practices** for Panel development
-- **Extension compatibility** information
-
-## 🛠️ Available Tools
-
-<details>
-<summary><b>Panel Tools</b></summary>
-
-- **list_packages**: List all installed packages that provide Panel UI components.
-- **search**: Search for Panel components by name, module path, or description.
-- **list_components**: Get a summary list of Panel components without detailed docstring and parameter information.
-- **get_component**: Get complete details about a single Panel component including docstring and parameters.
-- **get_component_parameters**: Get detailed parameter information for a single Panel component.
-- **serve**: Start a Panel server for a given file (if code execution is enabled).
-- **get_server_logs**: Get logs for a running Panel application server.
-- **close_server**: Close a running Panel application server.
-
-</details>
-
-<details>
-<summary><b>Documentation Tools</b></summary>
-
-- **get_best_practices**: Get best practices for using a project with LLMs.
-- **list_best_practices**: List all available best practices projects.
-- **get_reference_guide**: Find reference guides for specific HoloViz components.
-- **get_document**: Retrieve a specific document by path and project.
-- **search**: Search HoloViz documentation using semantic similarity.
-
-</details>
-
-<details>
-<summary><b>hvPlot Tools</b></summary>
-
-- **list_plot_types**: List all available hvPlot plot types.
-- **get_docstring**: Get the docstring for a specific hvPlot plot type.
-- **get_signature**: Get the function signature for a specific hvPlot plot type.
-
-</details>
-
-To prevent tools like `panel_serve` from running arbitrary code, you can disable them by setting one of the following options:
-
-- In your YAML configuration file, set: `server.security.allow_code_execution: false`
-- Or, set the environment variable: `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false`
-
-This will block any features that allow execution of user-provided code.
-
-## 📦 Installation
-
-### For AI Assistant Use
-
-The recommended way is to configure your AI assistant (VS Code + GitHub Copilot) to use the server directly as shown above.
-
-### Manual Installation
-
-```bash
-uv tool install holoviz-mcp
-```
-
-### With Panel Extensions
-
-Install with panel extensions like `panel-material-ui`, `panel-graphic-walker` etc. installed:
-
-```bash
-uv tool install holoviz-mcp[panel-extensions]
-```
-
-### Running the MCP Server
-
-```bash
-uvx holoviz-mcp
-```
-
-For HTTP transport:
-
-```bash
-HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
-```
-
-### Running the Panel Server
-
-HoloViz MCP provides a collection of Panel apps to explore, validate and use the mcp tools. These are also valuable in their own right.
-
-Serve with:
-
-```bash
-uvx --from holoviz-mcp holoviz-mcp-serve
-```
-
-[Try it](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui) on Hugging Face.
-
-### Search Tool
-
-Search across the indexed documentation. Read or open the document on the website.
-
-![Search Tool](docs/assets/images/holoviz-mcp-search-tool.png)
-
-### Configuration Viewer Tool
-
-Check out the default, user and combined configuration.
-
-![Configuration Viewer Tool](docs/assets/images/holoviz-mcp-configuration-viewer-tool.png)
-
-## ⚙️ Configuration Options
-
-<details>
-<summary><b>Transport Modes</b></summary>
-
-The server supports different transport protocols:
-
-**Standard I/O (default):**
-```bash
-uvx holoviz-mcp
-```
-
-**HTTP (for remote development):**
-```bash
-HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
-```
-
-</details>
-
-<details>
-<summary><b>Environment Variables</b></summary>
-
-- **HOLOVIZ_MCP_LOG_LEVEL**: Set the server log level (e.g., `INFO`, `DEBUG`, `WARNING`).
-- **HOLOVIZ_MCP_SERVER_NAME**: Override the server name.
-- **HOLOVIZ_MCP_TRANSPORT**: Set the transport mode (e.g., `stdio`, `http`).
-- **HOLOVIZ_MCP_HOST**: Host address to bind to when using HTTP transport. Default: `127.0.0.1` (use `0.0.0.0` for Docker).
-- **HOLOVIZ_MCP_PORT**: Port to bind to when using HTTP transport. Default: `8000`.
-- **ANONYMIZED_TELEMETRY**: Enable or disable anonymized Chroma telemetry (`True` or `False` (default)).
-- **HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**: Allow or block code execution features (`True` (default) or `False`).
-- **JUPYTER_SERVER_PROXY_URL**: If set, Panel apps will open using this URL prefix (e.g., `.../proxy/5007/`) instead of `localhost:5007/`. This is useful when running remotely in a Jupyter Hub.
-
-</details>
-
-<details>
-<summary><b>Package Extensions</b></summary>
-
-The server automatically detects Panel-related packages in your environment:
-
-- `panel-material-ui`: Material Design components
-- `panel-graphic-walker`: Interactive data visualization
-- Any package that depends on the `panel` package.
-
-Install additional packages and restart the mcp server to include them.
-
-</details>
-
-## 🔄 Updates & Maintenance
-
-Keeping HoloViz MCP up to date ensures you have the latest features, bug fixes, and updated documentation.
-
-### Update the Python Package
-
-To update the holoviz-mcp Python package (including code and dependencies):
-
-```bash
-uv tool update holoviz-mcp[panel-extensions]
-```
-
-### Update the Documentation Index
-
-To refresh the searchable documentation index (recommended after package updates, or when new/updated docs are available):
-
-```bash
-uvx --from holoviz-mcp holoviz-mcp-update
-```
-
-## Tips & Tricks
-
-If you are a linux user, then you can make your life easier if you add the below to your .bashrc file
-
-```bash
-alias holoviz-mcp="uvx holoviz-mcp"
-alias holoviz-mcp-update="uv tool update holoviz_mcp[panel-extensions];uvx --from holoviz-mcp holoviz-mcp-update"
-```
-
-After restarting your terminal, you can run:
-
-```bash
-holoviz-mcp # to start the server
-holoviz-mcp-update # to update the python package AND the index
-```
-
-## ⚙️ User Configuration
-
-HoloViz MCP supports user configuration via a YAML file, allowing you to customize server behavior and documentation sources to fit your workflow.
-
-### Custom Configuration File
-
-By default, configuration is loaded from `~/.holoviz-mcp/config.yaml`.
-To use a different location, set the `HOLOVIZ_MCP_USER_DIR` environment variable:
-
-```bash
-export HOLOVIZ_MCP_USER_DIR=/path/to/your/config_dir
-```
-
-### Adding Custom Documentation Repositories
-
-You can add documentation from other libraries or your own projects by editing your configuration YAML and adding entries under `docs.repositories`.
-
-**Example: Adding Plotly and Altair Documentation**
-
-```yaml
-docs:
-  repositories:
-    plotly:
-      url: "https://github.com/plotly/plotly.py.git"
-      base_url: "https://plotly.com/python"
-      target_suffix: "plotly"
-    altair:
-      url: "https://github.com/altair-viz/altair.git"
-      base_url: "https://altair-viz.github.io"
-```
-
-After updating your configuration:
-
-1. Update your documentation index:
-   ```bash
-   holoviz-mcp-update
-   ```
-2. Restart the MCP server.
-
-Your custom documentation repositories will now be available for search and reference within HoloViz MCP.
-
-### Schema Validation
-
-A [`schema.json`](https://raw.githubusercontent.com/MarcSkovMadsen/holoviz-mcp/refs/heads/main/src/holoviz_mcp/config/schema.json) file is provided for configuration validation and editor autocompletion.
-
-**For VS Code with [vscode-yaml](https://github.com/redhat-developer/vscode-yaml):**
-
-Add this at the top of your YAML file:
-```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/MarcSkovMadsen/holoviz-mcp/refs/heads/main/src/holoviz_mcp/config/schema.json
-```
-This enables real-time validation and autocompletion in VS Code.
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**Server won't start**: Check that Python 3.11+ is installed and verify with `pip show holoviz-mcp`
-
-**VS Code integration not working**: Ensure GitHub Copilot Chat extension is installed and restart VS Code after configuration
-
-**Missing Panel components**: Install relevant Panel extension packages and restart the MCP server
-
-### Getting Help
-
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/MarcSkovMadsen/holoviz-mcp/issues)
-- **Documentation**: Check the [HoloViz documentation](https://holoviz.org/)
-- **Community**: Join the HoloViz community on [Discord](https://discord.gg/AXRHnJU6sP)
-
-## 🛠️ Development
-
-### Setup Codespaces
-
-Get started instantly with a fully configured development environment:
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MarcSkovMadsen/holoviz-mcp?quickstart=1)
-
-This will launch a containerized development environment with all dependencies pre-installed, including:
-- Pixi package manager
-- Python development tools (Jupyter, Ruff linter)
-- All project dependencies automatically installed
-
-Perfect for quick contributions without local setup hassle!
-
-### Setup Local Environment
-
-```bash
-git clone https://github.com/MarcSkovMadsen/holoviz-mcp
-cd holoviz-mcp
-```
-
-Install [pixi](https://pixi.sh) and run:
-
-```bash
-pixi run pre-commit-install
-pixi run postinstall
-pixi run test
-```
-
-### Development Server
-
-For remote development with VS Code:
-
-```bash
-HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
-```
-
-Add to VS Code workspace `.vscode/mcp.json`:
-
-```json
-{
-	"servers": {
-		"holoviz": {
-			"type": "http",
-			"url": "http://127.0.0.1:8000/mcp/",
-		}
-	},
-	"inputs": []
-}
-```
-
-### Template
-
-This project uses [copier-template-panel-extension](https://github.com/panel-extensions/copier-template-panel-extension).
-
-Update to the latest template:
-
-```bash
-pixi exec --spec copier --spec ruamel.yaml -- copier update --defaults --trust
-```
+- **[Tutorials](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)**: Step-by-step guides to get you started
+- **[How-To Guides](https://marcskovmadsen.github.io/holoviz-mcp/how-to/installation/)**: Practical guides for common tasks
+- **[Explanation](https://marcskovmadsen.github.io/holoviz-mcp/explanation/architecture/)**: Understanding concepts and architecture
+- **[Reference](https://marcskovmadsen.github.io/holoviz-mcp/reference/holoviz_mcp/)**: API documentation and technical details
 
 ## ❤️ Contributing
 
-We welcome contributions! Here's how to get started:
+We welcome contributions! See our [Contributing Guide](https://marcskovmadsen.github.io/holoviz-mcp/contributing/) for details.
 
-1. **Fork** the repository and create a new branch
-2. **Make** your changes with tests and documentation
-3. **Run** `pixi run test` to ensure everything works
-4. **Submit** a pull request
+## 📄 License
 
-### Code Quality
+HoloViz MCP is licensed under the [BSD 3-Clause License](LICENSE.txt).
 
-- **pre-commit** hooks ensure consistent formatting
-- **pytest** for comprehensive testing
-- **GitHub Actions** for CI/CD
+## 🔗 Links
 
-Run `pixi run pre-commit-install` to set up code quality checks.
+- **GitHub**: [MarcSkovMadsen/holoviz-mcp](https://github.com/MarcSkovMadsen/holoviz-mcp)
+- **Documentation**: [marcskovmadsen.github.io/holoviz-mcp](https://marcskovmadsen.github.io/holoviz-mcp/)
+- **PyPI**: [pypi.org/project/holoviz-mcp](https://pypi.org/project/holoviz-mcp)
+- **Docker**: [ghcr.io/marcskovmadsen/holoviz-mcp](https://github.com/MarcSkovMadsen/holoviz-mcp/pkgs/container/holoviz-mcp)
+- **HoloViz Community**: [Discord](https://discord.gg/AXRHnJU6sP) | [Discourse](https://discourse.holoviz.org/)
+
+---
+
+**Note**: This MCP server can execute arbitrary Python code when serving Panel applications (configurable, enabled by default). See [Security Considerations](https://marcskovmadsen.github.io/holoviz-mcp/explanation/security/) for details.
