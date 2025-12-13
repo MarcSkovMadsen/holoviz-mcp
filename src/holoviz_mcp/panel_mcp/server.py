@@ -185,7 +185,7 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
     --------
     Search for button components:
     >>> search("button")
-    [ComponentSummarySearchResult(name="Button", package="panel", relevance_score=80, ...)]
+    [ComponentSummarySearchResult(name="Button", project="panel", relevance_score=80, ...)]
 
     Search within a specific package:
     >>> search("input", project="panel-material-ui")
