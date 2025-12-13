@@ -156,9 +156,6 @@ jobs:
           echo "[run]" > .uicoveragerc
           echo "concurrency = greenlet" >> .uicoveragerc
 
-      - name: Install Playwright Chromium Browser
-        run: pixi run -e ${{ matrix.environment }} playwright install chromium
-
       - name: Test UI
         run: |
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
