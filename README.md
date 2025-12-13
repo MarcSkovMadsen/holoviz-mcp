@@ -675,8 +675,6 @@ Get started instantly with a fully configured development environment:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MarcSkovMadsen/holoviz-mcp?quickstart=1)
 
-https://codespaces.new/uw-ssec/holoviz-mcp?quickstart=1
-
 This will launch a containerized development environment with all dependencies pre-installed, including:
 - Pixi package manager
 - Python development tools (Jupyter, Ruff linter)

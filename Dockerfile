@@ -49,8 +49,6 @@ RUN apt-get update && \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install UV in final stage
-
 # Copy Pixi installation from builder
 COPY --from=builder /root/.pixi /root/.pixi
 ENV PATH="/root/.pixi/bin:${PATH}"
