@@ -48,6 +48,7 @@ dependencies = [
     "panel",
     "pydantic>=2.0",
     "PyYAML",
+    "typer",
 ]
 
 [project.urls]
@@ -168,6 +169,4 @@ source = "vcs"
 raw-options = { version_scheme = "no-guess-dev" }
 
 [project.scripts]
-"holoviz-mcp" = "holoviz_mcp:main"
-"holoviz-mcp-update" = "holoviz_mcp.docs_mcp.data:main"
-"holoviz-mcp-serve" = "holoviz_mcp.serve:main"
+"holoviz-mcp" = "holoviz_mcp.cli:main"
