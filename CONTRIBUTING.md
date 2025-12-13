@@ -303,7 +303,7 @@ Build documentation locally:
 
 ```bash
 # Build documentation
-pixi run -e docs serve
+pixi run -e docs build
 
 # Serve documentation locally
 pixi run -e docs docs-serve
