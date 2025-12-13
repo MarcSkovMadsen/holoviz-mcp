@@ -542,8 +542,8 @@ docker system prune -a --volumes
 
 ## Additional Resources
 
-- [Main Documentation](index.md)
-- [Examples](examples.md)
+- [Main Documentation](../index.md)
+- [Examples](../examples.md)
 - [GitHub Repository](https://github.com/MarcSkovMadsen/holoviz-mcp)
 - [Docker Hub](https://github.com/MarcSkovMadsen/holoviz-mcp/pkgs/container/holoviz-mcp)
 - [HoloViz Community](https://discourse.holoviz.org/)
