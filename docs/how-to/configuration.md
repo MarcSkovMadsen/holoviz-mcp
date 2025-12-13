@@ -34,49 +34,49 @@ This enables real-time validation and autocompletion in VS Code with the [vscode
 
 ### Server Configuration
 
-**HOLOVIZ_MCP_TRANSPORT**  
-Transport mode for the server.  
-Values: `stdio`, `http`  
+**HOLOVIZ_MCP_TRANSPORT**
+Transport mode for the server.
+Values: `stdio`, `http`
 Default: `stdio`
 
 ```bash
 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 ```
 
-**HOLOVIZ_MCP_HOST**  
-Host address to bind to (HTTP transport only).  
+**HOLOVIZ_MCP_HOST**
+Host address to bind to (HTTP transport only).
 Default: `127.0.0.1`
 
 ```bash
 HOLOVIZ_MCP_HOST=0.0.0.0 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 ```
 
-**HOLOVIZ_MCP_PORT**  
-Port to bind to (HTTP transport only).  
+**HOLOVIZ_MCP_PORT**
+Port to bind to (HTTP transport only).
 Default: `8000`
 
 ```bash
 HOLOVIZ_MCP_PORT=9000 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 ```
 
-**HOLOVIZ_MCP_LOG_LEVEL**  
-Server logging level.  
-Values: `DEBUG`, `INFO`, `WARNING`, `ERROR`  
+**HOLOVIZ_MCP_LOG_LEVEL**
+Server logging level.
+Values: `DEBUG`, `INFO`, `WARNING`, `ERROR`
 Default: `INFO`
 
 ```bash
 HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp
 ```
 
-**HOLOVIZ_MCP_SERVER_NAME**  
-Override the server name.  
+**HOLOVIZ_MCP_SERVER_NAME**
+Override the server name.
 Default: `holoviz-mcp`
 
 ### Security Configuration
 
-**HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**  
-Allow or block code execution features like `panel_serve`.  
-Values: `true`, `false`  
+**HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**
+Allow or block code execution features like `panel_serve`.
+Values: `true`, `false`
 Default: `true`
 
 ```bash
@@ -87,7 +87,7 @@ When disabled, tools that execute arbitrary code will be blocked.
 
 ### Remote Development
 
-**JUPYTER_SERVER_PROXY_URL**  
+**JUPYTER_SERVER_PROXY_URL**
 URL prefix for Panel apps when running remotely.
 
 ```bash
@@ -98,9 +98,9 @@ This is useful when running in JupyterHub or similar environments.
 
 ### Documentation Configuration
 
-**ANONYMIZED_TELEMETRY**  
-Enable or disable Chroma telemetry.  
-Values: `true`, `false`  
+**ANONYMIZED_TELEMETRY**
+Enable or disable Chroma telemetry.
+Values: `true`, `false`
 Default: `false`
 
 ```bash
