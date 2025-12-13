@@ -156,6 +156,9 @@ jobs:
           echo "[run]" > .uicoveragerc
           echo "concurrency = greenlet" >> .uicoveragerc
 
+      - name: Install Playwright Browsers
+        run: playwright install chromium
+
       - name: Test UI
         run: |
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
