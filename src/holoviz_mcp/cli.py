@@ -46,7 +46,7 @@ def serve():
 
 @app.callback(invoke_without_command=True)
 def default_callback(ctx: typer.Context):
-    """Default behavior when no command is specified - run the server."""
+    """Run the server if no command is specified."""
     # If no command is provided, run the server
     if ctx.invoked_subcommand is None:
         run_server()

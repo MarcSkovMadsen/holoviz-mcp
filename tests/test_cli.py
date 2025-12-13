@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
 from typer.testing import CliRunner
 
 from holoviz_mcp.cli import app
@@ -41,8 +40,8 @@ def test_default_command_invokes_server_main(mock_main):
     # Mock the main function to prevent actual server startup
     mock_main.return_value = None
 
-    result = runner.invoke(app, [])
-    
+    runner.invoke(app, [])
+
     # The command should have been invoked
     mock_main.assert_called_once()
 
@@ -51,7 +50,7 @@ def test_default_command_invokes_server_main(mock_main):
 def test_update_command_invokes_data_main(mock_main):
     """Test that the update command invokes the docs_mcp.data main function."""
     mock_main.return_value = None
-    result = runner.invoke(app, ["update"])
+    runner.invoke(app, ["update"])
 
     # The command should have been invoked
     mock_main.assert_called_once()
@@ -61,7 +60,7 @@ def test_update_command_invokes_data_main(mock_main):
 def test_serve_command_invokes_serve_main(mock_main):
     """Test that the serve command invokes the serve main function."""
     mock_main.return_value = None
-    result = runner.invoke(app, ["serve"])
+    runner.invoke(app, ["serve"])
 
     # The command should have been invoked
     mock_main.assert_called_once()
