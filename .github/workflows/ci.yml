@@ -157,7 +157,7 @@ jobs:
           echo "concurrency = greenlet" >> .uicoveragerc
 
       - name: Install Playwright Chromium Browser
-        run: pixi run -e ${{ matrix.environment }} playwright install --with-deps chromium
+        run: pixi run -e ${{ matrix.environment }} playwright install chromium
 
       - name: Test UI
         run: |
