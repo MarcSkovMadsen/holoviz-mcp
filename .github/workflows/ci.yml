@@ -160,6 +160,7 @@ jobs:
         run: |
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
           pixi run -e ${{ matrix.environment }} test-ui --cov-config=.uicoveragerc $FAIL
+        shell: bash
 
       - name: Upload UI Screenshots
         uses: actions/upload-artifact@v4

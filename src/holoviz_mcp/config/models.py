@@ -151,6 +151,8 @@ class ServerConfig(BaseModel):
     description: str = Field(default="Model Context Protocol server for HoloViz ecosystem", description="Server description")
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO", description="Logging level")
     transport: Literal["stdio", "http"] = Field(default="stdio", description="Transport protocol for MCP communication")
+    host: str = Field(default="127.0.0.1", description="Host address to bind to when using HTTP transport (use 0.0.0.0 for Docker)")
+    port: int = Field(default=8000, description="Port to bind to when using HTTP transport")
     anonymized_telemetry: bool = Field(default=False, description="Enable anonymized telemetry")
     jupyter_server_proxy_url: str = Field(default="", description="Jupyter server proxy URL for Panel app integration")
     security: SecurityConfig = Field(default_factory=SecurityConfig, description="Security configuration")

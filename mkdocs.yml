@@ -89,7 +89,10 @@ watch:
 
 nav:
     - Home: index.md
+    - Docker Guide: docker.md
     - Examples: examples.md
+    - Contributing: contributing.md
+    - Code of Conduct: code-of-conduct.md
     - Reference: reference/holoviz_mcp.md
 
 extra:
