@@ -62,7 +62,7 @@ This ensures the `holoviz-mcp` server is installed once, instead of each time it
 Additionally, we highly recommend creating the documentation index (i.e., context) used by holoviz-mcp now, since this process can take up to 10 minutes:
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
+uvx --from holoviz-mcp holoviz-mcp update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
 ```
 
 You may optionally verify you can start the server with the default [`stdio`](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#stdio) transport used for local mcp servers:
@@ -499,7 +499,7 @@ HoloViz MCP provides a collection of Panel apps to explore, validate and use the
 Serve with:
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-serve
+uvx --from holoviz-mcp holoviz-mcp serve
 ```
 
 [Try it](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui) on Hugging Face.
@@ -579,7 +579,7 @@ uv tool update holoviz-mcp[panel-extensions]
 To refresh the searchable documentation index (recommended after package updates, or when new/updated docs are available):
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-update
+uvx --from holoviz-mcp holoviz-mcp update
 ```
 
 ## Tips & Tricks
@@ -588,7 +588,7 @@ If you are a linux user, then you can make your life easier if you add the below
 
 ```bash
 alias holoviz-mcp="uvx holoviz-mcp"
-alias holoviz-mcp-update="uv tool update holoviz_mcp[panel-extensions];uvx --from holoviz-mcp holoviz-mcp-update"
+alias holoviz-mcp-update="uv tool update holoviz_mcp[panel-extensions];uvx --from holoviz-mcp holoviz-mcp update"
 ```
 
 After restarting your terminal, you can run:
@@ -633,7 +633,7 @@ After updating your configuration:
 
 1. Update your documentation index:
    ```bash
-   holoviz-mcp-update
+   holoviz-mcp update
    ```
 2. Restart the MCP server.
 
