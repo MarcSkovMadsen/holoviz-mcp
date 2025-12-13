@@ -6,8 +6,6 @@ from pathlib import Path
 import pytest
 import yaml
 from jsonschema import Draft7Validator
-from jsonschema import ValidationError
-from pydantic import parse_obj_as
 
 from holoviz_mcp.config.models import HoloVizMCPConfig
 

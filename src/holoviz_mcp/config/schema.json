@@ -70,7 +70,7 @@
         "vector_db_path": {
           "type": "string",
           "description": "Path to the Chroma vector database",
-          "format": "uri-reference"
+          "format": "path"
         }
       },
       "additionalProperties": false
@@ -223,17 +223,17 @@
     "user_dir": {
       "type": "string",
       "description": "User configuration directory",
-      "format": "uri-reference"
+      "format": "path"
     },
     "default_dir": {
       "type": "string",
       "description": "Default configuration directory",
-      "format": "uri-reference"
+      "format": "path"
     },
     "repos_dir": {
       "type": "string",
       "description": "Repository download directory",
-      "format": "uri-reference"
+      "format": "path"
     }
   },
   "additionalProperties": false
