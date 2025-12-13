@@ -5,6 +5,7 @@
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/holoviz-mcp?logoColor=white&logo=conda-forge&style=flat-square)](https://prefix.dev/channels/conda-forge/packages/holoviz-mcp)
 [![pypi-version](https://img.shields.io/pypi/v/holoviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/holoviz-mcp)
 [![python-version](https://img.shields.io/pypi/pyversions/holoviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/holoviz-mcp)
+[![docs](https://img.shields.io/badge/docs-read-blue?style=flat-square)](https://marcskovmadsen.github.io/holoviz-mcp/)
 
 A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem, enabling AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [Lumen](https://lumen.holoviz.org/), [Datashader](https://datashader.org/) and your favorite Python libraries.
 
@@ -125,6 +126,8 @@ Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to
 [![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)
 
 ## 📚 Learn More
+
+Check out the [`holoviz-mcp` documentation](https://marcskovmadsen.github.io/holoviz-mcp/):
 
 - **[Tutorials](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)**: Step-by-step guides to get you started
 - **[How-To Guides](https://marcskovmadsen.github.io/holoviz-mcp/how-to/installation/)**: Practical guides for common tasks
