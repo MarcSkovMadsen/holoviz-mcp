@@ -12,11 +12,16 @@
         }
       },
       "extensions": [
-        "ms-toolsai.jupyter",
-        "ms-python.python",
         "charliermarsh.ruff",
+        "jjjermiah.pixi-vscode",
+        "ms-python.debugpy",
+        "ms-python.mypy-type-checker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.datawrangler",
+        "ms-toolsai.jupyter",
         "tamasfe.even-better-toml",
-        "jjjermiah.pixi-vscode"
+        "wesbos.theme-cobalt2"
       ]
     }
   },

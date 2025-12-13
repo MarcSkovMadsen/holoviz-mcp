@@ -959,5 +959,10 @@ class DocumentationIndexer:
         asyncio.run(run_indexer())
 
 
-if __name__ == "__main__":
+def main():
+    """Run the documentation indexer."""
     DocumentationIndexer().run()
+
+
+if __name__ == "__main__":
+    main()

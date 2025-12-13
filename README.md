@@ -6,7 +6,7 @@
 [![pypi-version](https://img.shields.io/pypi/v/holoviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/holoviz-mcp)
 [![python-version](https://img.shields.io/pypi/pyversions/holoviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/holoviz-mcp)
 
-A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem, enabling AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [datashader](https://datashader.org/) and your favorite Python libraries.
+A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem, enabling AI assistants to help you build interactive dashboards and data visualizations with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [Lumen](https://lumen.holoviz.org/), [Datashader](https://datashader.org/) and your favorite Python libraries.
 
 [![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)](https://holoviz.org)
 
@@ -49,27 +49,44 @@ Other videos: [hvPlot tools](https://youtu.be/jTe2ZqAAtR8).
 
 Or use [Docker](#-docker-installation) for a containerized setup.
 
-### Contributing & Development
+## Install with uv
 
-Want to contribute to HoloViz MCP? Get started instantly with a fully configured development environment:
+If you have [uv](https://docs.astral.sh/uv/) installed, we recommend installing HoloViz MCP as a [uv tool](https://docs.astral.sh/uv/concepts/tools/):
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MarcSkovMadsen/holoviz-mcp?quickstart=1)
+```bash
+uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]
+```
 
-This will launch a containerized development environment with all dependencies pre-installed, including:
-- Pixi package manager
-- Python development tools (Jupyter, Ruff linter)
-- All project dependencies automatically installed
+This ensures the `holoviz-mcp` server is installed once, instead of each time it is run as a tool.
 
-Perfect for quick contributions without local setup hassle!
+Additionally, we highly recommend creating the documentation index (i.e., context) used by holoviz-mcp now, since this process can take up to 10 minutes:
 
-## 🐳 Docker Installation
+```bash
+uvx --from holoviz-mcp holoviz-mcp-update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
+```
 
-The easiest way to run HoloViz MCP is using Docker. The image is automatically built and published to GitHub Container Registry.
+You may optionally verify you can start the server with the `sse` transport:
+
+```bash
+uvx holoviz-mcp
+```
+
+Or, optionally start it with the `http` transport:
+
+```bash
+HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+```
+
+Use `CTRL+C` to stop the server when you are finished.
+
+## 🐳 Install with Docker
+
+An easy way to run HoloViz MCP is using Docker. This is the recommended way for users at [uw-ssec](https://github.com/uw-ssec).
 
 ### Quick Start with Docker
 
 ```bash
-# Pull the latest image
+# Pull the latest image.
 docker pull ghcr.io/marcskovmadsen/holoviz-mcp:latest
 
 # Run with default settings (STDIO transport)
@@ -205,37 +222,7 @@ The image supports both AMD64 and ARM64 architectures (Apple Silicon, Raspberry 
 
 </details>
 
-## Install as a Tool (Recommended)
-
-Due to its size, we strongly recommend installing HoloViz MCP once as a [uv tool](https://docs.astral.sh/uv/concepts/tools/):
-
-```bash
-uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]
-```
-
-This ensures the `holoviz-mcp` server is installed once, instead of each time it is run as a tool.
-
-Additionally, we highly recommend creating the documentation index (i.e., context) used by holoviz-mcp now, since this process can take up to 10 minutes:
-
-```bash
-uvx --from holoviz-mcp holoviz-mcp-update # Updates the documentation index used by holoviz-mcp, not the holoviz-mcp Python package.
-```
-
-You may optionally verify you can start the server with the `sse` transport:
-
-```bash
-uvx holoviz-mcp
-```
-
-Or, optionally start it with the `http` transport:
-
-```bash
-HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
-```
-
-Use `CTRL+C` to stop the server when you are finished.
-
-### One-Click Install (Also Recommended)
+### One-Click IDE Installation with uv
 
 Click the appropriate badge below to install it for usage with a MCP client:
 
@@ -243,7 +230,7 @@ Click the appropriate badge below to install it for usage with a MCP client:
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install_Server-000000?style=flat-square)](cursor://settings/mcp)
 [![Claude Desktop](https://img.shields.io/badge/Claude_Desktop-Add_Server-FF6B35?style=flat-square)](#claude-desktop)
 
-### Manual Installation (Alternative to One-Click Install)
+### Manual IDE Installation
 
 <details>
 <summary><b>VS Code + GitHub Copilot</b></summary>
@@ -257,8 +244,6 @@ Add this configuration to your VS Code `mcp.json`:
 			"type": "stdio",
 			"command": "uvx",
 			"args": [
-				"--from",
-				"git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
 				"holoviz-mcp"
 			]
 		}
@@ -289,8 +274,6 @@ Add to your Claude Desktop configuration file:
         "holoviz": {
             "command": "uvx",
             "args": [
-                "--from",
-                "git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
                 "holoviz-mcp"
             ]
         }
@@ -311,8 +294,6 @@ Go to `Cursor Settings` → `Features` → `Model Context Protocol` → `Add Ser
     "name": "holoviz",
     "command": "uvx",
     "args": [
-        "--from",
-        "git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
         "holoviz-mcp"
     ]
 }
@@ -332,8 +313,6 @@ Add to your Windsurf MCP configuration:
         "holoviz": {
             "command": "uvx",
             "args": [
-                "--from",
-                "git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
                 "holoviz-mcp"
             ]
         }
@@ -352,8 +331,6 @@ For other MCP-compatible clients, use the standard MCP configuration:
     "name": "holoviz",
     "command": "uvx",
     "args": [
-        "--from",
-        "git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]",
         "holoviz-mcp"
     ]
 }
@@ -492,15 +469,15 @@ The recommended way is to configure your AI assistant (VS Code + GitHub Copilot)
 ### Manual Installation
 
 ```bash
-uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp
+uv tool install holoviz-mcp
 ```
 
 ### With Panel Extensions
 
-Install with support for community projects like `panel-material-ui`, `panel-graphic-walker` etc.:
+Install with panel extensions like `panel-material-ui`, `panel-graphic-walker` etc. installed:
 
 ```bash
-uv tool install git+https://github.com/MarcSkovMadsen/holoviz-mcp[panel-extensions]
+uv tool install holoviz-mcp[panel-extensions]
 ```
 
 ### Running the Server
@@ -570,7 +547,7 @@ Keeping HoloViz MCP up to date ensures you have the latest features, bug fixes, 
 To update the holoviz-mcp Python package (including code and dependencies):
 
 ```bash
-uv tool update holoviz_mcp[panel-extensions]
+uv tool update holoviz-mcp[panel-extensions]
 ```
 
 ### Update the Documentation Index
@@ -668,7 +645,22 @@ This enables real-time validation and autocompletion in VS Code.
 
 ## 🛠️ Development
 
-### Setup
+### Setup Codespaces
+
+Get started instantly with a fully configured development environment:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/MarcSkovMadsen/holoviz-mcp?quickstart=1)
+
+https://codespaces.new/uw-ssec/holoviz-mcp?quickstart=1
+
+This will launch a containerized development environment with all dependencies pre-installed, including:
+- Pixi package manager
+- Python development tools (Jupyter, Ruff linter)
+- All project dependencies automatically installed
+
+Perfect for quick contributions without local setup hassle!
+
+### Setup Local Environment
 
 ```bash
 git clone https://github.com/MarcSkovMadsen/holoviz-mcp

@@ -47,7 +47,6 @@ dependencies = [
     "panel",
     "pydantic>=2.0",
     "PyYAML",
-    "sentence-transformers",
 ]
 
 [project.urls]
@@ -56,10 +55,11 @@ Source = "https://github.com/MarcSkovMadsen/holoviz-mcp"
 
 [project.optional-dependencies]
 dev = [
+    "ipykernel",
+    "mkdocs_pycafe",
     "mkdocs-material",
     "mkdocs",
     "mkdocstrings[python]",
-    "mkdocs_pycafe",
     "pre-commit",
     "pytest-asyncio",
     "pytest-rerunfailures",

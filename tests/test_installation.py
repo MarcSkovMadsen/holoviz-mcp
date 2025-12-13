@@ -7,6 +7,7 @@ These tests verify that the server can be installed and run using:
 Note: These tests require uv and docker to be installed and available on the system.
 """
 
+import os
 import shutil
 import subprocess
 import time
@@ -299,11 +300,15 @@ class TestUVInstallation:
         """Test that uvx can run holoviz-mcp with --help flag."""
         # This test requires the package to be installed via uv tool install
         # Skip if not already installed
+        env = os.environ.copy()
+        env["HOLOVIZ_MCP_PORT"] = "7653"  # Avoid port conflicts
+
         result = subprocess.run(
             ["uvx", "--from", "holoviz-mcp", "holoviz-mcp", "--help"],
             capture_output=True,
             text=True,
             timeout=30,
+            env=env,  # Avoid port conflicts
         )
 
         # If package not installed, this will fail - that's expected
@@ -311,7 +316,10 @@ class TestUVInstallation:
         # A return code of 0 means success
         if result.returncode == 0:
             # If successful, verify output contains expected content
-            assert "holoviz" in result.stdout.lower() or "mcp" in result.stdout.lower()
+            std = (result.stdout + result.stderr).lower()
+            assert "holoviz" in std or "mcp" in std
+        else:
+            raise RuntimeError(f"uvx command failed unexpectedly:\n\n{result.stderr}")
 
 
 @pytest.mark.integration
@@ -354,7 +362,7 @@ class TestPackageStructure:
                 # Fallback for unparsable dependencies
                 dep_names.append(dep.split("[")[0].split(">=")[0].split("==")[0].strip())
 
-        required_deps = ["fastmcp", "panel", "chromadb", "pydantic", "sentence-transformers"]
+        required_deps = ["fastmcp", "panel", "chromadb", "pydantic"]
 
         for dep in required_deps:
             assert dep in dep_names, f"Required dependency '{dep}' not found in pyproject.toml"
