@@ -43,6 +43,7 @@ Problem-oriented guides that show you how to solve specific problems and accompl
 - [IDE Configuration](how-to/ide-configuration.md)
 - [Docker Setup](how-to/docker.md)
 - [Configuration](how-to/configuration.md)
+- [Serve Apps](how-to/serve-apps.md)
 - [Updates & Maintenance](how-to/updates.md)
 - [Troubleshooting](how-to/troubleshooting.md)
 

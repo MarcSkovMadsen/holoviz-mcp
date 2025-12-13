@@ -312,5 +312,6 @@ Run and manage applications:
 ## Related Documentation
 
 - [Architecture](architecture.md): How tools are implemented
-- [Security Considerations](security.md): Security implications
 - [Configuration](../how-to/configuration.md): Configure tool behavior
+- [Security Considerations](security.md): Security implications
+- [Serve Apps](../how-to/serve-apps.md): Serve Panel apps to explore the tools
