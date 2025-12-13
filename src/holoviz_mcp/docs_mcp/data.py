@@ -213,7 +213,7 @@ class DocumentationIndexer:
             vector_dir: Directory to store vector database. Defaults to config.vector_dir
         """
         # Use unified config for default paths
-        config = get_config()
+        config = self._holoviz_mcp_config = get_config()
 
         self.data_dir = data_dir or config.user_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -582,8 +582,6 @@ class DocumentationIndexer:
     async def index_documentation(self, ctx: Context | None = None):
         """Indexes all documentation."""
         await log_info("Starting documentation indexing...", ctx)
-        await log_info(f"📁 Repositories directory: {self.repos_dir}", ctx)
-        await log_info(f"💾 Vector database location: {self.data_dir / 'chroma'}", ctx)
 
         all_docs = []
 
@@ -941,6 +939,8 @@ class DocumentationIndexer:
         logger.info("=" * 50)
 
         async def run_indexer(indexer=self):
+            logger.info(f"📦 Default config: {indexer._holoviz_mcp_config.config_file_path(location="default")}")
+            logger.info(f"🏠 User config: {indexer._holoviz_mcp_config.config_file_path(location="user")}")
             logger.info(f"📁 Repository directory: {indexer.repos_dir}")
             logger.info(f"💾 Vector database: {indexer.data_dir / 'chroma'}")
             logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")

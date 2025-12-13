@@ -480,7 +480,7 @@ Install with panel extensions like `panel-material-ui`, `panel-graphic-walker` e
 uv tool install holoviz-mcp[panel-extensions]
 ```
 
-### Running the Server
+### Running the MCP Server
 
 ```bash
 uvx holoviz-mcp
@@ -491,6 +491,30 @@ For HTTP transport:
 ```bash
 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 ```
+
+### Running the Panel Server
+
+HoloViz MCP provides a collection of Panel apps to explore, validate and use the mcp tools. These are also valuable in their own right.
+
+Serve with:
+
+```bash
+uvx --from holoviz-mcp holoviz-mcp-serve
+```
+
+[Try it](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui) on Hugging Face.
+
+### Search Tool
+
+Search across the indexed documentation. Read or open the document on the website.
+
+![Search Tool](docs/assets/images/holoviz-mcp-search-tool.png)
+
+### Configuration Viewer Tool
+
+Check out the default, user and combined configuration.
+
+![Configuration Viewer Tool](docs/assets/images/holoviz-mcp-configuration-viewer-tool.png)
 
 ## ⚙️ Configuration Options
 
