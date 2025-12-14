@@ -209,6 +209,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/pandoc-3.8.2.1-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -531,6 +532,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/pandoc-3.8.2.1-h8af1aa0_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -845,6 +847,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-64/pandoc-3.8.2.1-h694c41f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -1150,6 +1153,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/pandoc-3.8.2.1-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -1450,6 +1454,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/pandoc-3.8.2.1-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -1779,6 +1784,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/pandoc-3.8.2.1-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -2103,6 +2109,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/pandoc-3.8.2.1-h8af1aa0_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -2418,6 +2425,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-64/pandoc-3.8.2.1-h694c41f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -2727,6 +2735,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/pandoc-3.8.2.1-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -3028,6 +3037,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/pandoc-3.8.2.1-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -3369,6 +3379,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/pandoc-3.8.2.1-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -3700,6 +3711,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/pandoc-3.8.2.1-h8af1aa0_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -4023,6 +4035,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-64/pandoc-3.8.2.1-h694c41f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -4337,6 +4350,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/pandoc-3.8.2.1-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -4646,6 +4660,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/pandoc-3.8.2.1-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -5282,6 +5297,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/pandoc-3.8.2.1-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -5609,6 +5625,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/pandoc-3.8.2.1-h8af1aa0_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -5926,6 +5943,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-64/pandoc-3.8.2.1-h694c41f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -6234,6 +6252,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/pandoc-3.8.2.1-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -6537,6 +6556,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/pandoc-3.8.2.1-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -6869,6 +6889,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/pandoc-3.8.2.1-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -7196,6 +7217,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/pandoc-3.8.2.1-h8af1aa0_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -7513,6 +7535,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-64/pandoc-3.8.2.1-h694c41f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -7821,6 +7844,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/pandoc-3.8.2.1-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -8124,6 +8148,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/pandoc-3.8.2.1-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -8473,6 +8498,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/pandoc-3.8.2.1-ha770c72_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -8834,6 +8860,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-aarch64/pandoc-3.8.2.1-h8af1aa0_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -9185,6 +9212,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-64/pandoc-3.8.2.1-h694c41f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -9527,6 +9555,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/pandoc-3.8.2.1-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -9864,6 +9893,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/pandoc-3.8.2.1-h57928b3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/panel-1.8.3-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathable-0.4.4-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/pathspec-0.12.1-pyhd8ed1ab_1.conda
@@ -23268,6 +23298,20 @@ packages:
   - pkg:pypi/panel?source=hash-mapping
   size: 22903699
   timestamp: 1762779744606
+- conda: https://prefix.dev/conda-forge/noarch/panel-material-ui-0.7.0-pyhd8ed1ab_0.conda
+  sha256: a207629344759f8154857e75b1cc7f115644b2c58378587d32b74c2ec2566510
+  md5: 94b847d2081e9f850dfd15f140e323be
+  depends:
+  - bokeh >=3.8.0
+  - packaging
+  - panel >=1.8.0
+  - python >=3.10
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/panel-material-ui?source=hash-mapping
+  size: 1485365
+  timestamp: 1764081852611
 - conda: https://prefix.dev/conda-forge/noarch/param-2.3.0-pyhc455866_1.conda
   sha256: fa1a4d3988c81fa24213fb08f20b9754164f37625c897388eedeb096d6f26655
   md5: 3933d9964fc0549f547e3a6bff0cce64

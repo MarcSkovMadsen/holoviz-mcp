@@ -291,21 +291,23 @@ class SearchApp(pn.viewable.Viewer):
             about_button.js_on_click(args={"about": about}, code="about.data.open = true")
 
             github_button = pmui.IconButton(
-                label="Github", icon="star", description="Give HoloViz-MCP a star on GitHub", sizing_mode="fixed", color="light", margin=(10, 0)
+                label="Github",
+                icon="star",
+                description="Give HoloViz-MCP a star on GitHub",
+                sizing_mode="fixed",
+                color="light",
+                margin=(10, 0),
+                href="https://github.com/MarcSkovMadsen/holoviz-mcp",
+                target="_blank",
             )
-            href = "https://github.com/MarcSkovMadsen/holoviz-mcp"
-            js_code_to_open_holoviz_mcp = f"window.open('{href}', '_blank')"
-            github_button.js_on_click(code=js_code_to_open_holoviz_mcp)
 
             return pmui.Page(
                 title=self.title,
                 site_url="./",
                 sidebar=[self._config, menu],
                 sidebar_width=400,
-                header=[pn.Row(about, about_button, github_button, align="end")],
-                main=[pmui.Container(DocumentView(document=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
-                # logo="https://holoviz.org/_static/holoviz-logo-unstacked.svg",
-                # stylesheets=[".logo {background: white;border-radius: 5px;margin: 15px 15px 5px 10px;padding:7px}"],
+                header=[pn.Row(pn.Spacer(), about_button, github_button, align="end")],
+                main=[pmui.Container(about, DocumentView(document=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
             )
 
 
