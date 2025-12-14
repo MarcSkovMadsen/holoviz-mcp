@@ -195,6 +195,8 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
         path_obj = Path(url_path)
         if url_transform == "plotly":
             url_path = str(path_obj.with_suffix(suffix="")) + "/"
+            if url_path.endswith("index/"):
+                url_path = url_path[: -len("index/")] + "/"
         else:
             url_path = str(path_obj.with_suffix(suffix=".html"))
 
