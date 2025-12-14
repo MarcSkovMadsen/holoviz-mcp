@@ -34,6 +34,11 @@ def test_convert_path_to_url_plotly():
     assert url == "doc/python/3d-axes/"
 
 
+def test_convert_index_path_to_url_plotly():
+    url = convert_path_to_url(Path("docs/index.md"), url_transform="plotly")
+    assert url == "/"
+
+
 def test_convert_path_to_url_datashader():
     url = convert_path_to_url(Path("/examples/user_guide/10_Performance.ipynb"), url_transform="datashader")
     assert url == "examples/user_guide/Performance.html"

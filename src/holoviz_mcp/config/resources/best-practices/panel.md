@@ -99,6 +99,8 @@ elif pn.state.served:
     HelloWorld.create_app().servable()
 ```
 
+For testing with pytest:
+
 ```python
 # DO put tests in a separate test file.
 # DO always test that the reactivity works as expected
