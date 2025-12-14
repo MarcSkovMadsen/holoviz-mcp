@@ -49,6 +49,7 @@ dependencies = [
     "pydantic>=2.0",
     "PyYAML",
     "typer",
+    "watchfiles",
 ]
 
 [project.urls]
@@ -68,7 +69,6 @@ dev = [
     "pytest-xdist",
     "pytest",
     "types-PyYAML",
-    "watchfiles",
 ]
 mypy = [
     "mypy",
@@ -90,7 +90,7 @@ exclude = [
     ".tox",
     ".eggs",
     "*.egg",
-    "doc",
+    "docs",
     "dist",
     "build",
     "_build",
@@ -146,7 +146,7 @@ force-single-line = true
 
 [tool.pytest.ini_options]
 addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
-norecursedirs = "doc .git dist build _build .ipynb_checkpoints examples"
+norecursedirs = "docs .git dist build _build .ipynb_checkpoints examples"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true

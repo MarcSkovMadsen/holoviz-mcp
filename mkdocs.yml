@@ -6,6 +6,8 @@ repo_url: https://github.com/MarcSkovMadsen/holoviz-mcp
 repo_name: MarcSkovMadsen/holoviz-mcp
 edit_uri: edit/main/docs/
 
+docs_dir: docs
+
 theme:
     name: material
     logo: 'assets/logo.svg'
@@ -89,11 +91,25 @@ watch:
 
 nav:
     - Home: index.md
-    - Docker Guide: docker.md
+    - Tutorials:
+        - Getting Started: tutorials/getting-started.md
+    - How-To Guides:
+        - Install: how-to/installation.md
+        - Configure your IDE: how-to/ide-configuration.md
+        - Setup Docker: how-to/docker.md
+        - Configure holoviz-mcp: how-to/configuration.md
+        - Serve Apps: how-to/serve-apps.md
+        - Maintain: how-to/updates.md
+        - Troubleshoot: how-to/troubleshooting.md
+    - Explanation:
+        - Architecture: explanation/architecture.md
+        - Available Tools: explanation/tools.md
+        - Security Considerations: explanation/security.md
+    - Reference:
+        - API Documentation: reference/holoviz_mcp.md
     - Examples: examples.md
     - Contributing: contributing.md
     - Code of Conduct: code-of-conduct.md
-    - Reference: reference/holoviz_mcp.md
 
 extra:
   social:

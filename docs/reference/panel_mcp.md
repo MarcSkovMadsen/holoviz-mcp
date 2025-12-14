@@ -1,3 +1,0 @@
-# Reference
-
-::: holoviz_mcp
