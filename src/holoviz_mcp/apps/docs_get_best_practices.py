@@ -105,7 +105,7 @@ class BestPracticesViewer(pn.viewable.Viewer):
         - Integration with HoloViz MCP docs_get_best_practices tool
     """
 
-    title = param.String(default="HoloViz MCP Best Practices", doc="Title of the best practices viewer")
+    title = param.String(default="HoloViz MCP - Docs Get Best Practices", doc="Title of the best practices viewer")
     config: BestPracticesConfiguration = param.Parameter(doc="Configuration for the best practices viewer")  # type: ignore
 
     def __init__(self, **params):
