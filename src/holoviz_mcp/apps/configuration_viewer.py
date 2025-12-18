@@ -102,7 +102,7 @@ class ConfigViewer(param.Parameterized):
         """Create and return the Panel Material UI app page."""
         viewer = cls()
         page = pmui.Page(
-            title="HoloViz MCP Configuration Viewer",
+            title="HoloViz MCP - Configuration Viewer",
             main=[viewer.view()],
             site_url="./",
         )

@@ -59,7 +59,7 @@ For LLMs this tool provides a structured way to access and retrieve relevant doc
 
 ### Learn More
 
-For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://github.com/MarcSkovMadsen/holoviz-mcp).
+For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
 """  # noqa: E501
 
 
@@ -258,7 +258,7 @@ class SearchApp(pn.viewable.Viewer):
         - Integration with HoloViz MCP docs_search tool
     """
 
-    title = param.String(default="HoloViz MCP Search Tool", doc="Title of the search app")
+    title = param.String(default="HoloViz MCP - Docs Search", doc="Title of the search app")
     config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):

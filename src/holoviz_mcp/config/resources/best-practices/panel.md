@@ -51,10 +51,21 @@ class HelloWorld(pn.viewable.Viewer):
         with pn.config.set(sizing_mode="stretch_width"):
             # DO create widgets using `.from_param` method
             self._characters_input = pn.widgets.IntSlider.from_param(self.param.characters, margin=(10,20))
+
             # DO Collect input widgets into horizontal, columnar layout unless other layout is specifically needed
             self._inputs = pn.Column(self._characters_input, max_width=300)
+
+            # CRITICAL: Create panes ONCE with reactive content
+            # DON'T recreate panes in @param.depends methods - causes flickering!
+            # DO bind reactive methods/functions to panes for smooth updates
+            self._output_pane = pn.pane.Markdown(
+                self.model,  # Reactive method reference
+                sizing_mode="stretch_width"
+            )
+
             # DO collect output components into some layout like Column, Row, FlexBox or Grid depending on use case
-            self._outputs = pn.Column(self.model)
+            self._outputs = pn.Column(self._output_pane)
+
             # DO collect all of your components into a combined layout useful for displaying in notebooks etc.
             self._panel = pn.Row(self._inputs, self._outputs)
 
@@ -66,6 +77,8 @@ class HelloWorld(pn.viewable.Viewer):
     # DO use `watch=True` or `.watch(...)` for updating the state parameters or triggering side effect like saving files or sending email.
     @param.depends("characters")
     def model(self):
+        # CRITICAL: Return ONLY the content, NOT the layout/pane
+        # The pane was created once in __init__, this just updates its content
         return transform(text, self.characters)
 
     # DO provide a method for displaying the component in a notebook setting, i.e. without using a Template or other element that cannot be displayed in a notebook setting.
@@ -128,6 +141,70 @@ DO note how this test simulates the user's behaviour of loading the page, changi
 - DO use `@param.depends()` for reactive methods
 - DON'T use `.watch()` for UI updates, only for side effects
 
+### Static Layout with Reactive Content (CRITICAL)
+
+**The Golden Rule: Create layout structure ONCE, update content REACTIVELY**
+
+This pattern eliminates flickering and creates professional Panel applications:
+
+```python
+# ✅ CORRECT: Create panes ONCE in __init__, bind reactive content
+class Dashboard(pn.viewable.Viewer):
+    filter_value = param.String(default="all")
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        # 1. Create static panes with reactive content
+        self._summary_pane = pn.pane.Markdown(self._summary_text)
+        self._chart_pane = pn.pane.HoloViews(self._chart)
+
+        # 2. Create static layout structure
+        self._layout = pn.Column(
+            "# Dashboard",    # Static title
+            self._summary_pane,  # Reactive content
+            self._chart_pane,    # Reactive content
+        )
+
+    @param.depends("filter_value")
+    def _summary_text(self):
+        # Returns string content only, NOT a pane
+        return f"**Count**: {len(self._get_data())}"
+
+    @param.depends("filter_value")
+    def _chart(self):
+        # Returns plot object only, NOT a pane
+        return self._get_data().hvplot.bar()
+
+    def __panel__(self):
+        return self._layout
+
+# ❌ WRONG: Recreating layout in @param.depends - causes flickering!
+class BadDashboard(pn.viewable.Viewer):
+    filter_value = param.String(default="all")
+
+    @param.depends("filter_value")
+    def view(self):
+        # DON'T recreate panes/layouts on every parameter change!
+        return pn.Column(
+            "# Dashboard",
+            pn.pane.Markdown(f"**Count**: {len(self._get_data())}"),
+            pn.pane.HoloViews(self._get_data().hvplot.bar()),
+        )
+```
+
+**Why This Matters:**
+- ✅ Smooth updates without layout reconstruction
+- ✅ No flickering - seamless transitions
+- ✅ Better performance - avoids unnecessary DOM updates
+- ✅ Professional UX
+
+**Key Rules:**
+1. Create main layout structure and panes ONCE in `__init__`
+2. Bind panes to reactive methods (not recreate them)
+3. Reactive methods return CONTENT only (strings, plots, dataframes), NOT panes/layouts
+4. Use `@param.depends` for reactive methods that update pane content
+
 ### Layouts
 - DO use `pn.Column`, `pn.Row`, `pn.Tabs`, `pn.Accordion` for layouts
 - DO use `pn.template.FastListTemplate` or other templates for served apps
@@ -139,38 +216,33 @@ DO note how this test simulates the user's behaviour of loading the page, changi
 - `pn.pane.Markdown`, `pn.pane.HTML` for content
 
 ### Serving
-- `panel serve app.py --dev` for development with hot reload. Add `--show` to open in browser.
+- `panel serve app.py --dev` for development with hot reload. Add `--show` to open in browser
 - `app.servable()` to mark components for serving
 
 ## Core Principles
 
 **Parameter-Driven Design**
 - DO prefer declarative reactive patterns over imperative event handling
-- DO create applications as `param.Parameterized` or `pn.Viewable` classes
 - DO let Parameters drive application state, not widgets directly
-- DO Separate business logic from UI concerns
+- DO separate business logic from UI concerns
 
 **UI Update Patterns**
-- DO update UI via parameters or `.bind()` and `.depends()` methods
+- DO update UI via parameters, `.bind()`, and `.depends()` methods
 - DON'T update UI as side effects with `.watch()` methods
-- DO feel free to use `.watch()` for updating app state and non-UI side effects (file saves, emails, etc.)
+- DO use `.watch()` for non-UI side effects (file saves, emails, app state updates)
 
 **Component Selection**
 - DO prefer `pn.widgets.Tabulator` for tabular data
-- DO use `pn.extension()` and include needed extensions like "tabulator", "plotly"
+- DO use `pn.extension()` with needed extensions like "tabulator", "plotly"
 - DON'T include "bokeh" in extensions
 
-**Layout**
-
-- DO create the overall layout and content structure once, but update the content dynamically. This eliminates flickering and provides a smooth, professional user experience.
-  - Don't recreate components when it can be avoided. Instead bind them to reactive functions (pn.bind, methods (@param.depends), expressions (.rx) or parameters (state.param.some_value).
-- DO use sizing_mode='stretch_width' for all components unless you specifically want another `sizing_mode` like `fixed` or `stretch_both`.
-- In a sidebar the order should be: 1) optional image/logo, 2) short app description, 3) input widgets/filters, 4) additional documentation.
+**Layout Best Practices**
+- DO use `sizing_mode='stretch_width'` by default unless you need `fixed` or `stretch_both`
+- In sidebars, order: 1) optional logo, 2) description, 3) input widgets, 4) documentation
 
 **Serving**
-- DO use `panel serve app.py --dev` for development with hot reload.
-  - DON't use legacy `--autoreload` flag.
-- DO use `if pn.state.served:` to check if being served with `panel serve`
+- DO use `panel serve app.py --dev` for development (DON'T use legacy `--autoreload`)
+- DO use `if pn.state.served:` to check if served with `panel serve`
 - DO use `if __name__ == "__main__":` to check if run directly via `python`
 
 ```python
@@ -178,7 +250,7 @@ DO note how this test simulates the user's behaviour of loading the page, changi
 if pn.state.served:
     main().servable()
 
-# Incorrect
+# Incorrect:
 if __name__ == "__main__":
     main().servable()
 ```
@@ -200,31 +272,42 @@ if __name__ == "__main__":
 
 ### Widget Creation
 ```python
-# Good: Parameter-driven
+# ✅ Good: Parameter-driven
 widget = pn.widgets.Select.from_param(self.param.model_type, name="Model Type")
 
-# Avoid: Manual management
+# ❌ Avoid: Manual management with links
 widget = pn.widgets.Select(options=['A', 'B'], value='A')
-
-# Avoid: Links. They are hard to reason about
-widget.link(self, value='model_type')
+widget.link(self, value='model_type')  # Hard to reason about
 ```
 
-### Reactive Updates
+### Reactive Updates Pattern
+
 ```python
-# Best: @param.depends for class methods
-@param.depends('model_results')
-def create_plot(self):
-    return create_performance_plot(self.model_results)
+# ✅ BEST: Static pane with reactive content (for classes)
+class MyComponent(pn.viewable.Viewer):
+    value = param.Number(default=10)
 
-plot_pane = pn.pane.Matplotlib(self.create_plot)
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._plot_pane = pn.pane.Matplotlib(self._create_plot)
 
-# Best: pn.bind for functions
-plot_pane = pn.pane.Matplotlib(pn.bind(create_plot))
+    @param.depends('value')
+    def _create_plot(self):
+        return create_plot(self.value)  # Returns plot only, not pane
 
-# Avoid: Manual updates
+# ✅ GOOD: pn.bind for functions
+slider = pn.widgets.IntSlider(value=10)
+plot_pane = pn.pane.Matplotlib(pn.bind(create_plot, slider))
+
+# ❌ AVOID: Recreating panes (causes flickering)
+@param.depends('value')
+def view(self):
+    return pn.pane.Matplotlib(create_plot(self.value))  # DON'T!
+
+# ❌ AVOID: Updating panes and other components directly. Makes it hard to reason about application flow and state
+@param.depends('value', watch=True)
 def update_plot(self):
-    self.plot_pane.object = create_performance_plot(self.model_results)
+    self.plot_pane.object = create_plot(self.value)
 ```
 
 ### Static Components Pattern

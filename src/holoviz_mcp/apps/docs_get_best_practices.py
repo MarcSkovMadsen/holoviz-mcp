@@ -42,7 +42,7 @@ The content is displayed in Markdown format and includes code examples you can r
 ### Learn More
 
 For more information about this project, including setup instructions and advanced configuration options,
-visit: [HoloViz MCP](https://github.com/MarcSkovMadsen/holoviz-mcp).
+visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
 """
 
 
@@ -105,7 +105,7 @@ class BestPracticesViewer(pn.viewable.Viewer):
         - Integration with HoloViz MCP docs_get_best_practices tool
     """
 
-    title = param.String(default="HoloViz MCP Best Practices", doc="Title of the best practices viewer")
+    title = param.String(default="HoloViz MCP - Docs Get Best Practices", doc="Title of the best practices viewer")
     config: BestPracticesConfiguration = param.Parameter(doc="Configuration for the best practices viewer")  # type: ignore
 
     def __init__(self, **params):
