@@ -163,7 +163,7 @@ class SearchResultsViewer(pn.viewable.Viewer):
 
     @param.depends("results")
     def is_not_empty(self):
-        """Check if there are no results."""
+        """Check if there are results."""
         return bool(self.results)
 
     @param.depends("results", watch=True)
