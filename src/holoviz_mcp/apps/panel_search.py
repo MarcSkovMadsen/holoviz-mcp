@@ -277,7 +277,7 @@ class PanelSearchApp(pn.viewable.Viewer):
 
             # GitHub button
             github_button = pmui.IconButton(
-                label="Github",
+                label="GitHub",
                 icon="star",
                 description="Give HoloViz-MCP a star on GitHub",
                 sizing_mode="fixed",
