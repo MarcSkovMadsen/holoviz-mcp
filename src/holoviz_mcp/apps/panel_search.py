@@ -228,7 +228,7 @@ class PanelSearchApp(pn.viewable.Viewer):
         self._error_pane = pn.pane.Alert(
             self._error_text,
             alert_type="danger",
-            visible=pn.rx(lambda msg: bool(msg))(self._config.param.error_message),
+            visible=pn.rx(bool)(self._config.param.error_message),
             sizing_mode="stretch_width",
         )
 
