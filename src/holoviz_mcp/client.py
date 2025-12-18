@@ -14,6 +14,7 @@ Examples
 >>> result = await call_tool("docs_search", {"query": "Button"})
 """
 
+import asyncio
 from typing import Any
 
 from fastmcp import Client
@@ -25,6 +26,7 @@ from holoviz_mcp.server import setup_composed_server
 __all__ = ["call_tool"]
 
 _CLIENT: Client | None = None
+_CLIENT_LOCK = asyncio.Lock()
 
 
 async def _setup_composed_server() -> None:
@@ -55,6 +57,9 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     server initialization. The first call will initialize the server and
     create a client; subsequent calls reuse the same client.
 
+    The client initialization is protected by an asyncio.Lock to prevent
+    race conditions when multiple tasks call this function concurrently.
+
     Parameters
     ----------
     tool_name : str
@@ -81,8 +86,9 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     >>> result = await call_tool("docs_get_best_practices", {"project": "panel"})
     """
     global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = await _create_client()
+    async with _CLIENT_LOCK:
+        if _CLIENT is None:
+            _CLIENT = await _create_client()
 
     async with _CLIENT:
         return await _CLIENT.call_tool(tool_name, parameters)
