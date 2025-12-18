@@ -59,7 +59,7 @@ For LLMs this tool provides a structured way to access and retrieve relevant doc
 
 ### Learn More
 
-For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://github.com/MarcSkovMadsen/holoviz-mcp).
+For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
 """  # noqa: E501
 
 
