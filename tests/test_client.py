@@ -19,11 +19,13 @@ class TestClientSingleton:
     async def test_concurrent_client_initialization(self):
         """Test that concurrent calls to call_tool don't create multiple clients.
 
-        This test verifies that the singleton client pattern is thread-safe
-        and handles race conditions properly when multiple tasks call call_tool
-        concurrently before the client is initialized.
+        This test verifies that the singleton client pattern handles race
+        conditions properly when multiple async tasks call call_tool
+        concurrently before the client is initialized. The asyncio.Lock
+        ensures only one task initializes the client.
         """
-        # Reset the client state by importing fresh
+        # Reset the client state for testing
+        # Note: This directly manipulates module state for testing purposes
         import holoviz_mcp.client as client_module
 
         client_module._CLIENT = None
