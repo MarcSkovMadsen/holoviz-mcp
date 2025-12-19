@@ -163,7 +163,7 @@ class SearchResultsViewer(pn.viewable.Viewer):
 
     @param.depends("results")
     def is_not_empty(self):
-        """Check if there are no results."""
+        """Check if there are results."""
         return bool(self.results)
 
     @param.depends("results", watch=True)
@@ -228,7 +228,7 @@ class PanelSearchApp(pn.viewable.Viewer):
         self._error_pane = pn.pane.Alert(
             self._error_text,
             alert_type="danger",
-            visible=pn.rx(lambda msg: bool(msg))(self._config.param.error_message),
+            visible=pn.rx(bool)(self._config.param.error_message),
             sizing_mode="stretch_width",
         )
 
@@ -277,7 +277,7 @@ class PanelSearchApp(pn.viewable.Viewer):
 
             # GitHub button
             github_button = pmui.IconButton(
-                label="Github",
+                label="GitHub",
                 icon="star",
                 description="Give HoloViz-MCP a star on GitHub",
                 sizing_mode="fixed",
