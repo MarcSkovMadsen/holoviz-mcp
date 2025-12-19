@@ -103,12 +103,12 @@ class TestPanelMCPIntegration:
                 assert all(comp["name"] == test_name for comp in result.data)
 
     @pytest.mark.asyncio
-    async def test_search_tool_real_data(self):
+    async def test_search_components_tool_real_data(self):
         """Test the search tool with real data."""
         client = Client(mcp)
         async with client:
             # Search for common widget terms
-            result = await client.call_tool("search", {"query": "widget"})
+            result = await client.call_tool("search_components", {"query": "widget"})
 
         # Should return a list of search results
         assert isinstance(result.data, list)
@@ -128,18 +128,18 @@ class TestPanelMCPIntegration:
             assert search_result["relevance_score"] > 0
 
     @pytest.mark.asyncio
-    async def test_search_tool_with_limit(self):
+    async def test_search_components_tool_with_limit(self):
         """Test the search tool with result limit."""
         client = Client(mcp)
         async with client:
             # Search with a limit
-            result = await client.call_tool("search", {"query": "widget", "limit": 2})
+            result = await client.call_tool("search_components", {"query": "widget", "limit": 2})
 
         assert isinstance(result.data, list)
         assert len(result.data) <= 2
 
     @pytest.mark.asyncio
-    async def test_search_tool_with_package_filter(self):
+    async def test_search_components_tool_with_package_filter(self):
         """Test the search tool with package filter."""
         client = Client(mcp)
         async with client:
@@ -150,7 +150,7 @@ class TestPanelMCPIntegration:
             if len(packages) > 0:
                 # Search within a specific package
                 test_package = packages[0]
-                result = await client.call_tool("search", {"query": "widget", "package": test_package})
+                result = await client.call_tool("search_components", {"query": "widget", "package": test_package})
 
                 # All results should be from the specified package
                 assert isinstance(result.data, list)
@@ -244,7 +244,16 @@ class TestPanelMCPIntegration:
             tools = await client.list_tools()
 
         tool_names = [tool.name for tool in tools]
-        expected_tools = ["list_packages", "list_components", "search", "get_component", "get_component_parameters", "serve", "close_server", "get_server_logs"]
+        expected_tools = [
+            "list_packages",
+            "list_components",
+            "search_components",
+            "get_component",
+            "get_component_parameters",
+            "serve",
+            "close_server",
+            "get_server_logs",
+        ]
 
         for tool in expected_tools:
             assert tool in tool_names
@@ -290,7 +299,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Search for a term that should return multiple results
-            result = await client.call_tool("search", {"query": "input"})
+            result = await client.call_tool("search_components", {"query": "input"})
 
         if len(result.data) > 1:
             # Check that results are ordered by relevance score (descending)

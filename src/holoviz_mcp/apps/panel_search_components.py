@@ -17,9 +17,9 @@ pn.pane.Markdown.disable_anchors = True
 ALL = "All Packages"
 
 ABOUT = """
-## Panel Component Search
+## Panel Component Search Tool
 
-This tool provides an interactive interface for searching Panel components and discovering their capabilities.
+The `panel_search_components` tool provides an interactive interface for searching Panel components and discovering their capabilities.
 
 ### How to Use This Search Tool
 
@@ -35,6 +35,7 @@ The search looks through component names, module paths, and docstrings to find m
 ### Search Results
 
 Each result includes:
+
 - **Component Name**: The class name of the component
 - **Relevance Score**: How closely it matches your query
 - **Package**: Which Panel package contains it
@@ -92,7 +93,7 @@ class SearchConfiguration(param.Parameterized):
             params["package"] = self.package
 
         try:
-            result = await call_tool("panel_search", params)
+            result = await call_tool("panel_search_components", params)
 
             if result and hasattr(result, "data"):
                 self.results = result.data if result.data else []
@@ -138,14 +139,13 @@ class SearchResultsViewer(pn.viewable.Viewer):
             show_index=False,
             name="Search Results",
             disabled=True,
-            styles={"border": "1px solid black"},
         )
 
         raw = pn.pane.JSON(
             self.param.results,
             depth=3,
             sizing_mode="stretch_width",
-            name="Raw Results",
+            name="Response",
         )
 
         tabs = pn.Tabs(table, raw, visible=self.is_not_empty, sizing_mode="stretch_width")
@@ -182,7 +182,7 @@ class SearchResultsViewer(pn.viewable.Viewer):
 class PanelSearchApp(pn.viewable.Viewer):
     """Main application for exploring Panel component search."""
 
-    title = param.String(default="HoloViz MCP - Panel Component Search")
+    title = param.String(default="HoloViz MCP - Panel Component Search Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)

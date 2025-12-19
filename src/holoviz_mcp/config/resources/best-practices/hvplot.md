@@ -14,7 +14,7 @@ import hvplot.polars # will add .hvplot namespace to Polars dataframes
 - DO use bar charts over pie Charts. Pie charts are not supported.
 - DO use NumeralTickFormatter and 'a' formatter for axis formatting:
 
-```bash
+```python
 from bokeh.models.formatters import NumeralTickFormatter
 
 df.hvplot(
