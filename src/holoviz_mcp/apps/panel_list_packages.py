@@ -38,7 +38,7 @@ def create_app():
     about_button = pmui.IconButton(
         label="About",
         icon="info",
-        description="Click to learn about the Panel Search Tool.",
+        description="Click to learn about the Panel List Packages Tool.",
         sizing_mode="fixed",
         color="light",
         margin=(10, 0),
