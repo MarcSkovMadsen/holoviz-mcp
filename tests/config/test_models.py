@@ -67,7 +67,7 @@ class TestGitRepository:
 class TestDocsConfig:
     """Test DocsConfig model."""
 
-    def test_default_docs_config(self):
+    def test_default_holoviz_config(self):
         """Test default docs configuration."""
         config = DocsConfig()
         assert config.repositories == {}
@@ -76,7 +76,7 @@ class TestDocsConfig:
         assert config.max_file_size == 1024 * 1024
         assert config.update_interval == 86400
 
-    def test_docs_config_with_repositories(self):
+    def test_holoviz_config_with_repositories(self):
         """Test docs configuration with repositories."""
         config = DocsConfig(
             repositories={

@@ -17,7 +17,7 @@ import os
 from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.docs_mcp.server import mcp as docs_mcp
+from holoviz_mcp.holoviz_mcp.server import mcp as holoviz_mcp
 from holoviz_mcp.hvplot_mcp.server import mcp as hvplot_mcp
 from holoviz_mcp.panel_mcp.server import mcp as panel_mcp
 
@@ -54,7 +54,7 @@ async def setup_composed_server() -> None:
     This uses static composition (import_server), which copies components
     from sub-servers into the main server with appropriate prefixes.
     """
-    await mcp.import_server(docs_mcp, prefix="docs")
+    await mcp.import_server(holoviz_mcp, prefix="holoviz")
     await mcp.import_server(hvplot_mcp, prefix="hvplot")
     await mcp.import_server(panel_mcp, prefix="panel")
 

@@ -1,11 +1,11 @@
-"""A search application for exploring the HoloViz MCP docs_search tool."""
+"""A search application for exploring the HoloViz MCP holoviz_search tool."""
 
 import panel as pn
 import panel_material_ui as pmui
 import param
 
-from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.models import Document
 
 URL_CSS = """
 #url, .url {
@@ -258,10 +258,10 @@ class SearchApp(pn.viewable.Viewer):
     Features:
         - Parameter-driven reactivity
         - Modern, responsive UI using Panel Material UI
-        - Integration with HoloViz MCP docs_search tool
+        - Integration with HoloViz MCP holoviz_search tool
     """
 
-    title = param.String(default="HoloViz MCP - docs_search Tool Demo", doc="Title of the search app")
+    title = param.String(default="HoloViz MCP - holoviz_search Tool Demo", doc="Title of the search app")
     config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):

@@ -64,6 +64,9 @@ class SearchConfiguration(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
+        if pn.state.location:
+            pn.state.location.sync(self, ["query", "package", "limit"])
+
         # Initialize with available packages
         pn.state.execute(self._update_packages)
 

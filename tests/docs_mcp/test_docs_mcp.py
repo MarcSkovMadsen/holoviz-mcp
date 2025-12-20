@@ -7,7 +7,7 @@ Tests just the docs server functionality without the composed server.
 import pytest
 from fastmcp import Client
 
-from holoviz_mcp.docs_mcp.server import mcp
+from holoviz_mcp.holoviz_mcp.server import mcp
 
 
 @pytest.mark.asyncio

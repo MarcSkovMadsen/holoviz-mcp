@@ -11,7 +11,7 @@ Examples
 >>> result = await call_tool("panel_list_components", {})
 >>>
 >>> # Search documentation
->>> result = await call_tool("docs_search", {"query": "Button"})
+>>> result = await call_tool("holoviz_search", {"query": "Button"})
 """
 
 import asyncio
@@ -64,7 +64,7 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     ----------
     tool_name : str
         The name of the tool to call (e.g., "panel_list_components",
-        "docs_search", "hvplot_list_plot_types").
+        "holoviz_search", "hvplot_list_plot_types").
     parameters : dict[str, Any]
         A dictionary of parameters to pass to the tool.
 
@@ -83,7 +83,7 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     >>> result = await call_tool("panel_search", {"query": "Button", "limit": 5})
     >>>
     >>> # Get documentation for a project
-    >>> result = await call_tool("docs_get_best_practices", {"project": "panel"})
+    >>> result = await call_tool("holoviz_get_best_practices", {"project": "panel"})
     """
     global _CLIENT
     async with _CLIENT_LOCK:

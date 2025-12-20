@@ -153,6 +153,7 @@ class ComponentsListViewer(pn.viewable.Viewer):
             self.param.results,
             depth=3,
             sizing_mode="stretch_width",
+            theme="dark",
             name="Raw Response",
         )
 

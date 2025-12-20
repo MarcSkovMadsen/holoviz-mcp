@@ -40,7 +40,7 @@ Provides tools for working with hvPlot:
 - **Signature Extraction**: Extracts function signatures
 - **Documentation Access**: Retrieves docstrings for plot types
 
-### Documentation MCP (`docs_mcp`)
+### Documentation MCP (`holoviz_mcp`)
 
 Manages HoloViz documentation:
 

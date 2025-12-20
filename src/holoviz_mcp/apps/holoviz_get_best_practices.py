@@ -1,4 +1,4 @@
-"""Panel app for exploring the HoloViz MCP docs_get_best_practices tool.
+"""Panel app for exploring the HoloViz MCP holoviz_get_best_practices tool.
 
 Uses panel-material-ui widgets and Page layout.
 """
@@ -7,8 +7,8 @@ import panel as pn
 import panel_material_ui as pmui
 import param
 
-from holoviz_mcp.docs_mcp.data import get_best_practices
-from holoviz_mcp.docs_mcp.data import list_best_practices
+from holoviz_mcp.holoviz_mcp.data import get_best_practices
+from holoviz_mcp.holoviz_mcp.data import list_best_practices
 
 pn.extension()
 
@@ -102,10 +102,10 @@ class BestPracticesViewer(pn.viewable.Viewer):
     Features:
         - Parameter-driven reactivity
         - Modern, responsive UI using Panel Material UI
-        - Integration with HoloViz MCP docs_get_best_practices tool
+        - Integration with HoloViz MCP holoviz_get_best_practices tool
     """
 
-    title = param.String(default="HoloViz MCP - docs_get_best_practices Tool Demo", doc="Title of the best practices viewer")
+    title = param.String(default="HoloViz MCP - holoviz_get_best_practices Tool Demo", doc="Title of the best practices viewer")
     config: BestPracticesConfiguration = param.Parameter(doc="Configuration for the best practices viewer")  # type: ignore
 
     def __init__(self, **params):

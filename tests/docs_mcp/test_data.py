@@ -4,8 +4,8 @@ import pytest
 from pydantic import AnyHttpUrl
 
 from holoviz_mcp.config import GitRepository
-from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.data import convert_path_to_url
+from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import convert_path_to_url
 
 
 def is_reference_path(relative_path: Path) -> bool:
