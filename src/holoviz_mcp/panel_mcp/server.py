@@ -155,9 +155,9 @@ async def list_packages(ctx: Context) -> list[str]:
 
 
 @mcp.tool
-async def search(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
+async def search_components(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
     """
-    Search for Panel components by name, module path, or description.
+    Search for Panel components by search query and optional package filter.
 
     Use this tool to find components when you don't know the exact name but have keywords.
     The search looks through component names, module paths, and documentation to find matches.
@@ -184,14 +184,15 @@ async def search(ctx: Context, query: str, package: str | None = None, limit: in
     Examples
     --------
     Search for button components:
-    >>> search("button")
+    >>> search_components("button")
     [ComponentSummarySearchResult(name="Button", package="panel", relevance_score=80, ...)]
 
     Search within a specific package:
-    >>> search("input", package="panel_material_ui")
+    >>> search_components("input", package="panel_material_ui")
     [ComponentSummarySearchResult(name="TextInput", package="panel_material_ui", ...)]
+
     Find chart components with limited results:
-    >>> search("chart", limit=5)
+    >>> search_components("chart", limit=5)
     [ComponentSummarySearchResult(name="Bokeh", package="panel", ...)]
     """
     query_lower = query.lower()

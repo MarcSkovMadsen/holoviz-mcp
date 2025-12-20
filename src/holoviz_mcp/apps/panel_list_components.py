@@ -1,6 +1,6 @@
-"""An app to search for Panel components and examples.
+"""An app to list and filter Panel components.
 
-An interactive version of the holoviz_mcp.panel_mcp.server.search tool.
+An interactive version of the holoviz_mcp.panel_mcp.server.list_components tool.
 """
 
 import pandas as pd
@@ -17,29 +17,36 @@ pn.pane.Markdown.disable_anchors = True
 ALL = "All Packages"
 
 ABOUT = """
-## Panel Component Search
+## Panel Component List Tool
 
-This tool provides an interactive interface for searching Panel components and discovering their capabilities.
+This tool provides an interactive interface for listing and filtering Panel components.
 
-### How to Use This Search Tool
+### How to Use This Tool
 
-1. **Enter a Query**: Type component names, features, or descriptions (e.g., "Button", "input", "layout")
-2. **Filter by Package**: Narrow your search to specific Panel packages (or search all)
-3. **Set Max Results**: Control how many results to display
-4. **Click Search**: View matching components with relevance scores
+1. **Filter by Name**: Enter a component name (e.g., "Button") for exact case-insensitive matching
+2. **Filter by Module Path**: Enter a module path prefix (e.g., "panel.widgets") to list all components in that module
+3. **Filter by Package**: Select a specific package or "All Packages" to see components from all packages
+4. **Click List Components**: View all matching components
 
-### How the Search Works
+Leave filters empty to see all components.
 
-The search looks through component names, module paths, and docstrings to find matches to the *Search Query*.
+### Key Differences from Search Tool
 
-### Search Results
+Unlike the search tool which uses fuzzy matching and relevance scoring, this tool:
+- Uses **exact/prefix matching** for precise filtering
+- Returns **ALL matching components** (no result limit)
+- Provides **faster responses** (no docstring content included)
+- Best for **browsing** when you know what category you're looking for
+
+### Results Display
 
 Each result includes:
 - **Component Name**: The class name of the component
-- **Relevance Score**: How closely it matches your query
-- **Package**: Which Panel package contains it
+- **Package**: Which Panel package contains it (e.g., "panel", "panel_material_ui")
 - **Module Path**: The full Python import path
 - **Description**: A brief summary of the component's functionality
+
+You can click column headers to sort the results alphabetically.
 
 ### Learn More
 
@@ -48,18 +55,18 @@ visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
 """
 
 
-class SearchConfiguration(param.Parameterized):
-    """Configuration for Panel component search tool."""
+class ListComponentsConfiguration(param.Parameterized):
+    """Configuration for Panel component list tool."""
 
-    query = param.String(default="Button", label="Search Query")
+    component_name = param.String(default="Button", label="Component Name")
+    module_path = param.String(default="", label="Module Path")
     package = param.Selector(default=ALL, objects=[ALL], label="Package")
-    limit = param.Integer(default=10, bounds=(1, 50), label="Max Results")
 
-    search = param.Event(label="Search")
+    list_components = param.Event(label="List Components")
 
-    results = param.List(default=[], doc="Search results")
+    results = param.List(default=[], doc="List results")
     loading = param.Boolean(default=False, doc="Loading state")
-    error_message = param.String(default="", doc="Error message if search fails")
+    error_message = param.String(default="", doc="Error message if listing fails")
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -72,59 +79,57 @@ class SearchConfiguration(param.Parameterized):
         packages = [p for p in result.data]
         self.param.package.objects = [ALL] + sorted(packages)
 
-    @param.depends("search", watch=True)
+    @param.depends("list_components", watch=True)
     async def _update_results(self):
-        """Execute search and update results."""
-        if not self.query.strip():
-            self.error_message = "Please enter a search query"
-            return
-
+        """Execute list_components and update results."""
         self.loading = True
         self.error_message = ""
         self.results = []
 
-        params = {
-            "query": self.query,
-            "limit": self.limit,
-        }
-        # Add package filter if not "All"
+        params = {}
+
+        # Add filters only if they have values
+        if self.component_name.strip():
+            params["name"] = self.component_name.strip()
+        if self.module_path.strip():
+            params["module_path"] = self.module_path.strip()
         if self.package != ALL:
             params["package"] = self.package
 
         try:
-            result = await call_tool("panel_search", params)
+            result = await call_tool("panel_list_components", params)
 
             if result and hasattr(result, "data"):
                 self.results = result.data if result.data else []
                 if not self.results:
-                    self.error_message = "No results found"
+                    self.error_message = "No components found matching the filters"
             else:
-                self.error_message = "Search returned no data"
+                self.error_message = "List returned no data"
 
         except Exception as e:
-            self.error_message = f"Search failed: {str(e)}"
+            self.error_message = f"List failed: {str(e)}"
         finally:
             self.loading = False
 
 
-class SearchResultsViewer(pn.viewable.Viewer):
-    """Viewer for displaying search results as a menu list."""
+class ComponentsListViewer(pn.viewable.Viewer):
+    """Viewer for displaying component list as a table."""
 
-    results = param.List(default=[], allow_refs=True, doc="List of search results")
+    results = param.List(default=[], allow_refs=True, doc="List of components")
 
-    data = param.DataFrame(doc="DataFrame of search results")
+    data = param.DataFrame(doc="DataFrame of components")
 
     def __init__(self, **params):
         super().__init__(**params)
 
         no_components_message = pn.pane.Markdown(
-            "### No results to display.\n" "Please enter a search query and click 'Search' to find Panel components.",
+            "### No results to display.\n" "Click 'List Components' to see all available components, or use filters to narrow your search.",
             sizing_mode="stretch_width",
             visible=self.is_empty,
         )
+
         titles = {
             "name": "Component",
-            "relevance_score": "Relevance",
             "package": "Package",
             "module_path": "Path",
             "description": "Description",
@@ -136,19 +141,19 @@ class SearchResultsViewer(pn.viewable.Viewer):
             formatters=formatters,
             sizing_mode="stretch_width",
             show_index=False,
-            name="Search Results",
+            name="Table",
             disabled=True,
-            styles={"border": "1px solid black"},
+            sortable=True,
         )
 
-        raw = pn.pane.JSON(
+        response = pn.pane.JSON(
             self.param.results,
             depth=3,
             sizing_mode="stretch_width",
-            name="Raw Results",
+            name="Response",
         )
 
-        tabs = pn.Tabs(table, raw, visible=self.is_not_empty, sizing_mode="stretch_width")
+        tabs = pn.Tabs(table, response, visible=self.is_not_empty, sizing_mode="stretch_width")
 
         self._layout = pmui.Column(
             no_components_message,
@@ -169,9 +174,9 @@ class SearchResultsViewer(pn.viewable.Viewer):
     @param.depends("results", watch=True)
     def _update_data(self):
         if not self.results:
-            data = pd.DataFrame(columns=["name", "relevance_score", "package", "module_path", "description"])
+            data = pd.DataFrame(columns=["name", "package", "module_path", "description"])
         else:
-            data = pd.DataFrame(self.results)[["name", "relevance_score", "package", "module_path", "description"]]
+            data = pd.DataFrame(self.results)[["name", "package", "module_path", "description"]]
         self.data = data
 
     def __panel__(self):
@@ -179,23 +184,31 @@ class SearchResultsViewer(pn.viewable.Viewer):
         return self._layout
 
 
-class PanelSearchApp(pn.viewable.Viewer):
-    """Main application for exploring Panel component search."""
+class PanelListComponentsApp(pn.viewable.Viewer):
+    """Main application for listing and filtering Panel components."""
 
-    title = param.String(default="HoloViz MCP - Panel Component Search")
+    title = param.String(default="HoloViz MCP - Panel List Components Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)
 
         # Create configuration and components
-        self._config = SearchConfiguration()
-        self._search_results = SearchResultsViewer(results=self._config.param.results)
+        self._config = ListComponentsConfiguration()
+        self._components_list = ComponentsListViewer(results=self._config.param.results)
 
         with pn.config.set(sizing_mode="stretch_width"):
-            self._search_input = pmui.TextInput.from_param(
-                self._config.param.query,
-                label="Search Query",
-                placeholder="e.g., Button, TextInput, layout...",
+            self._name_input = pmui.TextInput.from_param(
+                self._config.param.component_name,
+                label="Component Name",
+                placeholder="e.g., Button, TextInput, Slider...",
+                variant="outlined",
+                sx={"width": "100%"},
+            )
+
+            self._module_path_input = pmui.TextInput.from_param(
+                self._config.param.module_path,
+                label="Module Path",
+                placeholder="e.g., panel.widgets, panel.pane...",
                 variant="outlined",
                 sx={"width": "100%"},
             )
@@ -207,20 +220,13 @@ class PanelSearchApp(pn.viewable.Viewer):
                 sx={"width": "100%"},
             )
 
-            self._limit_input = pmui.IntInput.from_param(
-                self._config.param.limit,
-                label="Max Results",
-                variant="outlined",
-                sx={"width": "100%"},
-            )
-
-            self._search_button = pmui.Button.from_param(
-                self._config.param.search,
-                label="Search",
+            self._list_button = pmui.Button.from_param(
+                self._config.param.list_components,
+                label="List Components",
                 color="primary",
                 variant="contained",
                 sx={"width": "100%", "marginTop": "10px"},
-                on_click=lambda e: self._config.param.trigger("search"),
+                on_click=lambda e: self._config.param.trigger("list_components"),
             )
 
         # Status indicators
@@ -228,31 +234,31 @@ class PanelSearchApp(pn.viewable.Viewer):
         self._error_pane = pn.pane.Alert(
             self._error_text,
             alert_type="danger",
-            visible=pn.rx(bool)(self._config.param.error_message),
+            visible=pn.rx(lambda msg: bool(msg))(self._config.param.error_message),
             sizing_mode="stretch_width",
         )
 
         # Create static layout structure
         self._sidebar = pn.Column(
-            pmui.Typography("## Search Filters", variant="h6"),
-            self._search_input,
+            pmui.Typography("## Filter Options", variant="h6"),
+            self._name_input,
+            self._module_path_input,
             self._package_select,
-            self._limit_input,
-            self._search_button,
+            self._list_button,
             self._error_pane,
             self._status_pane,
             sizing_mode="stretch_width",
         )
 
-        self._main = pmui.Container(self._search_results, width_option="xl")
+        self._main = pmui.Container(self._components_list, width_option="xl")
 
     @param.depends("_config.loading", "_config.results")
     def _status_text(self):
         """Generate status message."""
         if self._config.loading:
-            return "_Searching..._"
+            return "_Loading components..._"
         elif self._config.results:
-            return f"_Found {len(self._config.results)} result(s)_"
+            return f"_Found {len(self._config.results)} component(s)_"
         return ""
 
     @param.depends("_config.error_message")
@@ -267,7 +273,7 @@ class PanelSearchApp(pn.viewable.Viewer):
             about_button = pmui.IconButton(
                 label="About",
                 icon="info",
-                description="Click to learn about the Panel Search Tool.",
+                description="Click to learn about the Panel List Components Tool.",
                 sizing_mode="fixed",
                 color="light",
                 margin=(10, 0),
@@ -277,7 +283,7 @@ class PanelSearchApp(pn.viewable.Viewer):
 
             # GitHub button
             github_button = pmui.IconButton(
-                label="GitHub",
+                label="Github",
                 icon="star",
                 description="Give HoloViz-MCP a star on GitHub",
                 sizing_mode="fixed",
@@ -296,13 +302,6 @@ class PanelSearchApp(pn.viewable.Viewer):
             )
 
 
-def create_app(**params):
-    """Create and return the servable Panel Search app."""
-    app = PanelSearchApp(**params)
-    return app.__panel__()
-
-
-# Make the app servable
 if pn.state.served:
     pn.extension("tabulator")
-    create_app().servable()
+    PanelListComponentsApp().servable()

@@ -16,7 +16,7 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"What Panel packages are installed?"*
 
-### search
+### search_components
 
 **Purpose**: Search for Panel components by name, module path, or description.
 

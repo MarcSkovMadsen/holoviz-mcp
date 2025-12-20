@@ -258,7 +258,7 @@ class SearchApp(pn.viewable.Viewer):
         - Integration with HoloViz MCP docs_search tool
     """
 
-    title = param.String(default="HoloViz MCP - Docs Search", doc="Title of the search app")
+    title = param.String(default="HoloViz MCP - Docs Search Demo", doc="Title of the search app")
     config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):
