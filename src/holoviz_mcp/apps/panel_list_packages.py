@@ -8,7 +8,7 @@ from holoviz_mcp.client import call_tool
 ABOUT = """
 # Panel List Packages Tool
 
-This tool lists all installed packages that provide Panel UI components.
+The `panel_list_packages` tool lists all installed packages that provide Panel `Viewable` components.
 
 ## Purpose
 
@@ -20,20 +20,6 @@ This helps you understand which packages you can use in the 'package' parameter 
 A list of package names that provide Panel components, sorted alphabetically.
 
 **Examples:** `["panel"]` or `["panel", "panel_material_ui"]`
-
-## Usage Example
-
-Use this tool to see available packages:
-```python
->>> list_packages()
-["panel", "panel_material_ui"]
-```
-
-Then use those package names in other tools:
-```python
->>> list_components(package="panel_material_ui")
->>> search("button", package="panel")
-```
 """
 
 
@@ -72,10 +58,10 @@ def create_app():
         target="_blank",
     )
 
-    main = pmui.Container(about, pn.pane.JSON(panel_list_packages))
+    main = pmui.Container(about, pn.pane.JSON(panel_list_packages, theme="dark", depth=3, sizing_mode="stretch_width"))
 
     return pmui.Page(
-        title="HoloViz-MCP: Panel List Packages Tool Demo",
+        title="HoloViz-MCP: panel_list_packages Tool Demo",
         header=[pmui.Row(pn.HSpacer(), about_button, github_button, sizing_mode="stretch_width")],
         main=[main],
     )

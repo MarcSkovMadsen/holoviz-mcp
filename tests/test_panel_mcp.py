@@ -175,15 +175,8 @@ class TestPanelMCPIntegration:
                 result = await client.call_tool("get_component", {"name": test_name, "package": test_package})
 
                 # Should return detailed component information
-                component = result.data
-
-                # Check if it's a dictionary (serialized) or Component object
-                if hasattr(component, "model_dump"):
-                    component_dict = component.model_dump()
-                elif hasattr(component, "__dict__"):
-                    component_dict = component.__dict__
-                else:
-                    component_dict = component
+                assert result.structured_content
+                component_dict = result.structured_content
 
                 assert "name" in component_dict
                 assert "package" in component_dict
@@ -193,9 +186,8 @@ class TestPanelMCPIntegration:
                 assert "parameters" in component_dict
                 assert "init_signature" in component_dict
 
-                # Parameters should exist (could be empty)
                 parameters = component_dict["parameters"]
-                assert parameters is not None
+                assert parameters
 
     @pytest.mark.asyncio
     async def test_component_tool_nonexistent_component(self):
@@ -319,19 +311,9 @@ class TestPanelMCPIntegration:
                 first_comp = components_result.data[0]
                 result = await client.call_tool("get_component", {"name": first_comp["name"], "package": first_comp["package"]})
 
-                component = result.data
-
-                # Handle Component object properly
-                if hasattr(component, "model_dump"):
-                    component_dict = component.model_dump()
-                elif hasattr(component, "__dict__"):
-                    component_dict = component.__dict__
-                else:
-                    component_dict = component
-
-                # Check parameters structure
-                parameters = component_dict["parameters"]
-                assert parameters is not None
+                assert result.structured_content
+                parameters = result.structured_content["parameters"]
+                assert parameters
 
                 # Just check that the parameters attribute exists and is accessible
                 # The actual structure depends on the implementation

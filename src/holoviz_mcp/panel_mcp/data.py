@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from textwrap import dedent
 
 from panel.viewable import Viewable
 
@@ -83,7 +84,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
     # Extract parameters information
     parameters = {}
     if hasattr(cls, "param"):
-        for param_name in cls.param:
+        for param_name in sorted(cls.param):
             # Skip private parameters
             if param_name.startswith("_"):
                 continue
@@ -95,6 +96,8 @@ def collect_component_info(cls: type) -> ComponentDetails:
             for attr in ["default", "doc", "allow_None", "constant", "readonly", "per_instance"]:
                 if hasattr(param_obj, attr):
                     value = getattr(param_obj, attr)
+                    if isinstance(value, str):
+                        value = dedent(value).strip()
                     # Handle non-JSON serializable values
                     try:
                         json.dumps(value)

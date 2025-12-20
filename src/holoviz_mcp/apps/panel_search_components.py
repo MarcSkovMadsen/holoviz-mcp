@@ -137,15 +137,16 @@ class SearchResultsViewer(pn.viewable.Viewer):
             formatters=formatters,
             sizing_mode="stretch_width",
             show_index=False,
-            name="Search Results",
+            name="Human Readable View",
             disabled=True,
         )
 
         raw = pn.pane.JSON(
             self.param.results,
             depth=3,
+            theme="dark",
             sizing_mode="stretch_width",
-            name="Response",
+            name="Raw Response",
         )
 
         tabs = pn.Tabs(table, raw, visible=self.is_not_empty, sizing_mode="stretch_width")
@@ -182,7 +183,7 @@ class SearchResultsViewer(pn.viewable.Viewer):
 class PanelSearchApp(pn.viewable.Viewer):
     """Main application for exploring Panel component search."""
 
-    title = param.String(default="HoloViz MCP - Panel Component Search Tool Demo")
+    title = param.String(default="HoloViz MCP - panel_search_components Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -225,9 +226,9 @@ class PanelSearchApp(pn.viewable.Viewer):
 
         # Status indicators
         self._status_pane = pn.pane.Markdown(self._status_text, sizing_mode="stretch_width")
-        self._error_pane = pn.pane.Alert(
+        self._error_pane = pmui.Alert(
             self._error_text,
-            alert_type="danger",
+            alert_type="error",
             visible=pn.rx(bool)(self._config.param.error_message),
             sizing_mode="stretch_width",
         )
