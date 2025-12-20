@@ -35,6 +35,16 @@
           "enum": ["stdio", "http"],
           "default": "stdio"
         },
+        "host": {
+          "type": "string",
+          "description": "Host address to bind to when using HTTP transport (use 0.0.0.0 for Docker)",
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port to bind to when using HTTP transport",
+          "default": 8000
+        },
         "anonymized_telemetry": {
           "type": "boolean",
           "description": "Enable anonymized telemetry",
@@ -51,11 +61,16 @@
           "properties": {
             "allow_code_execution": {
               "type": "boolean",
-              "description": "Allow LLM to execute arbitrary code (Python, bash, pytest, Panel apps, etc.)",
+              "description": "Allow LLM to execute arbitrary code. This can be dangerous and should only be enabled in trusted environments.",
               "default": true
             }
           },
           "additionalProperties": false
+        },
+        "vector_db_path": {
+          "type": "string",
+          "description": "Path to the Chroma vector database",
+          "format": "path"
         }
       },
       "additionalProperties": false
@@ -122,7 +137,14 @@
                 },
                 "base_url": {
                   "type": "string",
-                  "description": "Base URL for documentation links"
+                  "description": "Base URL for documentation links",
+                  "format": "uri"
+                },
+                "url_transform": {
+                  "type": "string",
+                  "description": "How to transform file path into URL",
+                  "enum": ["holoviz", "plotly", "datashader"],
+                  "default": "holoviz"
                 },
                 "reference_patterns": {
                   "type": "array",
@@ -133,7 +155,7 @@
                   "default": ["examples/reference/**/*.md", "examples/reference/**/*.ipynb"]
                 }
               },
-              "required": ["url"],
+              "required": ["url", "base_url"],
               "additionalProperties": false
             }
           },
@@ -197,6 +219,21 @@
         }
       },
       "additionalProperties": false
+    },
+    "user_dir": {
+      "type": "string",
+      "description": "User configuration directory",
+      "format": "path"
+    },
+    "default_dir": {
+      "type": "string",
+      "description": "Default configuration directory",
+      "format": "path"
+    },
+    "repos_dir": {
+      "type": "string",
+      "description": "Repository download directory",
+      "format": "path"
     }
   },
   "additionalProperties": false
