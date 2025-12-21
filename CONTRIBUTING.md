@@ -306,7 +306,7 @@ Build documentation locally:
 pixi run -e docs build
 
 # Serve documentation locally
-pixi run -e docs docs-serve
+pixi run -e docs serve
 ```
 
 ### Documentation Style
