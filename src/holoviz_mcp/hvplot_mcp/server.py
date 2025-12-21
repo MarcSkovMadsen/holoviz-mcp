@@ -114,9 +114,7 @@ async def get_docstring(
 
 
 @mcp.tool
-async def get_signature(
-    ctx: Context, plot_type: str, docstring: bool = True, generic: bool = True, style: Union[Literal["matplotlib", "bokeh", "plotly"], bool] = True
-) -> str:
+async def get_signature(ctx: Context, plot_type: str, style: Union[Literal["matplotlib", "bokeh", "plotly"], bool] = True) -> str:
     """
     Get the function signature for a specific hvPlot plot type.
 
@@ -128,10 +126,6 @@ async def get_signature(
         FastMCP context (automatically provided by the MCP framework).
     plot_type : str
         The type of plot to provide help for (e.g., 'line', 'scatter').
-    docstring : bool, default=True
-        Whether to include the docstring in the output (ignored here, included for API compatibility).
-    generic : bool, default=True
-        Whether to include generic plotting options shared by all plot types (ignored here, included for API compatibility).
     style : str or bool, default=True
         Plotting backend to use for style options. If True, automatically infers the backend (ignored here).
 
@@ -144,7 +138,7 @@ async def get_signature(
     --------
     >>> get_signature(plot_type='line')
     """
-    _, sig = _help(plot_type=plot_type, docstring=docstring, generic=generic, style=style)
+    _, sig = _help(plot_type=plot_type, docstring=True, generic=True, style=style)
     return str(sig)
 
 

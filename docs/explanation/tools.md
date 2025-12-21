@@ -182,7 +182,7 @@ Tools for searching and accessing HoloViz documentation.
 
 Tools for working with hvPlot plotting functionality.
 
-### list_plot_types
+### hvplot_list_plot_types
 
 **Purpose**: List all available hvPlot plot types.
 
@@ -192,7 +192,9 @@ Tools for working with hvPlot plotting functionality.
 
 **Example Query**: *"What plot types does hvPlot support?"*
 
-### get_docstring
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_list_plot_types](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_list_plot_types)
+
+### hvplot_get_docstring
 
 **Purpose**: Get the docstring for a specific hvPlot plot type.
 
@@ -205,7 +207,9 @@ Tools for working with hvPlot plotting functionality.
 
 **Example Query**: *"How do I use hvPlot's scatter plot?"*
 
-### get_signature
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_docstring](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_docstring)
+
+### hvplot_get_signature
 
 **Purpose**: Get the function signature for a specific hvPlot plot type.
 
@@ -215,6 +219,8 @@ Tools for working with hvPlot plotting functionality.
 **Use Case**: Understand the parameters for a plot type.
 
 **Returns**: Function signature with parameter information.
+
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_signature](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_signature)
 
 ## Tool Categories by Use Case
 
