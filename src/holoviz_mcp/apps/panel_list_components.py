@@ -155,7 +155,6 @@ class ComponentsListViewer(pn.viewable.Viewer):
             sizing_mode="stretch_width",
             theme="dark",
             name="Raw Response",
-            theme="dark",
         )
 
         tabs = pn.Tabs(table, response, visible=self.is_not_empty, sizing_mode="stretch_width")
