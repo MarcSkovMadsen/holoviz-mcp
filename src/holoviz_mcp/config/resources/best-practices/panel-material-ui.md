@@ -137,14 +137,14 @@ def test_characters_reactivity():
 
 ## Panel Material UI Guidelines
 
-### General Guidelines
+### General Instructions
 
 - DO use the new parameter names (e.g. `label`, `color`) instead of legacy aliases (e.g. `name`, `button_type`) for pmui components
 - DO use `sizing_mode` parameter over `sx` css styling parameter
 - DO use Material UI `sx` parameter for all css styling over `styles` and `stylesheets`
 - DO use panel-material-ui components instead of panel components for projects already using panel-material-ui and for new projects
 
-## Component Guidelines
+## Component Instructions
 
 ### Page
 

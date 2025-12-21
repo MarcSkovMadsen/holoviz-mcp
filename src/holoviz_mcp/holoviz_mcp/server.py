@@ -11,10 +11,10 @@ from fastmcp import Context
 from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.data import get_best_practices as _get_best_practices
-from holoviz_mcp.docs_mcp.data import list_best_practices as _list_best_practices
-from holoviz_mcp.docs_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import get_best_practices as _get_best_practices
+from holoviz_mcp.holoviz_mcp.data import list_best_practices as _list_best_practices
+from holoviz_mcp.holoviz_mcp.models import Document
 
 logger = logging.getLogger(__name__)
 

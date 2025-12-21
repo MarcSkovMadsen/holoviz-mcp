@@ -20,7 +20,7 @@ from pydantic import HttpUrl
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.config.models import FolderConfig
 from holoviz_mcp.config.models import GitRepository
-from holoviz_mcp.docs_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.models import Document
 
 logger = logging.getLogger(__name__)
 

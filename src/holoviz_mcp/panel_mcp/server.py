@@ -342,7 +342,7 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
         Examples: "panel.widgets.Button", "panel_material_ui.Button"
     package : str, optional
         Package name to filter by. If None, searches all packages.
-        Examples: "hvplot", "panel" or "panel_material_ui"
+        Examples: "panel" or "panel_material_ui"
 
     Returns
     -------
@@ -375,7 +375,6 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     if len(components_list) > 1:
         module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
         raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
-
     component = components_list[0]
     return component
 

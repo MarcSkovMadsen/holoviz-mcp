@@ -122,14 +122,14 @@ src/holoviz_mcp/
 
 The main server (`server.py`) uses **static composition** to combine three sub-servers:
 
-1. **docs_mcp**: Semantic search over HoloViz documentation (ChromaDB + sentence-transformers)
+1. **holoviz_mcp**: Semantic search over HoloViz documentation (ChromaDB + sentence-transformers)
 2. **panel_mcp**: Component introspection, Panel server management, best practices
 3. **hvplot_mcp**: hvPlot plot types, signatures, and documentation
 
 Each sub-server is a standalone FastMCP instance that gets imported with a prefix:
 
 ```python
-await mcp.import_server(docs_mcp, prefix="docs")    # docs_search, docs_get_document, etc.
+await mcp.import_server(holoviz_mcp, prefix="docs")    # holoviz_search, holoviz_get_document, etc.
 await mcp.import_server(panel_mcp, prefix="panel")  # panel_search, panel_serve, etc.
 await mcp.import_server(hvplot_mcp, prefix="hvplot") # hvplot_list_plot_types, etc.
 ```
@@ -301,7 +301,7 @@ tests/
 │   ├── test_loader.py
 │   └── test_models.py
 │
-├── docs_mcp/                # Documentation MCP tests
+├── holoviz_mcp/                # Documentation MCP tests
 │   ├── test_server.py
 │   └── test_data.py
 │
@@ -345,7 +345,7 @@ Current coverage expectations:
 
 ### Adding a New MCP Tool
 
-1. **Choose the right sub-server**: `docs_mcp`, `panel_mcp`, or `hvplot_mcp`
+1. **Choose the right sub-server**: `holoviz_mcp`, `panel_mcp`, or `hvplot_mcp`
 2. **Add the tool function** with FastMCP decorator:
 
 ```python

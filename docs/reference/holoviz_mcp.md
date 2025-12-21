@@ -54,25 +54,25 @@ This section provides detailed API documentation for HoloViz MCP.
 
 ## Documentation MCP
 
-::: holoviz_mcp.docs_mcp
+::: holoviz_mcp.holoviz_mcp
     options:
       heading_level: 3
 
 ### Server
 
-::: holoviz_mcp.docs_mcp.server
+::: holoviz_mcp.holoviz_mcp.server
     options:
       heading_level: 4
 
 ### Models
 
-::: holoviz_mcp.docs_mcp.models
+::: holoviz_mcp.holoviz_mcp.models
     options:
       heading_level: 4
 
 ### Data
 
-::: holoviz_mcp.docs_mcp.data
+::: holoviz_mcp.holoviz_mcp.data
     options:
       heading_level: 4
 

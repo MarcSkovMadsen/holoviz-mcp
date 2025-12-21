@@ -73,6 +73,9 @@ class ListComponentsConfiguration(param.Parameterized):
         # Initialize with available packages
         pn.state.execute(self._update_packages)
 
+        if pn.state.location:
+            pn.state.location.sync(self, parameters=["component_name", "module_path", "package"])
+
     async def _update_packages(self):
         """Update the available Panel packages."""
         result = await call_tool("panel_list_packages", {})
@@ -141,7 +144,7 @@ class ComponentsListViewer(pn.viewable.Viewer):
             formatters=formatters,
             sizing_mode="stretch_width",
             show_index=False,
-            name="Table",
+            name="Human Readable View",
             disabled=True,
             sortable=True,
         )
@@ -150,7 +153,8 @@ class ComponentsListViewer(pn.viewable.Viewer):
             self.param.results,
             depth=3,
             sizing_mode="stretch_width",
-            name="Response",
+            theme="dark",
+            name="Raw Response",
         )
 
         tabs = pn.Tabs(table, response, visible=self.is_not_empty, sizing_mode="stretch_width")
@@ -187,7 +191,7 @@ class ComponentsListViewer(pn.viewable.Viewer):
 class PanelListComponentsApp(pn.viewable.Viewer):
     """Main application for listing and filtering Panel components."""
 
-    title = param.String(default="HoloViz MCP - Panel List Components Tool Demo")
+    title = param.String(default="HoloViz MCP - panel_list_components Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -231,10 +235,10 @@ class PanelListComponentsApp(pn.viewable.Viewer):
 
         # Status indicators
         self._status_pane = pn.pane.Markdown(self._status_text, sizing_mode="stretch_width")
-        self._error_pane = pn.pane.Alert(
+        self._error_pane = pmui.Alert(
             self._error_text,
-            alert_type="danger",
-            visible=pn.rx(lambda msg: bool(msg))(self._config.param.error_message),
+            alert_type="error",
+            visible=pn.rx(bool)(self._config.param.error_message),
             sizing_mode="stretch_width",
         )
 

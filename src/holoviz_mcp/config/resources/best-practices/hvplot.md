@@ -1,6 +1,6 @@
 # hvPlot
 
-## General Guidelines
+## General Instructions
 
 - Always import hvplot for your data backend:
 

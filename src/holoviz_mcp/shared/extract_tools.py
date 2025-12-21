@@ -18,7 +18,7 @@ async def extract_tools():
     tools_dict = await mcp.get_tools()
 
     # Group tools by category
-    docs_tools = []
+    holoviz_tools = []
     panel_tools = []
     utility_tools = []
 
@@ -38,13 +38,13 @@ async def extract_tools():
         if any(x in tool_name for x in ["docs", "get_best_practices", "get_reference_guide", "get_document", "update_docs"]) or (
             tool_name == "search" and "component" not in str(tool_info)
         ):
-            docs_tools.append(tool_data)
+            holoviz_tools.append(tool_data)
         elif any(x in tool_name for x in ["component", "packages"]) or "search" in tool_name:
             panel_tools.append(tool_data)
         else:
             utility_tools.append(tool_data)
 
-    return {"panel_tools": panel_tools, "docs_tools": docs_tools, "utility_tools": utility_tools}
+    return {"panel_tools": panel_tools, "holoviz_tools": holoviz_tools, "utility_tools": utility_tools}
 
 
 async def main():
@@ -66,7 +66,7 @@ async def main():
         logger.info("")
 
     print_tools(tools_data["panel_tools"], "Panel Components")
-    print_tools(tools_data["docs_tools"], "Documentation")
+    print_tools(tools_data["holoviz_tools"], "Documentation")
     print_tools(tools_data["utility_tools"], "Utilities")
 
 

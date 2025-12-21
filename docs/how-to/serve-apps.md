@@ -18,8 +18,10 @@ How‑To: Serve HoloViz MCP Panel apps locally for exploration, learning, and va
 
 Try the hosted demo: [🤗 holoviz-mcp-ui](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui)
 
-[![Configuration Viewer Tool](../assets/images/holoviz-mcp-configuration-viewer.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/configuration_viewer)
-[![Docs Get Best Practices Tool](../assets/images/holoviz-mcp-docs-get-best-practices-tool.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/docs_get_best_practices)
-[![Docs Search Tool](../assets/images/holoviz-mcp-docs-search-tool.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/docs_search)
-[![Panel List Components Tool](../assets/images/holoviz-mcp-panel-list-components-tool.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_components)
-[![Panel Search Components Tool](../assets/images/holoviz-mcp-panel-search-components-tool.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_search_components)
+[![Configuration Viewer Tool](../assets/thumbnails/configuration_viewer.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/configuration_viewer)
+[![HoloViz Get Best Practices Tool](../assets/thumbnails/holoviz_get_best_practices.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_best_practices)
+[![HoloViz Search Tool](../assets/thumbnails/holoviz_search.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_search)
+[![Panel Get Component Tool](../assets/thumbnails/panel_get_component.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component)
+[![Panel List Components Tool](../assets/thumbnails/panel_list_components.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_components)
+[![Panel List Packages Tool](../assets/thumbnails/panel_list_packages.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages)
+[![Panel Search Components Tool](../assets/thumbnails/panel_search_components.png)](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_search_components)
