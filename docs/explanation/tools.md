@@ -6,7 +6,7 @@ HoloViz MCP provides several categories of tools that enable AI assistants to he
 
 Tools for discovering and working with Panel components.
 
-### list_packages
+### panel_list_packages
 
 **Purpose**: List all installed packages that provide Panel UI components.
 
@@ -16,7 +16,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"What Panel packages are installed?"*
 
-### search_components
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages)
+
+### panel_search_components
 
 **Purpose**: Search for Panel components by name, module path, or description.
 
@@ -29,7 +31,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"Search for Panel input components"*
 
-### list_components
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_search_components](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_search_components)
+
+### panel_list_components
 
 **Purpose**: Get a summary list of Panel components without detailed docstring and parameter information.
 
@@ -39,7 +43,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"List all Panel components"*
 
-### get_component
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages)
+
+### panel_get_component
 
 **Purpose**: Get complete details about a single Panel component including docstring and parameters.
 
@@ -52,7 +58,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"Tell me about Panel's TextInput component"*
 
-### get_component_parameters
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component)
+
+### panel_get_component_parameters
 
 **Purpose**: Get detailed parameter information for a single Panel component.
 
@@ -65,7 +73,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"What parameters does Panel's Button accept?"*
 
-### serve
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
+
+### panel_serve
 
 **Purpose**: Start a Panel server for a given file (requires code execution to be enabled).
 
@@ -81,7 +91,7 @@ Tools for discovering and working with Panel components.
 
 **Security Note**: This tool executes arbitrary code. Can be disabled with `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false`.
 
-### get_server_logs
+### panel_get_server_logs
 
 **Purpose**: Get logs for a running Panel application server.
 
@@ -92,7 +102,7 @@ Tools for discovering and working with Panel components.
 
 **Returns**: Server logs and output.
 
-### close_server
+### panel_close_server
 
 **Purpose**: Close a running Panel application server.
 
@@ -103,11 +113,11 @@ Tools for discovering and working with Panel components.
 
 **Returns**: Confirmation of closure.
 
-## Documentation Tools
+## HoloViz Tools
 
 Tools for searching and accessing HoloViz documentation.
 
-### search
+### holoviz_search
 
 **Purpose**: Search HoloViz documentation using semantic similarity.
 
@@ -122,7 +132,9 @@ Tools for searching and accessing HoloViz documentation.
 
 **Example Query**: *"How do I create a layout in Panel?"*
 
-### get_document
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_search](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_search)
+
+### holoviz_get_document
 
 **Purpose**: Retrieve a specific document by path and project.
 
@@ -134,7 +146,7 @@ Tools for searching and accessing HoloViz documentation.
 
 **Returns**: Complete document content.
 
-### get_reference_guide
+### holoviz_get_reference_guide
 
 **Purpose**: Find reference guides for specific HoloViz components.
 
@@ -145,7 +157,7 @@ Tools for searching and accessing HoloViz documentation.
 
 **Returns**: Reference guide content.
 
-### list_best_practices
+### holoviz_list_best_practices
 
 **Purpose**: List all available best practices projects.
 
@@ -153,7 +165,7 @@ Tools for searching and accessing HoloViz documentation.
 
 **Returns**: List of projects with best practices.
 
-### get_best_practices
+### holoviz_get_best_practices
 
 **Purpose**: Get best practices for using a project with LLMs.
 
@@ -163,6 +175,8 @@ Tools for searching and accessing HoloViz documentation.
 **Use Case**: Learn recommended patterns and practices.
 
 **Returns**: Best practices guide content.
+
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_best_practices](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_best_practices)
 
 ## hvPlot Tools
 
@@ -207,40 +221,44 @@ Tools for working with hvPlot plotting functionality.
 ### Discovery
 
 Find what's available:
-- `list_packages`: Available Panel packages
-- `list_components`: Available Panel components
-- `list_plot_types`: Available hvPlot plots
-- `list_best_practices`: Available best practices
+
+- `panel_list_packages`: Available Panel packages
+- `panel_list_components`: Available Panel components
+- `hvplot_list_plot_types`: Available hvPlot plots
+- `hvplot_list_best_practices`: Available best practices
 
 ### Information
 
 Get detailed information:
-- `get_component`: Complete component details
-- `get_component_parameters`: Parameter information
-- `get_docstring`: Plot type documentation
-- `get_signature`: Function signatures
-- `get_best_practices`: Best practices guide
+
+- `panel_get_component`: Complete component details
+- `panel_get_component_parameters`: Parameter information
+- `hvplot_get_docstring`: Plot type documentation
+- `hvplot_get_signature`: Function signatures
+- `holoviz_get_best_practices`: Best practices guide
 
 ### Search
 
 Find relevant information:
-- `search` (Panel): Find components
-- `search` (Documentation): Find documentation
-- `get_reference_guide`: Find reference docs
-- `get_document`: Get specific document
+
+- `panel_search` (Panel): Find components
+- `holoviz_search` (Documentation): Find documentation
+- `holoviz_get_reference_guide`: Find reference docs
+- `holoviz_get_document`: Get specific document
 
 ### Execution
 
 Run and manage applications:
-- `serve`: Start Panel server
-- `get_server_logs`: View server logs
-- `close_server`: Stop server
+
+- `panel_serve`: Start Panel server
+- `panel_get_server_logs`: View server logs
+- `panel_close_server`: Stop server
 
 ## Tool Usage Patterns
 
 ### Component Discovery Pattern
 
-```
+```markdown
 1. AI Assistant receives: "I need an input component"
 2. Calls: list_components or search with query="input"
 3. Presents: List of input components
@@ -251,7 +269,7 @@ Run and manage applications:
 
 ### Documentation Search Pattern
 
-```
+```markdown
 1. AI Assistant receives: "How do I create a layout?"
 2. Calls: search (documentation) with query="layout"
 3. Receives: Relevant documentation chunks
@@ -261,7 +279,7 @@ Run and manage applications:
 
 ### Code Generation Pattern
 
-```
+```markdown
 1. User requests: "Create a dashboard"
 2. AI uses: list_components, get_component_parameters
 3. Generates: Code using component information
