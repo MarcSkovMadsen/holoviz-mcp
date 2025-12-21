@@ -220,6 +220,8 @@ Tools for working with hvPlot plotting functionality.
 
 **Returns**: Function signature with parameter information.
 
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_signature](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_signature)
+
 ## Tool Categories by Use Case
 
 ### Discovery
