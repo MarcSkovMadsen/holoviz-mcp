@@ -27,9 +27,12 @@ The plan consists of a Markdown document that describes the implementation plan,
 
 Please
 
-- If available, use the holoviz MCP server to search for relevant information and to lookup relevant best practices.
-  - lookup and adhere to the panel and panel-material-ui best practices.
-- Use the read/readdFile and web/fetch tools to gather any additional information you may need.
 - prefer panel-material-ui components over panel components where possible.
 - Keep the plan short, concise, and professional.
 - Ensure that the plan includes considerations for testability, maintainability, scalability, and user experience.
+
+## MCP Tools
+
+- If available, use the holoviz MCP server to search for relevant information and to lookup relevant best practices.
+  - lookup and adhere to the panel and panel-material-ui best practices.
+- Use the read/readdFile and web/fetch tools to gather any additional information you may need.
