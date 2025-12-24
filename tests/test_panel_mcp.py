@@ -242,9 +242,6 @@ class TestPanelMCPIntegration:
             "search_components",
             "get_component",
             "get_component_parameters",
-            "serve",
-            "close_server",
-            "get_server_logs",
         ]
 
         for tool in expected_tools:

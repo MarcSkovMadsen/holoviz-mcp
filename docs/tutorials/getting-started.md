@@ -155,18 +155,12 @@ Now that everything is set up, let's build a simple dashboard:
 
 4. Ask your AI assistant:
    ```
-   Using the holoviz-mcp tools serve the app
+   Serve the app using panel serve
    ```
 
-5. Ask your AI assistant:
-   ```
-   Get the panel server logs
-   ```
+5. Ask your AI assistant to monitor the output in the terminal
 
-6. Ask your AI Assistant
-  ```
-  Close the panel server
-  ```
+6. Ask your AI Assistant to stop the server when done
 
 ## What's Next?
 

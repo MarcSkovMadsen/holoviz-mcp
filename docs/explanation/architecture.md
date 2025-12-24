@@ -146,11 +146,11 @@ Git clones of documentation repositories:
 
 ### Code Execution
 
-The `panel_serve` tool can execute arbitrary Python code. This is:
+AI agents can execute arbitrary Python code using bash commands like `panel serve`. This is:
 
 - **Configurable**: Can be disabled via configuration
-- **Sandboxed**: Runs in separate processes
-- **Monitored**: Server logs track execution
+- **Monitored**: Terminal output tracks execution
+- **Flexible**: Agents can use any bash command
 
 Disable with:
 ```bash

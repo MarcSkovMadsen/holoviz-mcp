@@ -75,43 +75,23 @@ Tools for discovering and working with Panel components.
 
 **Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
 
-### panel_serve
+### Serving Panel Applications
 
-**Purpose**: Start a Panel server for a given file (requires code execution to be enabled).
+**Note**: The deprecated MCP tools for serving (`panel_serve`, `panel_get_server_logs`, `panel_close_server`) have been removed. AI agents can now directly use `panel serve` commands via bash:
 
-**Parameters**:
-- `file_path` (string): Path to the Panel application file
-- `port` (integer, optional): Port to serve on
+**Starting a server**:
+```bash
+panel serve app.py --dev --port 5007
+```
 
-**Use Case**: Serve and test Panel applications.
+**Viewing logs**: Available in the terminal output
 
-**Returns**: Server URL and process information.
+**Stopping the server**: Use Ctrl+C or terminate the process
 
-**Example Query**: *"Serve my Panel application at app.py"*
+**Use Case**: Serve and test Panel applications during development.
 
-**Security Note**: This tool executes arbitrary code. Can be disabled with `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false`.
+**Security Note**: Running `panel serve` executes arbitrary Python code. Ensure you trust the code being served.
 
-### panel_get_server_logs
-
-**Purpose**: Get logs for a running Panel application server.
-
-**Parameters**:
-- `process_id` (string): ID of the server process
-
-**Use Case**: Debug running Panel applications.
-
-**Returns**: Server logs and output.
-
-### panel_close_server
-
-**Purpose**: Close a running Panel application server.
-
-**Parameters**:
-- `process_id` (string): ID of the server process
-
-**Use Case**: Stop a running Panel server.
-
-**Returns**: Confirmation of closure.
 
 ## HoloViz Tools
 
@@ -254,11 +234,11 @@ Find relevant information:
 
 ### Execution
 
-Run and manage applications:
+Run and manage applications using bash commands:
 
-- `panel_serve`: Start Panel server
-- `panel_get_server_logs`: View server logs
-- `panel_close_server`: Stop server
+- Use `panel serve` command directly via bash to start Panel servers
+- View server logs in terminal output
+- Stop servers with Ctrl+C or process termination
 
 ## Tool Usage Patterns
 
@@ -289,8 +269,7 @@ Run and manage applications:
 1. User requests: "Create a dashboard"
 2. AI uses: list_components, get_component_parameters
 3. Generates: Code using component information
-4. Optional: serve to test the application
-5. Optional: get_server_logs to debug
+4. Optional: Use `panel serve` command via bash to test the application
 ```
 
 ## Best Practices for Tool Use
@@ -309,15 +288,15 @@ Run and manage applications:
 
 ### Security
 
-- Be cautious with `serve` tool - it executes code
-- Verify file paths before serving
-- Monitor server logs for issues
+- Be cautious when running `panel serve` - it executes code
+- Verify file paths and code content before serving
+- Monitor terminal output for issues
 
 ## Tool Limitations
 
 ### Code Execution
 
-- `serve` tool requires code execution enabled
+- Running `panel serve` executes arbitrary Python code
 - Limited to local file system
 - Subject to system resource constraints
 
@@ -338,4 +317,4 @@ Run and manage applications:
 - [Architecture](architecture.md): How tools are implemented
 - [Configuration](../how-to/configuration.md): Configure tool behavior
 - [Security Considerations](security.md): Security implications
-- [Serve Apps](../how-to/serve-apps.md): Serve Panel apps to explore the tools
+- [Serve Apps](../how-to/serve-apps.md): Serve Panel apps locally
