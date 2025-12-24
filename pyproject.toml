@@ -50,6 +50,7 @@ dependencies = [
     "plotly",
     "pydantic>=2.0",
     "PyYAML",
+    "typer",
     "watchfiles",
 ]
 
@@ -170,6 +171,4 @@ source = "vcs"
 raw-options = { version_scheme = "no-guess-dev" }
 
 [project.scripts]
-"holoviz-mcp" = "holoviz_mcp:main"
-"holoviz-mcp-update" = "holoviz_mcp.holoviz_mcp.data:main"
-"holoviz-mcp-serve" = "holoviz_mcp.serve:main"
+"holoviz-mcp" = "holoviz_mcp.cli:cli_main"
