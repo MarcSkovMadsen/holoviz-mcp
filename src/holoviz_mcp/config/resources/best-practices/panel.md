@@ -20,23 +20,23 @@ Core dependencies provided with the `panel` Python package:
 
 - **panel**: Core application framework
 - **param**: A declarative approach to creating classes with typed, validated, and documented parameters. Fundamental to Panel's reactive programming model.
-- **watchfiles**: Enables high performance file watching and autoreload for the panel server
 
 Optional panel-extensions:
 
 - **panel-material-ui**: Modern Material UI components. To replace the panel native widgets within the next two years.
 - **panel-graphic-walker**: Modern Tableau like interface. Can offload computations to the server and thus scale to large datasets.
 
-Optional key dependencies from the HoloViz Ecosystem:
+Optional dependencies from the HoloViz Ecosystem:
 
-- **hvplot**: High-level plotting API with Pandas `.plot()`-like syntax. Best for: quick exploratory visualizations, interactive plots from DataFrames/Xarray, when you want interactivity without verbose code. Built on HoloViews.
-- **holoviews**: Declarative data visualization library with composable elements. Best for: complex multi-layered plots, advanced interactivity (linked brushing, selection), when you need fine control over plot composition, scientific visualizations. More powerful but steeper learning curve than hvPlot.
+- **colorcet**: Perceptually uniform colormaps collection. Best for: scientific visualization requiring accurate color representation, avoiding rainbow colormaps, accessible color schemes. Integrates with hvPlot, HoloViews, Matplotlib, Bokeh.
 - **datashader**: Renders large datasets (millions+ points) into images for visualization. Best for: big data visualization, geospatial datasets, scatter plots with millions of points, heatmaps of dense data. Requires hvPlot or HoloViews as frontend.
 - **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
-- **colorcet**: Perceptually uniform colormaps collection. Best for: scientific visualization requiring accurate color representation, avoiding rainbow colormaps, accessible color schemes. Integrates with hvPlot, HoloViews, Matplotlib, Bokeh.
-- **[holoviz-mcp](https://github.com/MarcSkovMadsen/holoviz-mcp)**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
+- **holoviews**: Declarative data visualization library with composable elements. Best for: complex multi-layered plots, advanced interactivity (linked brushing, selection), when you need fine control over plot composition, scientific visualizations. More powerful but steeper learning curve than hvPlot.
+- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
+- **hvplot**: High-level plotting API with Pandas `.plot()`-like syntax. Best for: quick exploratory visualizations, interactive plots from DataFrames/Xarray, when you want interactivity without verbose code. Built on HoloViews.
+- **hvsampledata**: Shared datasets for the HoloViz projects.
 
-Optional key dependencies from the wider PyData Ecosystem:
+Optional dependencies from the wider PyData Ecosystem:
 
 - **altair**: Declarative, grammar-of-graphics visualization library. Best for: statistical visualizations, interactive exploratory charts, when you need Vega-Lite's extensive chart gallery. Works well with Pandas/Polars DataFrames.
 - **dask**: Parallel computing library for scaling Pandas DataFrames beyond memory. Best for: processing datasets larger than RAM, parallel computation across multiple cores/machines, lazy evaluation workflows.
@@ -46,6 +46,7 @@ Optional key dependencies from the wider PyData Ecosystem:
 - **Plotly**: Interactive, publication-quality visualization library. Best for: 3D plots, complex interactive charts, animations, when you need hover tooltips and interactivity. Works well with Dash and Panel.
 - **polars**: Modern, fast DataFrame library written in Rust. Best for: high-performance data processing, datasets that fit in memory but need speed, when you need lazy evaluation, better memory efficiency than Pandas.
 - **xarray**: N-dimensional labeled arrays and datasets. Best for: multidimensional scientific data (climate, satellite imagery), data with multiple dimensions and coordinates, NetCDF/HDF5 files, geospatial raster data.
+- **watchfiles**: Enables high performance file watching and autoreload for the panel server.
 
 ## Common Use Cases
 
@@ -55,6 +56,14 @@ Optional key dependencies from the wider PyData Ecosystem:
 4. **Data Input Applications**: Validated form-based data collection
 5. **Report Viewers**: Interactive report generation and browsing
 6. **Administrative Interfaces**: Internal tools for data management
+
+## Installation
+
+```bash
+pip install panel watchfiles hvplot hvsampledata
+```
+
+For development in .py files DO always include watchfiles for hotreload.
 
 ## Best Practice Hello World App
 
@@ -407,7 +416,7 @@ If you experience memory make sure to:
 
 ### Lookup additional information
 
-- If the HoloViz MCP server is available DO use the HoloViz MCP server to access relevant documentation including documentation, component reference guides, and detailed component information.
+- If the HoloViz MCP server is available DO use the HoloViz MCP server to access relevant documentation including how-to guides, component reference guides, and detailed component docstrings and parameter information.
 - If the HoloViz MCP server is not available, DO search the web. For example searching the Panel website for `Tabulator` related information via [https://panel.holoviz.org/search.html?q=Tabulator](https://panel.holoviz.org/search.html?q=Tabulator) url.
 
 ### Test the app with pytest
@@ -478,6 +487,7 @@ def update_plot(self):
 ```
 
 ### Static Components Pattern
+
 ```python
 # DO: Create static layout with reactive content
 def _get_kpi_card(self):
@@ -504,6 +514,10 @@ def kpi_value(self):
 ### Tabulator
 
 - DO set `Tabulator.disabled=True` unless you would like the user to be able to edit the table.
+
+### Bind
+
+- DON't bind a function to nothing: `pn.bind(some_func)`. Just run the function instead `some_func()`.
 
 ## Plotting
 
