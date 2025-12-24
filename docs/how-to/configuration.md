@@ -139,7 +139,7 @@ docs:
 After adding repositories, update the index:
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-update
+holoviz-mcp update
 ```
 
 ## Security Configuration in YAML
@@ -199,7 +199,7 @@ See the [Docker Guide](docker.md) for Docker-specific configuration options.
 HoloViz MCP includes a built-in configuration viewer. Run:
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-serve
+holoviz-mcp serve
 ```
 
 Navigate to the Configuration Viewer tool to see your current configuration.
