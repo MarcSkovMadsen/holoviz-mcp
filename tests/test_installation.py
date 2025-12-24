@@ -337,9 +337,9 @@ class TestPackageStructure:
 
         scripts = pyproject.get("project", {}).get("scripts", {})
 
+        # After CLI refactoring, we only have one entry point
         assert "holoviz-mcp" in scripts, "holoviz-mcp entry point not found"
-        assert "holoviz-mcp-update" in scripts, "holoviz-mcp-update entry point not found"
-        assert "holoviz-mcp-serve" in scripts, "holoviz-mcp-serve entry point not found"
+        assert scripts["holoviz-mcp"] == "holoviz_mcp.cli:cli_main", "holoviz-mcp entry point has incorrect target"
 
     def test_required_dependencies_in_pyproject(self):
         """Verify all required dependencies are in pyproject.toml."""
@@ -362,7 +362,7 @@ class TestPackageStructure:
                 # Fallback for unparsable dependencies
                 dep_names.append(dep.split("[")[0].split(">=")[0].split("==")[0].strip())
 
-        required_deps = ["fastmcp", "panel", "chromadb", "pydantic"]
+        required_deps = ["fastmcp", "panel", "chromadb", "pydantic", "typer"]
 
         for dep in required_deps:
             assert dep in dep_names, f"Required dependency '{dep}' not found in pyproject.toml"
