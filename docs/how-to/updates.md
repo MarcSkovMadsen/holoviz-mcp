@@ -29,7 +29,7 @@ conda update -c conda-forge holoviz-mcp
 After updating the package, refresh the documentation index:
 
 ```bash
-holoviz-mcp update
+uvx holoviz-mcp update
 ```
 
 This ensures you have the latest documentation from HoloViz projects.
@@ -39,21 +39,7 @@ This ensures you have the latest documentation from HoloViz projects.
 For convenience, update both the package and documentation:
 
 ```bash
-uv tool update holoviz-mcp[panel-extensions] && holoviz-mcp update
-```
-
-### Create an Alias
-
-If using *bash*, add this to your `.bashrc` or `.zshrc`:
-
-```bash
-alias holoviz-update="uv tool update holoviz-mcp[panel-extensions] && holoviz-mcp update"
-```
-
-Then simply run:
-
-```bash
-holoviz-update
+uv tool update holoviz-mcp[panel-extensions] && uvx holoviz-mcp update
 ```
 
 ## Update Docker Image
@@ -144,7 +130,7 @@ If the documentation index gets corrupted:
 
 ```bash
 rm -rf ~/.holoviz-mcp/chroma
-holoviz-mcp update
+uvx holoviz-mcp update
 ```
 
 ## Automatic Updates
@@ -174,7 +160,7 @@ Remove unused data:
 rm -rf ~/.holoviz-mcp/chroma
 
 # Recreate
-holoviz-mcp update
+uvx holoviz-mcp update
 ```
 
 ### Verify Installation

@@ -60,7 +60,6 @@ def serve() -> None:
     """Serve Panel apps from the apps directory.
 
     This command starts a Panel server to host all Panel apps found in the apps directory.
-    Additional arguments can be passed to configure the Panel server (e.g., --port, --show).
     """
     from holoviz_mcp.serve import main as serve_main
 

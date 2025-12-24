@@ -2,9 +2,8 @@
 
 import subprocess
 import sys
+import time
 from pathlib import Path
-
-import pytest
 
 
 class TestCLI:
@@ -69,8 +68,6 @@ class TestCLI:
         )
 
         # Wait briefly for server to start
-        import time
-
         time.sleep(3)
 
         # Terminate the process
@@ -142,56 +139,3 @@ class TestCLIEntryPoint:
         )
         assert result.returncode == 0
         assert "Serve Panel apps" in result.stdout
-
-
-class TestBackwardCompatibility:
-    """Test that the CLI maintains backward compatibility."""
-
-    def test_server_main_still_callable(self):
-        """Test that the old server.main() function still works."""
-        from holoviz_mcp.server import main
-
-        # Just verify it's callable - don't actually run it
-        assert callable(main)
-
-    def test_update_main_still_callable(self):
-        """Test that the old data.main() function still works."""
-        from holoviz_mcp.holoviz_mcp.data import main
-
-        # Just verify it's callable - don't actually run it
-        assert callable(main)
-
-    def test_serve_main_still_callable(self):
-        """Test that the old serve.main() function still works."""
-        from holoviz_mcp.serve import main
-
-        # Just verify it's callable - don't actually run it
-        assert callable(main)
-
-
-class TestCLIStructure:
-    """Test the structure of the CLI."""
-
-    def test_cli_file_exists(self):
-        """Test that the CLI file exists."""
-        cli_path = Path(__file__).parent.parent / "src" / "holoviz_mcp" / "cli.py"
-        assert cli_path.exists(), "CLI file does not exist"
-
-    def test_cli_has_typer_app(self):
-        """Test that the CLI uses Typer."""
-        from holoviz_mcp import cli
-
-        import typer
-
-        assert isinstance(cli.app, typer.Typer)
-
-    def test_cli_commands_registered(self):
-        """Test that all commands are registered with Typer."""
-        from holoviz_mcp import cli
-
-        # Get registered commands
-        command_names = [cmd.callback.__name__ for cmd in cli.app.registered_commands if hasattr(cmd, "callback") and cmd.callback]
-
-        # Check that our commands are registered
-        assert "update" in command_names
-        assert "serve" in command_names

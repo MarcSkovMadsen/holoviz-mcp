@@ -35,7 +35,7 @@ This installs HoloViz MCP with Panel extensions like Material UI, Graphic Walker
 After installation, create the documentation index:
 
 ```bash
-holoviz-mcp update
+uvx holoviz-mcp update
 ```
 
 **Note**: This process takes 5-10 minutes on first run.
@@ -148,13 +148,6 @@ Add to your `.bashrc` or `.zshrc`:
 
 ```bash
 alias holoviz-mcp="uvx holoviz-mcp"
-alias holoviz-update="uv tool update holoviz-mcp[panel-extensions] && holoviz-mcp update"
-```
-
-Then simply run:
-
-```bash
-holoviz-update
 ```
 
 ## Uninstalling

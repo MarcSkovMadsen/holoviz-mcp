@@ -10,7 +10,7 @@ How‑To: Serve HoloViz MCP Panel apps locally for exploration, learning, and va
 
 1. Start the local Panel server:
 	```bash
-	holoviz-mcp serve
+	uvx holoviz-mcp serve
 	```
 2. Open the URL printed in the terminal. This starts the bundled Panel apps.
 

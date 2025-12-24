@@ -49,7 +49,7 @@ uv tool install holoviz-mcp[panel-extensions]
 Create the documentation index (takes up to 10 minutes on first run):
 
 ```bash
-holoviz-mcp update
+uvx holoviz-mcp update
 ```
 
 ### Configure Your IDE
