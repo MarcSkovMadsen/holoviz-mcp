@@ -10,11 +10,11 @@ HoloViz MCP is designed with security in mind, but like any tool that provides A
 
 ### Bash Command Execution
 
-AI agents can execute bash commands, including `panel serve`, to run Panel applications. This is powerful but requires careful consideration.
+AI agents can execute bash commands. This is powerful but requires careful consideration.
 
 **Default Behavior**: Enabled (controlled by `allow_code_execution` setting)
 
-**Why It Exists**: Allows testing and demonstrating Panel applications directly from AI conversations.
+**Why It Exists**: Allows AI agents to perform operations directly in the environment.
 
 **Risk**: Could execute malicious code if:
 - AI generates harmful commands
@@ -55,7 +55,6 @@ server:
 
 When disabled:
 - AI cannot execute bash commands on your behalf
-- Panel applications must be served manually
 
 ## Network Exposure
 

@@ -75,24 +75,6 @@ Tools for discovering and working with Panel components.
 
 **Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
 
-### Serving Panel Applications
-
-**Note**: The deprecated MCP tools for serving (`panel_serve`, `panel_get_server_logs`, `panel_close_server`) have been removed. AI agents can now directly use `panel serve` commands via bash:
-
-**Starting a server**:
-```bash
-panel serve app.py --dev --port 5007
-```
-
-**Viewing logs**: Available in the terminal output
-
-**Stopping the server**: Use Ctrl+C or terminate the process
-
-**Use Case**: Serve and test Panel applications during development.
-
-**Security Note**: Running `panel serve` executes arbitrary Python code. Ensure you trust the code being served.
-
-
 ## HoloViz Tools
 
 Tools for searching and accessing HoloViz documentation.
@@ -232,14 +214,6 @@ Find relevant information:
 - `holoviz_get_reference_guide`: Find reference docs
 - `holoviz_get_document`: Get specific document
 
-### Execution
-
-Run and manage applications using bash commands:
-
-- Use `panel serve` command directly via bash to start Panel servers
-- View server logs in terminal output
-- Stop servers with Ctrl+C or process termination
-
 ## Tool Usage Patterns
 
 ### Component Discovery Pattern
@@ -269,7 +243,6 @@ Run and manage applications using bash commands:
 1. User requests: "Create a dashboard"
 2. AI uses: list_components, get_component_parameters
 3. Generates: Code using component information
-4. Optional: Use `panel serve` command via bash to test the application
 ```
 
 ## Best Practices for Tool Use
@@ -286,19 +259,7 @@ Run and manage applications using bash commands:
 - Cross-reference documentation when unsure
 - Use specific component paths to avoid ambiguity
 
-### Security
-
-- Be cautious when running `panel serve` - it executes code
-- Verify file paths and code content before serving
-- Monitor terminal output for issues
-
 ## Tool Limitations
-
-### Code Execution
-
-- Running `panel serve` executes arbitrary Python code
-- Limited to local file system
-- Subject to system resource constraints
 
 ### Documentation
 

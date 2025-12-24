@@ -146,7 +146,7 @@ Git clones of documentation repositories:
 
 ### Code Execution
 
-AI agents can execute arbitrary Python code using bash commands like `panel serve`. This is:
+AI agents can execute bash commands. This is:
 
 - **Configurable**: Can be disabled via configuration
 - **Monitored**: Terminal output tracks execution

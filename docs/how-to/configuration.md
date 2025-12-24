@@ -75,7 +75,7 @@ Default: `holoviz-mcp`
 ### Security Configuration
 
 **HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**
-Allow or block code execution features. When enabled, AI agents can execute bash commands including `panel serve`.
+Allow or block code execution features. When enabled, AI agents can execute bash commands.
 Values: `true`, `false`
 Default: `true`
 
