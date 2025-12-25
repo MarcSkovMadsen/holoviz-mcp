@@ -439,8 +439,5 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     return component.parameters
 
 
-
-
-
 if __name__ == "__main__":
     mcp.run(transport=_config.server.transport)

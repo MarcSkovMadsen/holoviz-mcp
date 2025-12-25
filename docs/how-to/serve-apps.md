@@ -17,4 +17,3 @@
 ## Online Demo
 
 Try the hosted demo: [🤗 holoviz-mcp-ui](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui)
-
