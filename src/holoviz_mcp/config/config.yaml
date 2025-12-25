@@ -145,6 +145,12 @@ docs:
         docs:
           url_path: ""
       base_url: "https://marcskovmadsen.github.io/holoviz-mcp"
+    bokeh:
+      url: "https://github.com/bokeh/bokeh.git"
+      base_url: "https://docs.bokeh.org/en/latest/docs"
+      folders:
+        docs/bokeh/source/docs:
+          url_path: "/"
 
   index_patterns:
     - "**/*.md"
