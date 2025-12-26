@@ -180,7 +180,7 @@ DO serve the app with
 panel serve path_to_this_file.py --show --dev `
 ```
 
-DONT serve with `python path_to_this_file.py`.
+DON'T serve with `python path_to_this_file.py`.
 
 ## Best Practice Hello World Tests
 
