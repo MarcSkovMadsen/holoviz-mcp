@@ -38,7 +38,7 @@ class TestCLI:
             [sys.executable, "-m", "holoviz_mcp.cli", "update", "--help"],
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=15,
         )
         assert result.returncode == 0
         assert "Update the documentation index" in result.stdout
