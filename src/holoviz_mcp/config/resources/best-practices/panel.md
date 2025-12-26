@@ -1,8 +1,69 @@
-# Panel
+---
+name: panel-development
+description: Build interactive web applications and dashboards with HoloViz Panel. Create reactive, component-based UIs with widgets, layouts, templates, and real-time updates. Use when developing data apps, monitoring dashboards, data exploration tools, or any interactive Python web application. Supports file uploads, streaming data, multi-page apps, and integration with HoloViews, hvPlot, and the rest of the HoloViz and PyData ecosystem.
+metadata:
+  version: "1.0.0"
+  author: holoviz
+  category: web-development
+  difficulty: intermediate
+---
 
-This guide provides best practices for using Panel. Optimized for LLMs.
+# Panel Development Skill
 
-Please develop code, tests and documentation as an **expert Panel analytics app developer** would do when working with a **short time to market** and in Python .py files.
+This document provides best practices for developing dashboards and data apps with HoloViz Panel in Python .py files.
+
+Please develop as an **Expert Python Developer** developing advanced data-driven, analytics and testable dashboards and applications would do. Keep the code short, concise, documented, testable and professional.
+
+## Dependencies
+
+Core dependencies provided with the `panel` Python package:
+
+- **panel**: Core application framework
+- **param**: A declarative approach to creating classes with typed, validated, and documented parameters. Fundamental to Panel's reactive programming model.
+
+Optional panel-extensions:
+
+- **panel-material-ui**: Modern Material UI components. To replace the panel native widgets within the next two years.
+- **panel-graphic-walker**: Modern Tableau like interface. Can offload computations to the server and thus scale to large datasets.
+
+Optional dependencies from the HoloViz Ecosystem:
+
+- **colorcet**: Perceptually uniform colormaps collection. Best for: scientific visualization requiring accurate color representation, avoiding rainbow colormaps, accessible color schemes. Integrates with hvPlot, HoloViews, Matplotlib, Bokeh.
+- **datashader**: Renders large datasets (millions+ points) into images for visualization. Best for: big data visualization, geospatial datasets, scatter plots with millions of points, heatmaps of dense data. Requires hvPlot or HoloViews as frontend.
+- **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
+- **holoviews**: Declarative data visualization library with composable elements. Best for: complex multi-layered plots, advanced interactivity (linked brushing, selection), when you need fine control over plot composition, scientific visualizations. More powerful but steeper learning curve than hvPlot.
+- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
+- **hvplot**: High-level plotting API with Pandas `.plot()`-like syntax. Best for: quick exploratory visualizations, interactive plots from DataFrames/Xarray, when you want interactivity without verbose code. Built on HoloViews.
+- **hvsampledata**: Shared datasets for the HoloViz projects.
+
+Optional dependencies from the wider PyData Ecosystem:
+
+- **altair**: Declarative, grammar-of-graphics visualization library. Best for: statistical visualizations, interactive exploratory charts, when you need Vega-Lite's extensive chart gallery. Works well with Pandas/Polars DataFrames.
+- **dask**: Parallel computing library for scaling Pandas DataFrames beyond memory. Best for: processing datasets larger than RAM, parallel computation across multiple cores/machines, lazy evaluation workflows.
+- **duckdb**: High-performance analytical SQL database. Best for: fast SQL queries on DataFrames, aggregations on large datasets, when you need SQL interface, OLAP-style analytics. Much faster than Pandas for analytical queries.
+- **matplotlib**: Low-level, highly customizable plotting library. Best for: publication-quality static plots, fine-grained control over every aspect of visualization, scientific plots, when you need pixel-perfect control.
+- **pandas**: Industry-standard DataFrame library for tabular data. Best for: data cleaning, transformation, time series analysis, datasets that fit in memory. The default choice for most data work.
+- **Plotly**: Interactive, publication-quality visualization library. Best for: 3D plots, complex interactive charts, animations, when you need hover tooltips and interactivity. Works well with Dash and Panel.
+- **polars**: Modern, fast DataFrame library written in Rust. Best for: high-performance data processing, datasets that fit in memory but need speed, when you need lazy evaluation, better memory efficiency than Pandas.
+- **xarray**: N-dimensional labeled arrays and datasets. Best for: multidimensional scientific data (climate, satellite imagery), data with multiple dimensions and coordinates, NetCDF/HDF5 files, geospatial raster data.
+- **watchfiles**: Enables high performance file watching and autoreload for the panel server.
+
+## Common Use Cases
+
+1. **Real-time Monitoring Dashboards**: Live metrics and KPI displays
+2. **Data Exploration Tools**: Interactive data analysis applications
+3. **Configuration Interfaces**: Complex multi-step configuration UIs
+4. **Data Input Applications**: Validated form-based data collection
+5. **Report Viewers**: Interactive report generation and browsing
+6. **Administrative Interfaces**: Internal tools for data management
+
+## Installation
+
+```bash
+pip install panel watchfiles hvplot hvsampledata
+```
+
+For development in .py files DO always include watchfiles for hotreload.
 
 ## Best Practice Hello World App
 
@@ -38,7 +99,6 @@ def transform(data: str, count: int=5)->str:
 
 # DO organize functions to create plots separately as your app grows. Eventually in a separate plots.py file.
 # DO organize custom components and views separately as your app grows. Eventually in separate components.py or views.py file(s).
-
 # DO use param.Parameterized, pn.viewable.Viewer or similar approach to create new components and apps with state and reactivity
 class HelloWorld(pn.viewable.Viewer):
     # DO define parameters to hold state and drive the reactivity
@@ -56,7 +116,7 @@ class HelloWorld(pn.viewable.Viewer):
             self._inputs = pn.Column(self._characters_input, max_width=300)
 
             # CRITICAL: Create panes ONCE with reactive content
-            # DON'T recreate panes in @param.depends methods - causes flickering!
+            # DON'T recreate panes and layouts in @param.depends methods - causes flickering!
             # DO bind reactive methods/functions to panes for smooth updates
             self._output_pane = pn.pane.Markdown(
                 self.model,  # Reactive method reference
@@ -74,12 +134,17 @@ class HelloWorld(pn.viewable.Viewer):
     @pn.cache(max_items=3)
     # DO prefer .depends over .bind over .rx for reactivity methods on Parameterized classes as it can be typed and documented
     # DON'T use `watch=True` or `.watch(...)` methods to update UI components directly.
-    # DO use `watch=True` or `.watch(...)` for updating the state parameters or triggering side effect like saving files or sending email.
+    # DO use `watch=True` or `.watch(...)` for updating the state parameters or triggering side effects like saving files or sending email.
     @param.depends("characters")
     def model(self):
         # CRITICAL: Return ONLY the content, NOT the layout/pane
         # The pane was created once in __init__, this just updates its content
         return transform(text, self.characters)
+
+    # DO use `watch=True` or `.watch(...)` for updating the state parameters or triggering side effects like saving files or sending email.
+    @param.depends("characters", watch=True)
+    def _inform_user(self):
+        print(f"User selected to show {self.characters} characters.")
 
     # DO provide a method for displaying the component in a notebook setting, i.e. without using a Template or other element that cannot be displayed in a notebook setting.
     def __panel__(self):
@@ -102,17 +167,26 @@ class HelloWorld(pn.viewable.Viewer):
         )
         return template
 
-# DO provide a method to serve the app with `python`
-if __name__ == "__main__":
-    # DO run with `python path_to_this_file.py`
-    HelloWorld.create_app().show(port=5007, autoreload=True, open=True)
+# DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
 # DO provide a method to serve the app with `panel serve`
-elif pn.state.served:
-    # DO run with `panel serve path_to_this_file.py --port 5007 --dev` add `--show` to open the app in a browser
+if pn.state.served:
+    # Mark components to be displayed in the app with .servable()
     HelloWorld.create_app().servable()
 ```
 
-For testing with pytest:
+DO serve the app with
+
+```bash
+panel serve path_to_this_file.py --show --dev
+```
+
+DON'T serve with `python path_to_this_file.py`.
+
+## Best Practice Hello World Tests
+
+With panel you can easily create tests to test user behaviour without having to write client side tests.
+
+DO always create separate tests in the `tests` folder:
 
 ```python
 # DO put tests in a separate test file.
@@ -131,17 +205,33 @@ def test_characters_reactivity():
     assert hello_world.model() == text[:3]
 ```
 
-DO note how this test simulates the user's behaviour of loading the page, changing the `characters` input and updating the output without having to write client side tests.
+DO run the tests with:
+
+```bash
+pytest tests/path/to/test_file.py
+```
+
+DO fix any errors identified.
 
 ## Key Patterns
 
 ### Parameter-Driven Architecture
-- DO use `param.Parameterized` or `pn.viewable.Viewer` classes
+
+- DO use `param.Parameterized` or `pn.viewable.Viewer` classes to organize and manage state
 - DO create widgets with `.from_param()` method
 - DO use `@param.depends()` for reactive methods
-- DON'T use `.watch()` for UI updates, only for side effects
+- DO use `@param.depends(..., watch=True)` to update parameter/ state values and for side-effects like sending an email.
+- DO group related parameters in separate `Parameterized` or `Viewable` classes
 
-### Static Layout with Reactive Content (CRITICAL)
+
+```python
+# ❌ AVOID: Updating panes and other components directly. This makes it hard to reason about application flow and state
+@param.depends('value', watch=True)
+def update_plot(self):
+    self.output_pane.object = transform(text, self.characters)
+```
+
+### Create Static Layout with Reactive Content (CRITICAL)
 
 **The Golden Rule: Create layout structure ONCE, update content REACTIVELY**
 
@@ -152,12 +242,14 @@ This pattern eliminates flickering and creates professional Panel applications:
 class Dashboard(pn.viewable.Viewer):
     filter_value = param.String(default="all")
 
+    chart = param.Parameter()
+
     def __init__(self, **params):
         super().__init__(**params)
 
         # 1. Create static panes with reactive content
         self._summary_pane = pn.pane.Markdown(self._summary_text)
-        self._chart_pane = pn.pane.HoloViews(self._chart)
+        self._chart_pane = pn.pane.HoloViews(self.param.chart)
 
         # 2. Create static layout structure
         self._layout = pn.Column(
@@ -166,15 +258,19 @@ class Dashboard(pn.viewable.Viewer):
             self._chart_pane,    # Reactive content
         )
 
+    # ✅ Good: Reactive content method
+    # Will be run multiple times when filter_value updates if multiple panes or reactive functions depend on the _summary_text method
     @param.depends("filter_value")
     def _summary_text(self):
         # Returns string content only, NOT a pane
         return f"**Count**: {len(self._get_data())}"
 
-    @param.depends("filter_value")
-    def _chart(self):
-        # Returns plot object only, NOT a pane
-        return self._get_data().hvplot.bar()
+    # ✅ Good: Reactive update of chart parameter
+    # Will be run only one time when filter_value updates - even if multiple panes or reactive functions depend on the chart value
+    @param.depends("filter_value", watch=True, on_init=True)
+    def _update_chart(self):
+        # updates the chart object only, NOT a pane
+        self.chart = self._get_data().hvplot.bar()
 
     def __panel__(self):
         return self._layout
@@ -194,79 +290,159 @@ class BadDashboard(pn.viewable.Viewer):
 ```
 
 **Why This Matters:**
+
 - ✅ Smooth updates without layout reconstruction
 - ✅ No flickering - seamless transitions
 - ✅ Better performance - avoids unnecessary DOM updates
 - ✅ Professional UX
 
 **Key Rules:**
-1. Create main layout structure and panes ONCE in `__init__`
-2. Bind panes to reactive methods (not recreate them)
-3. Reactive methods return CONTENT only (strings, plots, dataframes), NOT panes/layouts
+
+1. DO create main layout structure and panes ONCE in `__init__`
+2. DO bind panes to reactive methods or parameters (DON'T recreate them)
+3. Reactive methods should return CONTENT only (strings, plots, dataframes), NOT panes/layouts
 4. Use `@param.depends` for reactive methods that update pane content
 
+### Widgets
+
+Use
+
+- `pn.widgets.IntSlider`, `pn.widgets.Select`, `pn.widgets.DateRangeSlider` and other widgets for input
+- `pn.widgets.Tabulator` to display tabular data like DataFrames
+
+### Panes
+
+Use panes to display data:
+
+- `pn.pane.Markdown` and `pn.pane.HTML` to display strings
+- `pn.pane.HoloViews`, `pn.pane.Plotly`, `pn.pane.Matplotlib` or `pn.pane.ECharts` to display plots
+
 ### Layouts
+
+Use layouts to layout components:
+
 - DO use `pn.Column`, `pn.Row`, `pn.Tabs`, `pn.Accordion` for layouts
-- DO use `pn.template.FastListTemplate` or other templates for served apps
-- DO use `sizing_mode="stretch_width"` by default
 
-### Common Widgets
-- `pn.widgets.IntSlider`, `pn.widgets.Select`, `pn.widgets.DateRangeSlider`
-- `pn.widgets.Tabulator` for tables
-- `pn.pane.Markdown`, `pn.pane.HTML` for content
+### Templates
 
-### Serving
-- `panel serve app.py --dev` for development with hot reload. Add `--show` to open in browser
-- `app.servable()` to mark components for serving
-
-## Core Principles
-
-**Parameter-Driven Design**
-- DO prefer declarative reactive patterns over imperative event handling
-- DO let Parameters drive application state, not widgets directly
-- DO separate business logic from UI concerns
-
-**UI Update Patterns**
-- DO update UI via parameters, `.bind()`, and `.depends()` methods
-- DON'T update UI as side effects with `.watch()` methods
-- DO use `.watch()` for non-UI side effects (file saves, emails, app state updates)
-
-**Component Selection**
-- DO prefer `pn.widgets.Tabulator` for tabular data
-- DO use `pn.extension()` with needed extensions like "tabulator", "plotly"
-- DON'T include "bokeh" in extensions
-
-**Layout Best Practices**
-- DO use `sizing_mode='stretch_width'` by default unless you need `fixed` or `stretch_both`
-- In sidebars, order: 1) optional logo, 2) description, 3) input widgets, 4) documentation
-
-**Serving**
-- DO use `panel serve app.py --dev` for development (DON'T use legacy `--autoreload`)
-- DO use `if pn.state.served:` to check if served with `panel serve`
-- DO use `if __name__ == "__main__":` to check if run directly via `python`
+- DO use `pn.template.FastListTemplate` or other templates for served apps:
 
 ```python
-# Correct:
+template = pn.template.FastListTemplate(
+    title="Hello World App",
+    sidebar=[instance._inputs],
+    main=[instance._outputs],
+    main_layout=None,
+)
+```
+
+- In the `sidebar`, DO use the order: 1) optional logo, 2) description, 3) input widgets, 4) documentation
+- Do set `main_layout=None` for a modern styling.
+
+### Responsive Design
+
+- DO use `sizing_mode="stretch_width"` by default:
+
+```python
+with pn.config.set(sizing_mode="stretch_width"):
+    character_input = pn.widgets...
+    output_pane = pn.pane....
+```
+
+- DO use `FlexBox`, `GridSpec` or `GridBox` for complex, responsive grid layouts
+- DO set appropriate `min_width`, `min_height`, `max_width` and `max_height` to prevent layout collapse
+
+### Extensions
+
+DO remember to add extensions like "tabulator", "plotly" etc. to `pn.extension` to make sure their Javascript is loaded:
+
+```python
+# ✅ Good
+pn.extension("tabulator", "plotly")
+```
+
+DON'T add "bokeh". It's already loaded:
+
+```python
+# ❌ Bad
+pn.extension("bokeh")
+```
+
+### Servable()
+
+DO make the main component `.servable()` to include it in the served app and use `pn.state.served` to run the main method when the app is panel serve'd.
+
+```python
+# ✅ Correct:
 if pn.state.served:
     main().servable()
 
-# Incorrect:
+# ❌ Incorrect:
 if __name__ == "__main__":
     main().servable()
+
+# ❌ Don't: Works, but not how we want to serve the app:
+if __name__ == "__main__":
+    main().show()
 ```
+
+### Performance Optimization
+
+- **Defer load**: Defer load to after the app is shown to the user: `pn.extension(defer_load=True, loading_indicator=True, ...)`
+- **Lazy-load components** using Tabs or Accordion for heavy content
+- **Use caching** with `@pn.cache` decorator for expensive computations
+- **Use async/await**: Implement asynchronous patterns for I/O operations
+- **Use faster frameworks**: Replace slower Pandas with faster Polars or DuckDB
+- **Offload to threads**: Consider using threading for CPU-intensive tasks
+- **Offload to external processes**: Consider offloading heavy computations to external processes like databases, scheduled (airflow) jobs, REST apis etc.
+- **Profile callbacks** with `@pn.io.profiler` to identify bottlenecks
+
+If you experience memory issues, make sure to:
+
+- **Limit history**: Cap data history sizes in streaming applications
+- **Clear caches**: Periodically call `pn.state.clear_caches()`
+- **Restart periodically**: Schedule application restarts for long-running production apps
+- **Profile memory**: Use memory profilers (memory_profiler, tracemalloc) to identify leaks
+
+### Code Organization
+
+- **Separate concerns**: Keep UI code separate from business logic using Param classes
+- **Create reusable components**: Extract common patterns into functions or classes
+- **Use templates** for consistent application structure across pages
+- **Organize modules**: Group related components and utilities
+- **Document parameters**: Add clear docstrings to Parameterized classes
 
 ## Workflows
 
-**Development**
+### Lookup additional information
 
-- DO always start and keep running a development server `panel serve path_to_file.py --dev` with hot reload while developing!
+- If the HoloViz MCP server is available DO use the HoloViz MCP server to access relevant documentation including how-to guides, component reference guides, and detailed component docstrings and parameter information.
+- If the HoloViz MCP server is not available, DO search the web. For example searching the Panel website for `Tabulator` related information via [https://panel.holoviz.org/search.html?q=Tabulator](https://panel.holoviz.org/search.html?q=Tabulator) url.
 
-**Testing**
+### Test the app with pytest
+
+DO add tests to the `tests` folder and run them with `pytest tests/path/to/test_file.py`.
 
 - DO structure your code with Parameterized components, so that reactivity and user interactions can be tested easily.
 - DO separate UI logic from business logic to enable unit testing
 - DO separate data extraction, data transformation, plots generation, custom components and views, styles etc. to enable unit testing as your app grows
-- DO always test the reactivity of your app and components.
+- DO fix any test errors and rerun the tests
+- DO run the tests and fix errors before serving the app and asking the user to run manual tests
+
+### Serve the App with panel serve
+
+DO always start and keep running a development server `panel serve path_to_file.py --dev --show` with hot reload while developing!
+
+- Due to `--show` flag, a browser tab will automatically open showing your app.
+- Due to `--dev` flag, the panel server and app will automatically reload if you change the code.
+- The app will be served at http://localhost:5006/.
+- DO make sure the correct virtual environment is activated before serving the app.
+- DO fix any errors that show up in the terminal. Consider adding new tests to ensure they don't happen again.
+- DON'T stop or restart the server after changing the code. The app will automatically reload.
+- If you see 'Cannot start Bokeh server, port 5006 is already in use' in the terminal, DO serve the app on another port with `--port {port-number}` flag.
+- DO remind the user to test the application on multiple screen sizes (desktop, tablet, mobile)
+- DON'T use legacy `--autoreload` flag
+- DON't run `python path_to_file.py` to test or serve the app.
 
 ## Quick Reference
 
@@ -299,18 +475,19 @@ class MyComponent(pn.viewable.Viewer):
 slider = pn.widgets.IntSlider(value=10)
 plot_pane = pn.pane.Matplotlib(pn.bind(create_plot, slider))
 
-# ❌ AVOID: Recreating panes (causes flickering)
+# ❌ AVOID: Recreating panes and other components directly. This causes flickering.
 @param.depends('value')
 def view(self):
     return pn.pane.Matplotlib(create_plot(self.value))  # DON'T!
 
-# ❌ AVOID: Updating panes and other components directly. Makes it hard to reason about application flow and state
+# ❌ AVOID: Updating panes and other components directly. This makes it hard to reason about application flow and state
 @param.depends('value', watch=True)
 def update_plot(self):
     self.plot_pane.object = create_plot(self.value)
 ```
 
 ### Static Components Pattern
+
 ```python
 # DO: Create static layout with reactive content
 def _get_kpi_card(self):
@@ -328,28 +505,19 @@ def kpi_value(self):
     return f"The kpi is {self.characters}"
 ```
 
-#### Date time widgets
+## Other Guidance
 
-When comparing to data or time values to Pandas series convert to `Timestamp`:
-
-```python
-start_date, end_date = self.date_range
-# DO convert date objects to pandas Timestamp for proper comparison
-start_date = pd.Timestamp(start_date)
-end_date = pd.Timestamp(end_date)
-filtered = filtered[
-    (filtered['date'] >= start_date) &
-    (filtered['date'] <= end_date)
-]
-```
-
-## Components
+### CheckButtonGroup
 
 - DO arrange vertically when displaying `CheckButtonGroup` in a sidebar `CheckButtonGroup(..., vertical=True)`.
 
 ### Tabulator
 
 - DO set `Tabulator.disabled=True` unless you would like the user to be able to edit the table.
+
+### Bind
+
+- DON't bind a function to nothing: `pn.bind(some_func)`. Just run the function instead `some_func()`.
 
 ## Plotting
 
@@ -376,4 +544,19 @@ def create_plot(self) -> go.Figure:
         plot_bgcolor='rgba(0,0,0,0)' # Change to transparent background to align with the app background
     )
     return fig
+```
+
+### Date time widgets
+
+When comparing to date or time values to Pandas series convert to `Timestamp`:
+
+```python
+start_date, end_date = self.date_range
+# DO convert date objects to pandas Timestamp for proper comparison
+start_date = pd.Timestamp(start_date)
+end_date = pd.Timestamp(end_date)
+filtered = filtered[
+    (filtered['date'] >= start_date) &
+    (filtered['date'] <= end_date)
+]
 ```

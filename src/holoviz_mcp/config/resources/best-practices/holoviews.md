@@ -1,6 +1,6 @@
 ---
-name: hvplot-development
-description: hvPlot provides an intuitive, pandas-like API for rapid, interactive visualization and publication-quality plots with minimal code.
+name: holoviews-development
+description: HoloViews provides a powerful set of features for interactive, complex and publication-quality visualizations.
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -11,15 +11,14 @@ metadata:
 
 # hvPlot Development Skill
 
-This document provides best practices for developing plots and charts with HoloViz hvPlot in notebooks and .py files.
+This document provides best practices for developing plots and charts with HoloViz HoloViews in notebooks and .py files.
 
 Please develop as an **Expert Python Developer** developing advanced data-driven, analytics and testable data visualisations, dashboards and applications would do. Keep the code short, concise, documented, testable and professional.
 
 ## Dependencies
 
-Core dependencies provided with the `hvplot` Python package:
+Core dependencies provided with the `holoviews` Python package:
 
-- **hvplot**: Core visualization framework
 - **holoviews**: Declarative data visualization library with composable elements. Best for: complex multi-layered plots, advanced interactivity (linked brushing, selection), when you need fine control over plot composition, scientific visualizations. More powerful but steeper learning curve than hvPlot. hvPlot is built upon holoviews.
 - **colorcet**: Perceptually uniform colormaps
 - **panel**: Provides widgets and layouts enabling tool, dashboard and data app development.
@@ -28,6 +27,7 @@ Core dependencies provided with the `hvplot` Python package:
 
 Optional dependencies from the HoloViz Ecosystem:
 
+- **hvplot**: Easy to use plotting library with Pandas `.plot` like API. Built on top of HoloViews.
 - **datashader**: Renders large datasets (millions+ points) into images for visualization. Best for: big data visualization, geospatial datasets, scatter plots with millions of points, heatmaps of dense data. Requires hvPlot or HoloViews as frontend.
 - **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
 - **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
@@ -45,7 +45,7 @@ Optional dependencies from the wider PyData Ecosystem:
 ## Installation for Development
 
 ```bash
-pip install hvplot hvsampledata panel watchfiles
+pip install holoviews hvsampledata panel watchfiles
 ```
 
 For development in .py files DO always include watchfiles for Panel hotreload.
@@ -109,7 +109,7 @@ import hvsampledata
 # DO import panel if working in .py files
 import panel as pn
 # Do importing hvplot.pandas to add .hvplot namespace to Pandas DataFrames and Series
-import hvplot.pandas  # noqa: F401
+import holoviews as hv
 
 # DO always run pn.extension() to load panel javascript extensions
 pn.extension()
@@ -122,7 +122,7 @@ data = hvsampledata.earthquakes("pandas")
 mag_class_counts = data.groupby('mag_class').size().reset_index(name='counts')
 
 # Plot: counts by mag_class
-plot = mag_class_counts.hvplot.bar(x='mag_class', y='counts', title='Earthquake Counts by Magnitude Class')
+plot = hv.Bars(mag_class_counts, kdims='mag_class', vdims='counts').opts(title='Earthquake Counts by Magnitude Class')
 # If working in notebook DO output to plot:
 plot
 # Else if working in .py file DO:
@@ -145,7 +145,7 @@ DONT serve with `python path_to_this_file.py`.
 
 ```python
 # ============================================================================
-# Publication-Quality Bar Chart - hvPlot Best Practices Example
+# Publication-Quality Bar Chart - HoloViews Best Practices Example
 # ============================================================================
 # Demonstrates:
 # - Data extraction, transformation, and visualization separation
@@ -156,21 +156,22 @@ DONT serve with `python path_to_this_file.py`.
 # - Panel integration for web serving
 # ============================================================================
 
-import hvplot.pandas  # noqa: F401
-import panel as pn
 import hvsampledata
+import panel as pn
 from bokeh.models.formatters import NumeralTickFormatter
 from bokeh.themes import Theme
+
 import holoviews as hv
 from holoviews.plotting.bokeh import ElementPlot
-
-ACCENT_COLOR = '#007ACC'  # Professional blue
 
 # ============================================================================
 # BOKEH THEME SETUP - Define global styling
 # ============================================================================
 
-def create_bokeh_theme(font_family='Roboto', accent_color=ACCENT_COLOR):
+ACCENT_COLOR = '#007ACC'  # Professional blue
+FONT_FAMILY = 'Roboto'
+
+def create_bokeh_theme(font_family=FONT_FAMILY, accent_color=ACCENT_COLOR):
     """Create custom theme with specified font. Default: Roboto"""
     return Theme(json={
         'attrs': {
@@ -197,7 +198,7 @@ def create_bokeh_theme(font_family='Roboto', accent_color=ACCENT_COLOR):
                 'label_text_font_size': '10pt'
             },
             'Toolbar': {
-                # "autohide": True,
+                "autohide": True,
                 "logo": None,
                 "stylesheets": [
                     f"""
@@ -207,12 +208,12 @@ def create_bokeh_theme(font_family='Roboto', accent_color=ACCENT_COLOR):
                     """
                 ]
             },
-            # Does not work via Theme, so added here for reference purposes
+            # Does not work via Theme, so added here for reference purposes until I figure out how to do it
             'Tooltip': {
-                "stylesheets": ["""
-                    .bk-tooltip-row-label {
-                        color: pink !important;
-                    }"""]
+                "stylesheets": [f"""
+                    .bk-tooltip-row-label {{
+                        color: {ACCENT_COLOR} !important;
+            }}"""]
 
             }
         }
@@ -237,13 +238,19 @@ GLOBAL_BACKEND_OPTS={
 }
 
 ElementPlot.param.backend_opts.default = GLOBAL_BACKEND_OPTS
-ElementPlot.param.yformatter.default = NumeralTickFormatter(format='0a')  # 1k,
+ElementPlot.param.yformatter.default = NumeralTickFormatter(format='0a')  # 1k, ...
 
 hv.opts.defaults(
     hv.opts.Bars(
         color=ACCENT_COLOR,           # Professional blue
         line_color=None,            # Remove bar borders
-    )
+    ),
+    hv.opts.Labels(
+        text_baseline='bottom',
+        text_font_size='11pt',
+        text_font_style='normal',
+        text_color='#333333',
+    ),
 )
 hv.Cycle.default_cycles["default_colors"] = [ACCENT_COLOR, '#00948A', '#7E59BD', '#FFA20C', '#DA4341', '#D6F1FF', '#DAF5F4', '#F0E8FF', '#FFF8EA', '#FFF1EA', '#001142', '#003336', '#290031', '#371F00', '#3A0C13']
 
@@ -258,7 +265,6 @@ def get_earthquake_data():
 
 def aggregate_by_magnitude(earthquake_data):
     """Transform: Group earthquakes by magnitude class with statistics"""
-
     # Aggregate: count events and calculate average depth per magnitude class
     aggregated = (
         earthquake_data
@@ -279,47 +285,40 @@ def aggregate_by_magnitude(earthquake_data):
 
 def create_bar_chart(aggregated_data):
     """Create publication-quality bar chart with labels and tooltips"""
-
     default_tools=['save']
 
     # Main bar chart with professional styling
-    bar_chart = aggregated_data.hvplot.bar(
-        x='mag_class',
-        y='event_count',
-
+    bar_chart = hv.Bars(aggregated_data, kdims='mag_class', vdims=['event_count', 'percentage', 'avg_depth']).opts(
         # Titles and labels
         title='Earthquake Distribution by Magnitude',
         xlabel='Magnitude',
         ylabel='Number of Events',
 
         # Interactivity
-        hover_cols = ["mag_class", "event_count", "percentage", "avg_depth"],
+        # hover_cols = ["mag_class", "event_count", "percentage", "avg_depth"],
         hover_tooltips=[
             ('Magnitude', '@mag_class'),
             ('Events', '@event_count{0,0}'),      # Format: 1,234
-            ('Percentage', '@percentage{0 a}%'), # Format: 45.7%
+            ('Percentage', '@percentage{0 a}%'), # Format: 45%
             ('Avg Depth', '@avg_depth{0f} km')  # Format: 99 km
         ],
-    ).opts(default_tools=default_tools)
+        default_tools=default_tools
+    )
 
     # Add text labels above bars
     labels_data = aggregated_data.copy()
     labels_data['label_y'] = labels_data['event_count'] + 20  # Offset above bars
 
-    text_labels = labels_data.hvplot.labels(
-        x='mag_class',
-        y='label_y',
-        text='event_count',
-        text_baseline='bottom',
-        text_font_size='11pt',
-        text_font_style='bold',
-        text_color='#333333',
-        hover_cols = ["mag_class", "event_count"],
+    text_labels = hv.Labels(labels_data, kdims=['mag_class', 'label_y'], vdims=['event_count', 'percentage', 'avg_depth']).opts(
         hover_tooltips=[
             ('Magnitude', '@mag_class'),
             ('Events', '@event_count{0,0}'),      # Format: 1,234
+            # tooltips below do currently not work on Labels
+            # ('Percentage', '@percentage{0 a}%'), # Format: 45%
+            # ('Avg Depth', '@avg_depth{0f} km'),  # Format: 99 km
         ],
-    ).opts(default_tools=default_tools)
+        default_tools=default_tools
+    )
 
     # Overlay: bar chart * text labels
     return bar_chart * text_labels
@@ -350,29 +349,29 @@ if pn.state.served:
 
     # Apply custom Bokeh theme (override the global theme)
     # Create and serve the chart
-    chart = create_plot()
-    pn.panel(chart, sizing_mode="stretch_both", margin=25).servable()
+    plot = create_plot()
+    pn.panel(plot, sizing_mode="stretch_both", margin=25).servable()
 ```
 
 ## General Instructions
 
-- Always import hvplot for your data backend:
+- In a notebook always run `hv.extension()` to load any Javascript dependencies.
 
 ```python
-import hvplot.pandas # will add .hvplot namespace to Pandas dataframes
-import hvplot.polars # will add .hvplot namespace to Polars dataframes
+import holoviews as hv
+
+hv.extension()
 ...
 ```
 
 - Prefer Bokeh > Plotly > Matplotlib plotting backend for interactivity
 - DO use bar charts over pie Charts. Pie charts are not supported.
-- DO use NumeralTickFormatter and 'a' formatter for axis formatting:
+- DO use NumeralTickFormatter and 'a' formatter for easy axis formatting:
 
 ```python
 from bokeh.models.formatters import NumeralTickFormatter
 
-df.hvplot(
-    ...,
+plot.opts(
     yformatter=NumeralTickFormatter(format='0.00a'),  # Format as 1.00M, 2.50M, etc.
 )
 ```
@@ -384,54 +383,13 @@ df.hvplot(
 | 1460 | '0 a' | 1 k |
 | -104000 | '0a' | -104k |
 
-## Developing
-
-When developing a hvplot please serve it for development using Panel:
-
-```python
-import pandas as pd
-import hvplot.pandas  # noqa
-import panel as pn
-
-import numpy as np
-
-np.random.seed(42)
-dates = pd.date_range("2022-08-01", periods=30, freq="B")
-open_prices = np.cumsum(np.random.normal(100, 2, size=len(dates)))
-high_prices = open_prices + np.random.uniform(1, 5, size=len(dates))
-low_prices = open_prices - np.random.uniform(1, 5, size=len(dates))
-close_prices = open_prices + np.random.uniform(-3, 3, size=len(dates))
-
-data = pd.DataFrame({
-    "open": open_prices.round(2),
-    "high": high_prices.round(2),
-    "low": low_prices.round(2),
-    "close": close_prices.round(2),
-}, index=dates)
-
-
-# Create a scatter plot of date vs close price
-scatter_plot = data.hvplot.scatter(x="index", y="close", grid=True, title="Close Price Scatter Plot", xlabel="Date", ylabel="Close Price")
-
-
-# Create a Panel app
-app = pn.Column("# Close Price Scatter Plot", scatter_plot)
-
-if pn.state.served:
-    app.servable()
-```
-
-```bash
-panel serve plot.py --dev
-```
-
 ### Recommended Plot Types
 
-line - Line plots for time series and continuous data
-scatter - Scatter plots for exploring relationships between variables
-bar - Bar charts for categorical comparisons
-hist - Histograms for distribution analysis
-area - Area plots for stacked or filled visualizations
+Curve - Line plots for time series and continuous data
+Scatter - Scatter plots for exploring relationships between variables
+Bars - Bar charts for categorical comparisons
+Histogram - Histograms for distribution analysis
+Area - Area plots for stacked or filled visualizations
 
 ## Workflows
 
