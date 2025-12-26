@@ -354,7 +354,7 @@ with pn.config.set(sizing_mode="stretch_width"):
 
 ### Extensions
 
-DO remember add extensions like "tabulator", "plotly" etc. to `pn.extension` to make sure their Javascript is loaded:
+DO remember to add extensions like "tabulator", "plotly" etc. to `pn.extension` to make sure their Javascript is loaded:
 
 ```python
 # ✅ Good
