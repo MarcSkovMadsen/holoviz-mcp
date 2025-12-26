@@ -10,7 +10,6 @@ from .models import GitRepository
 from .models import HoloVizMCPConfig
 from .models import PromptConfig
 from .models import ResourceConfig
-from .models import SecurityConfig
 from .models import ServerConfig
 
 __all__ = [
@@ -26,6 +25,5 @@ __all__ = [
     "HoloVizMCPConfig",
     "PromptConfig",
     "ResourceConfig",
-    "SecurityConfig",
     "ServerConfig",
 ]

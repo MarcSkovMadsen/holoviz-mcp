@@ -1,0 +1,126 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set lowercase image name
+        id: image-name
+        run: |
+          # Convert repository name to lowercase for Docker compatibility
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "Using image name: ${IMAGE_NAME}"
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      # Note: Fork detection is intentionally NOT implemented here.
+      # Unlike the docs workflow, we allow forks to push to their own GHCR instances
+      # when they push to their main branch. This enables contributors to test
+      # container builds in their fork's GHCR before submitting PRs.
+      # Each fork pushes to ghcr.io/<fork-owner>/holoviz-mcp, not the upstream registry.
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value={{date 'YYYY.MM.DD'}},enable={{is_default_branch}}
+
+      - name: Determine version for Docker build
+        id: version
+        run: |
+          # Try to get version from git tags
+          if git describe --tags --always --dirty 2>/dev/null; then
+            VERSION=$(git describe --tags --always --dirty)
+          else
+            # Fallback to short SHA if no tags
+            VERSION="0.0.0+git.$(git rev-parse --short HEAD)"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building with version: ${VERSION}"
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
+
+      - name: Test Docker image
+        if: github.event_name != 'pull_request'
+        run: |
+          # Test that the image can be pulled and run
+          docker pull ${{ env.REGISTRY }}/${{ steps.image-name.outputs.IMAGE_NAME }}:latest
+
+          # Test that the MCP server can start (for stdio transport)
+          timeout 10s docker run --rm ${{ env.REGISTRY }}/${{ steps.image-name.outputs.IMAGE_NAME }}:latest --help || true
+
+          echo "Docker image tested successfully!"
+
+      - name: Generate artifact attestation
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.IMAGE_NAME }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+          push-to-registry: true

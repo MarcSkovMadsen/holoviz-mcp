@@ -10,6 +10,8 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+THUMBNAILS_DIR = Path(__file__).parent / "thumbnails"
+
 
 def main() -> None:
     """Serve all Panel apps in the apps directory."""
@@ -21,7 +23,7 @@ def main() -> None:
         return
 
     # Use python -m panel to ensure we use the same Python environment
-    cmd = [sys.executable, "-m", "panel", "serve", *app_files, *sys.argv[1:]]
+    cmd = [sys.executable, "-m", "panel", "serve", *app_files, "--static-dirs", f"thumbnails={THUMBNAILS_DIR}"]
     logger.info(f"Running: {' '.join(cmd)}")
 
     try:

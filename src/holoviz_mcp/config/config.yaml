@@ -9,8 +9,6 @@ server:
   transport: stdio
   anonymized_telemetry: false
   jupyter_server_proxy_url: ""
-  security:
-    allow_code_execution: True
 
 docs:
   repositories:
@@ -135,9 +133,22 @@ docs:
           url_path: ""
       base_url: https://lumen.holoviz.org
       reference_patterns:
-        - "doc/reference/**/*.md"
-        - "doc/reference/**/*.ipynb"
-        - "doc/reference/**/*.rst"
+        - "docs/reference/**/*.md"
+        - "docs/reference/**/*.ipynb"
+        - "docs/reference/**/*.rst"
+    holoviz-mcp:
+      url: "https://github.com/MarcSkovMadsen/holoviz-mcp.git"
+      url_transform: "plotly"
+      folders:
+        docs:
+          url_path: ""
+      base_url: "https://marcskovmadsen.github.io/holoviz-mcp"
+    bokeh:
+      url: "https://github.com/bokeh/bokeh.git"
+      base_url: "https://docs.bokeh.org/en/latest/docs"
+      folders:
+        docs/bokeh/source/docs:
+          url_path: "/"
 
   index_patterns:
     - "**/*.md"

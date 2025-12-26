@@ -11,10 +11,10 @@ from fastmcp import Context
 from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.data import get_best_practices as _get_best_practices
-from holoviz_mcp.docs_mcp.data import list_best_practices as _list_best_practices
-from holoviz_mcp.docs_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import get_best_practices as _get_best_practices
+from holoviz_mcp.holoviz_mcp.data import list_best_practices as _list_best_practices
+from holoviz_mcp.holoviz_mcp.models import Document
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def get_best_practices(project: str) -> str:
     DO Always use this tool to get best practices for using a project with LLMs before using it!
 
     Args:
-        project (str): The name of the project to get best practices for. For example, "panel", "panel_material_ui", etc.
+        project (str): The name of the project to get best practices for. For example, "panel", "panel-material-ui", etc.
 
     Returns
     -------
@@ -90,7 +90,7 @@ async def get_reference_guide(component: str, project: str | None = None, conten
     Args:
         component (str): Name of the component (e.g., "Button", "TextInput", "bar", "scatter")
         project (str, optional): Project name. Defaults to None (searches all projects).
-            Options: "panel", "panel_material_ui", "hvplot", "param", "holoviews"
+            Options: "panel", "panel-material-ui", "hvplot", "param", "holoviews"
         content (bool, optional): Whether to include full content. Defaults to True.
             Set to False to only return metadata for faster responses.
 
@@ -102,7 +102,7 @@ async def get_reference_guide(component: str, project: str | None = None, conten
     --------
     >>> get_reference_guide("Button")  # Find Button component guide across all projects
     >>> get_reference_guide("Button", "panel")  # Find Panel Button component guide specifically
-    >>> get_reference_guide("TextInput", "panel_material_ui")  # Find Material UI TextInput guide
+    >>> get_reference_guide("TextInput", "panel-material-ui")  # Find Material UI TextInput guide
     >>> get_reference_guide("bar", "hvplot")  # Find hvplot bar chart reference
     >>> get_reference_guide("scatter", "hvplot")  # Find hvplot scatter plot reference
     >>> get_reference_guide("Audio", content=False)  # Don't include Markdown content for faster response
@@ -163,7 +163,7 @@ async def search(
         query (str): Search query using natural language.
             For example "How to style Material UI components?" or "interactive plotting with widgets"
         project (str, optional): Optional project filter. Defaults to None.
-            Options: "panel", "panel_material_ui", "hvplot", "param", "holoviews"
+            Options: "panel", "panel-material-ui", "hvplot", "param", "holoviews"
         content (bool, optional): Whether to include full content. Defaults to True.
             Set to False to only return metadata for faster responses.
         max_results (int, optional): Maximum number of results to return. Defaults to 5.
@@ -174,7 +174,7 @@ async def search(
 
     Examples
     --------
-    >>> search("How to style Material UI components?", "panel_material_ui")  # Semantic search in specific project
+    >>> search("How to style Material UI components?", "panel-material-ui")  # Semantic search in specific project
     >>> search("interactive plotting with widgets", "hvplot")  # Find hvplot interactive guides
     >>> search("dashboard layout best practices")  # Search across all projects
     >>> search("custom widgets", project="panel", max_results=3)  # Limit results
@@ -184,7 +184,7 @@ async def search(
     return await indexer.search(query, project, content, max_results, ctx=ctx)
 
 
-@mcp.tool
+@mcp.tool(enabled=False)
 async def update_index(ctx: Context) -> str:
     """Update the documentation index by re-cloning repositories and re-indexing content.
 

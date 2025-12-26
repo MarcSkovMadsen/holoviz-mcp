@@ -1,11 +1,11 @@
-"""A search application for exploring the HoloViz MCP docs_search tool."""
+"""A search application for exploring the HoloViz MCP holoviz_search tool."""
 
 import panel as pn
 import panel_material_ui as pmui
 import param
 
-from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.models import Document
 
 URL_CSS = """
 #url, .url {
@@ -59,7 +59,7 @@ For LLMs this tool provides a structured way to access and retrieve relevant doc
 
 ### Learn More
 
-For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://github.com/MarcSkovMadsen/holoviz-mcp).
+For more information about this project, including setup instructions and advanced configuration options, visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
 """  # noqa: E501
 
 
@@ -181,10 +181,13 @@ class DocumentView(pn.viewable.Viewer):
     def __panel__(self):
         """Create the Panel layout."""
         return pmui.Tabs(
-            ("URL", pn.pane.HTML(self._url_view, sizing_mode="stretch_both", stylesheets=[URL_CSS])),
+            ("Human Readable View", pn.pane.HTML(self._url_view, sizing_mode="stretch_both", stylesheets=[URL_CSS])),
             # Hack Column Scroll
-            ("CONTENT", pn.Column(pn.pane.Markdown(self._source_view, sizing_mode="stretch_width", stylesheets=[URL_CSS]), sizing_mode="stretch_both", scroll=True)),
-            ("DOCUMENT", pn.Column(pn.pane.JSON(self._json_view, sizing_mode="stretch_both"), scroll=True)),
+            (
+                "Markdown View",
+                pn.Column(pn.pane.Markdown(self._source_view, sizing_mode="stretch_width", stylesheets=[URL_CSS]), sizing_mode="stretch_both", scroll=True),
+            ),
+            ("Raw Response", pn.Column(pn.pane.JSON(self._json_view, sizing_mode="stretch_both"), scroll=True)),
             dynamic=True,
         )
 
@@ -255,10 +258,10 @@ class SearchApp(pn.viewable.Viewer):
     Features:
         - Parameter-driven reactivity
         - Modern, responsive UI using Panel Material UI
-        - Integration with HoloViz MCP docs_search tool
+        - Integration with HoloViz MCP holoviz_search tool
     """
 
-    title = param.String(default="HoloViz MCP Search Tool", doc="Title of the search app")
+    title = param.String(default="HoloViz MCP - holoviz_search Tool Demo", doc="Title of the search app")
     config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):
@@ -291,21 +294,23 @@ class SearchApp(pn.viewable.Viewer):
             about_button.js_on_click(args={"about": about}, code="about.data.open = true")
 
             github_button = pmui.IconButton(
-                label="Github", icon="star", description="Give HoloViz-MCP a star on GitHub", sizing_mode="fixed", color="light", margin=(10, 0)
+                label="Github",
+                icon="star",
+                description="Give HoloViz-MCP a star on GitHub",
+                sizing_mode="fixed",
+                color="light",
+                margin=(10, 0),
+                href="https://github.com/MarcSkovMadsen/holoviz-mcp",
+                target="_blank",
             )
-            href = "https://github.com/MarcSkovMadsen/holoviz-mcp"
-            js_code_to_open_holoviz_mcp = f"window.open('{href}', '_blank')"
-            github_button.js_on_click(code=js_code_to_open_holoviz_mcp)
 
             return pmui.Page(
                 title=self.title,
                 site_url="./",
                 sidebar=[self._config, menu],
                 sidebar_width=400,
-                header=[pn.Row(about, about_button, github_button, align="end")],
-                main=[pmui.Container(DocumentView(document=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
-                # logo="https://holoviz.org/_static/holoviz-logo-unstacked.svg",
-                # stylesheets=[".logo {background: white;border-radius: 5px;margin: 15px 15px 5px 10px;padding:7px}"],
+                header=[pn.Row(pn.Spacer(), about_button, github_button, align="end")],
+                main=[pmui.Container(about, DocumentView(document=menu.param.value), width_option="xl", sizing_mode="stretch_both")],
             )
 
 

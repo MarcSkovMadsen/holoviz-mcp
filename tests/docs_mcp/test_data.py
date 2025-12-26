@@ -4,8 +4,8 @@ import pytest
 from pydantic import AnyHttpUrl
 
 from holoviz_mcp.config import GitRepository
-from holoviz_mcp.docs_mcp.data import DocumentationIndexer
-from holoviz_mcp.docs_mcp.data import convert_path_to_url
+from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import convert_path_to_url
 
 
 def is_reference_path(relative_path: Path) -> bool:
@@ -32,6 +32,11 @@ def test_convert_path_to_url(relative_path, expected_url, expected_is_reference)
 def test_convert_path_to_url_plotly():
     url = convert_path_to_url(Path("/doc/python/3d-axes.md"), url_transform="plotly")
     assert url == "doc/python/3d-axes/"
+
+
+def test_convert_index_path_to_url_plotly():
+    url = convert_path_to_url(Path("docs/index.md"), url_transform="plotly")
+    assert url == "/"
 
 
 def test_convert_path_to_url_datashader():

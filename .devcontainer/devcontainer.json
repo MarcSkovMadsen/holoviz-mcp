@@ -1,0 +1,38 @@
+{
+  "name": "holoviz-mcp",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "workbench.editorAssociations": {
+          "*.md": "vscode.markdown.preview.editor"
+        }
+      },
+      "extensions": [
+        "charliermarsh.ruff",
+        "jjjermiah.pixi-vscode",
+        "ms-python.debugpy",
+        "ms-python.mypy-type-checker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.datawrangler",
+        "ms-toolsai.jupyter",
+        "tamasfe.even-better-toml",
+        "wesbos.theme-cobalt2"
+      ]
+    }
+  },
+  "features": {},
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-pixi,target=${containerWorkspaceFolder}/.pixi,type=volume"
+  ],
+  "onCreateCommand": ".devcontainer/onCreate.sh",
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  }
+}

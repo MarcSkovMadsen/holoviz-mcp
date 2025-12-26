@@ -51,7 +51,7 @@ class ComponentSummary(BaseModel):
 
     module_path: str = Field(description="Full module path of the component, e.g., 'panel.widgets.Button' or 'panel_material_ui.Button'.")
     name: str = Field(description="Name of the component, e.g., 'Button' or 'TextInput'.")
-    project: str = Field(description="Project name of the component, e.g., 'panel' or 'panel_material_ui'.")
+    package: str = Field(description="Package name of the component, e.g., 'panel' or 'panel_material_ui'.")
     description: str = Field(description="Short description of the component's purpose and functionality.")
 
 
@@ -84,7 +84,7 @@ class ComponentSummarySearchResult(ComponentSummary):
             A search result summary of the component.
         """
         return cls(
-            module_path=component.module_path, name=component.name, project=component.project, description=component.description, relevance_score=relevance_score
+            module_path=component.module_path, name=component.name, package=component.package, description=component.description, relevance_score=relevance_score
         )
 
 
@@ -119,6 +119,6 @@ class ComponentDetails(ComponentSummary):
         return ComponentSummary(
             module_path=self.module_path,
             name=self.name,
-            project=self.project,
+            package=self.package,
             description=self.description,
         )

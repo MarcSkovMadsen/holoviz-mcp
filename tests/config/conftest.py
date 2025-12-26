@@ -50,7 +50,10 @@ def config_loader(test_config: HoloVizMCPConfig) -> ConfigLoader:
 def sample_config() -> dict[str, Any]:
     """Sample configuration for testing."""
     return {
-        "server": {"name": "test-server", "log_level": "DEBUG", "security": {"allow_code_execution": True}},
+        "server": {
+            "name": "test-server",
+            "log_level": "DEBUG",
+        },
         "docs": {
             "repositories": {"test-repo": {"url": "https://github.com/test/repo.git", "branch": "main", "folders": ["docs", "examples"]}},
             "max_file_size": 512 * 1024,
@@ -135,7 +138,6 @@ def clean_environment():
         "HOLOVIZ_MCP_REPOS_DIR",
         "HOLOVIZ_MCP_LOG_LEVEL",
         "HOLOVIZ_MCP_SERVER_NAME",
-        "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION",
     ]
 
     # Save original values

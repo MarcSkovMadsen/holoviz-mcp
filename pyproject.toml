@@ -42,11 +42,16 @@ dependencies = [
     "chromadb",
     "fastmcp",
     "GitPython",
-    "packaging",
+    "matplotlib",
     "nbconvert",
+    "packaging",
+    "panel-material-ui",
     "panel",
+    "plotly",
     "pydantic>=2.0",
     "PyYAML",
+    "typer",
+    "watchfiles",
 ]
 
 [project.urls]
@@ -55,17 +60,17 @@ Source = "https://github.com/MarcSkovMadsen/holoviz-mcp"
 
 [project.optional-dependencies]
 dev = [
+    "ipykernel",
+    "mkdocs_pycafe",
     "mkdocs-material",
     "mkdocs",
     "mkdocstrings[python]",
-    "mkdocs_pycafe",
     "pre-commit",
     "pytest-asyncio",
     "pytest-rerunfailures",
     "pytest-xdist",
     "pytest",
     "types-PyYAML",
-    "watchfiles",
 ]
 mypy = [
     "mypy",
@@ -75,7 +80,6 @@ mypy = [
 panel-extensions =[
     "panel-full-calendar",
     "panel-graphic-walker",
-    "panel-material-ui",
     "panel-neuroglancer",
     "panel-precision-slider",
     "panel-web-llm",
@@ -88,7 +92,7 @@ exclude = [
     ".tox",
     ".eggs",
     "*.egg",
-    "doc",
+    "docs",
     "dist",
     "build",
     "_build",
@@ -144,7 +148,7 @@ force-single-line = true
 
 [tool.pytest.ini_options]
 addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
-norecursedirs = "doc .git dist build _build .ipynb_checkpoints examples"
+norecursedirs = "docs .git dist build _build .ipynb_checkpoints examples"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
@@ -167,6 +171,4 @@ source = "vcs"
 raw-options = { version_scheme = "no-guess-dev" }
 
 [project.scripts]
-"holoviz-mcp" = "holoviz_mcp:main"
-"holoviz-mcp-update" = "holoviz_mcp.docs_mcp.data:main"
-"holoviz-mcp-serve" = "holoviz_mcp.serve:main"
+"holoviz-mcp" = "holoviz_mcp.cli:cli_main"

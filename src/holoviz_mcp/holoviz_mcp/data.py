@@ -20,7 +20,7 @@ from pydantic import HttpUrl
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.config.models import FolderConfig
 from holoviz_mcp.config.models import GitRepository
-from holoviz_mcp.docs_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.models import Document
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +195,8 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
         path_obj = Path(url_path)
         if url_transform == "plotly":
             url_path = str(path_obj.with_suffix(suffix="")) + "/"
+            if url_path.endswith("index/"):
+                url_path = url_path[: -len("index/")] + "/"
         else:
             url_path = str(path_obj.with_suffix(suffix=".html"))
 
@@ -213,7 +215,7 @@ class DocumentationIndexer:
             vector_dir: Directory to store vector database. Defaults to config.vector_dir
         """
         # Use unified config for default paths
-        config = get_config()
+        config = self._holoviz_mcp_config = get_config()
 
         self.data_dir = data_dir or config.user_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -582,8 +584,6 @@ class DocumentationIndexer:
     async def index_documentation(self, ctx: Context | None = None):
         """Indexes all documentation."""
         await log_info("Starting documentation indexing...", ctx)
-        await log_info(f"📁 Repositories directory: {self.repos_dir}", ctx)
-        await log_info(f"💾 Vector database location: {self.data_dir / 'chroma'}", ctx)
 
         all_docs = []
 
@@ -941,6 +941,8 @@ class DocumentationIndexer:
         logger.info("=" * 50)
 
         async def run_indexer(indexer=self):
+            logger.info(f"📦 Default config: {indexer._holoviz_mcp_config.config_file_path(location='default')}")
+            logger.info(f"🏠 User config: {indexer._holoviz_mcp_config.config_file_path(location='user')}")
             logger.info(f"📁 Repository directory: {indexer.repos_dir}")
             logger.info(f"💾 Vector database: {indexer.data_dir / 'chroma'}")
             logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")
@@ -959,5 +961,10 @@ class DocumentationIndexer:
         asyncio.run(run_indexer())
 
 
-if __name__ == "__main__":
+def main():
+    """Run the documentation indexer."""
     DocumentationIndexer().run()
+
+
+if __name__ == "__main__":
+    main()

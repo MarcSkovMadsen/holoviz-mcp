@@ -113,7 +113,6 @@ class ConfigLoader:
                 "version": "1.0.0",
                 "description": "Model Context Protocol server for HoloViz ecosystem",
                 "log_level": "INFO",
-                "security": {"allow_code_execution": True},
             },
             "docs": {
                 "repositories": {},  # No more Python-side defaults!
@@ -196,6 +195,21 @@ class ConfigLoader:
         if "HOLOVIZ_MCP_TRANSPORT" in os.environ:
             config.setdefault("server", {})["transport"] = os.environ["HOLOVIZ_MCP_TRANSPORT"]
 
+        # Host override (for HTTP transport)
+        if "HOLOVIZ_MCP_HOST" in os.environ:
+            config.setdefault("server", {})["host"] = os.environ["HOLOVIZ_MCP_HOST"]
+
+        # Port override (for HTTP transport)
+        if "HOLOVIZ_MCP_PORT" in os.environ:
+            port_str = os.environ["HOLOVIZ_MCP_PORT"]
+            try:
+                port = int(port_str)
+                if not (1 <= port <= 65535):
+                    raise ValueError(f"Port must be between 1 and 65535, got {port}")
+                config.setdefault("server", {})["port"] = port
+            except ValueError as e:
+                raise ConfigurationError(f"Invalid HOLOVIZ_MCP_PORT: {port_str}") from e
+
         # Telemetry override
         if "ANONYMIZED_TELEMETRY" in os.environ:
             config.setdefault("server", {})["anonymized_telemetry"] = os.environ["ANONYMIZED_TELEMETRY"].lower() in ("true", "1", "yes", "on")
@@ -203,15 +217,6 @@ class ConfigLoader:
         # Jupyter proxy URL override
         if "JUPYTER_SERVER_PROXY_URL" in os.environ:
             config.setdefault("server", {})["jupyter_server_proxy_url"] = os.environ["JUPYTER_SERVER_PROXY_URL"]
-
-        # Security configuration override
-        if "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION" in os.environ:
-            config.setdefault("server", {}).setdefault("security", {})["allow_code_execution"] = os.environ["HOLOVIZ_MCP_ALLOW_CODE_EXECUTION"].lower() in (
-                "true",
-                "1",
-                "yes",
-                "on",
-            )
 
         return config
 
@@ -250,7 +255,10 @@ class ConfigLoader:
 
         # Create default configuration
         template = {
-            "server": {"name": "holoviz-mcp", "log_level": "INFO", "security": {"allow_code_execution": True}},
+            "server": {
+                "name": "holoviz-mcp",
+                "log_level": "INFO",
+            },
             "docs": {
                 "repositories": {
                     "example-repo": {

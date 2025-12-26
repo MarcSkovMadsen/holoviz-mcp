@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from textwrap import dedent
 
 from panel.viewable import Viewable
 
@@ -83,7 +84,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
     # Extract parameters information
     parameters = {}
     if hasattr(cls, "param"):
-        for param_name in cls.param:
+        for param_name in sorted(cls.param):
             # Skip private parameters
             if param_name.startswith("_"):
                 continue
@@ -93,8 +94,10 @@ def collect_component_info(cls: type) -> ComponentDetails:
 
             # Get common parameter attributes (skip private ones)
             for attr in ["default", "doc", "allow_None", "constant", "readonly", "per_instance"]:
-                if hasattr(param_obj, attr):
+                if hasattr(param_obj, attr) and getattr(param_obj, attr):
                     value = getattr(param_obj, attr)
+                    if isinstance(value, str):
+                        value = dedent(value).strip()
                     # Handle non-JSON serializable values
                     try:
                         json.dumps(value)
@@ -107,7 +110,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
             param_data["type"] = param_type
 
             # For Selector parameters, get options
-            if hasattr(param_obj, "objects"):
+            if hasattr(param_obj, "objects") and param_obj.objects:
                 try:
                     json.dumps(param_obj.objects)
                     param_data["objects"] = param_obj.objects
@@ -115,7 +118,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
                     param_data["objects"] = "NON_JSON_SERIALIZABLE_VALUE"
 
             # For Number parameters, get bounds
-            if hasattr(param_obj, "bounds"):
+            if hasattr(param_obj, "bounds") and param_obj.bounds:
                 try:
                     json.dumps(param_obj.bounds)
                     param_data["bounds"] = param_obj.bounds
@@ -123,7 +126,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
                     param_data["bounds"] = "NON_JSON_SERIALIZABLE_VALUE"
 
             # For String parameters, get regex
-            if hasattr(param_obj, "regex"):
+            if hasattr(param_obj, "regex") and param_obj.regex:
                 try:
                     json.dumps(param_obj.regex)
                     param_data["regex"] = param_obj.regex
@@ -149,7 +152,7 @@ def collect_component_info(cls: type) -> ComponentDetails:
     return ComponentDetails(
         name=cls.__name__,
         description=description,
-        project=cls.__module__.split(".")[0],
+        package=cls.__module__.split(".")[0],
         module_path=f"{cls.__module__}.{cls.__name__}",
         init_signature=init_signature,
         docstring=docstring,

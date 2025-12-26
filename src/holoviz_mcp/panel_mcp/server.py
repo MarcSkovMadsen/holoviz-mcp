@@ -9,20 +9,13 @@ Use this server to access:
 - Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
-import logging
-import os
-import subprocess
-import threading
 from importlib.metadata import distributions
-from typing import Optional
-from typing import cast
 
 from fastmcp import Context
 from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.panel_mcp.data import get_components as _get_components_org
-from holoviz_mcp.panel_mcp.data import to_proxy_url
 from holoviz_mcp.panel_mcp.models import ComponentDetails
 from holoviz_mcp.panel_mcp.models import ComponentSummary
 from holoviz_mcp.panel_mcp.models import ComponentSummarySearchResult
@@ -139,25 +132,25 @@ async def list_packages(ctx: Context) -> list[str]:
     -------
     list[str]
         List of package names that provide Panel components, sorted alphabetically.
-        Examples: ["panel"], ["panel", "panel_material_ui"], ["panel", "awesome_panel_extensions"]
+        Examples: ["panel"] or ["panel", "panel_material_ui"]
 
     Examples
     --------
     Use this tool to see available packages:
     >>> list_packages()
-    ["panel", "panel_material_ui", "awesome_panel_extensions"]
+    ["panel", "panel_material_ui"]
 
     Then use those package names in other tools:
     >>> list_components(package="panel_material_ui")
     >>> search("button", package="panel")
     """
-    return sorted(set(component.project for component in await _get_all_components(ctx)))
+    return sorted(set(component.package for component in await _get_all_components(ctx)))
 
 
 @mcp.tool
-async def search(ctx: Context, query: str, project: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
+async def search_components(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
     """
-    Search for Panel components by name, module path, or description.
+    Search for Panel components by search query and optional package filter.
 
     Use this tool to find components when you don't know the exact name but have keywords.
     The search looks through component names, module paths, and documentation to find matches.
@@ -171,7 +164,7 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
         Examples: "button", "input", "text", "chart", "plot", "slider", "select"
     package : str, optional
         Package name to filter results. If None, searches all packages.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+        Examples: "hvplot", "panel", or "panel_material_ui"
     limit : int, optional
         Maximum number of results to return. Default is 10.
 
@@ -184,15 +177,15 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
     Examples
     --------
     Search for button components:
-    >>> search("button")
+    >>> search_components("button")
     [ComponentSummarySearchResult(name="Button", package="panel", relevance_score=80, ...)]
 
     Search within a specific package:
-    >>> search("input", package="panel_material_ui")
+    >>> search_components("input", package="panel_material_ui")
     [ComponentSummarySearchResult(name="TextInput", package="panel_material_ui", ...)]
 
     Find chart components with limited results:
-    >>> search("chart", limit=5)
+    >>> search_components("chart", limit=5)
     [ComponentSummarySearchResult(name="Bokeh", package="panel", ...)]
     """
     query_lower = query.lower()
@@ -200,7 +193,7 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
     matches = []
     for component in await _get_all_components(ctx=ctx):
         score = 0
-        if project and component.project.lower() != project.lower():
+        if package and component.package.lower() != package.lower():
             continue
 
         if component.name.lower() == query_lower or component.module_path.lower() == query_lower:
@@ -224,12 +217,12 @@ async def search(ctx: Context, query: str, project: str | None = None, limit: in
     return matches
 
 
-async def _get_component(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> list[ComponentDetails]:
+async def _get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentDetails]:
     """
     Get component details based on filtering criteria.
 
     This is an internal function used by the public component tools to filter
-    and retrieve components based on name, module path, and project criteria.
+    and retrieve components based on name, module path, and package criteria.
 
     Parameters
     ----------
@@ -240,7 +233,7 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
     module_path : str, optional
         Module path prefix to filter by. If None, all components match.
     package : str, optional
-        Package name to filter by. If None, all components match.
+        Package name to filter by. For example "panel" or "panel_material_ui". If None, all components match.
 
     Returns
     -------
@@ -252,7 +245,7 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
     for component in await _get_all_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
-        if project and component.project != project:
+        if package and component.package != package:
             continue
         if module_path and not component.module_path.startswith(module_path):
             continue
@@ -262,7 +255,7 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
 
 
 @mcp.tool
-async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> list[ComponentSummary]:
+async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
     """
     Get a summary list of Panel components without detailed docstring and parameter information.
 
@@ -282,7 +275,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
         Examples: "panel.widgets" to get all widgets, "panel.pane" to get all panes
     package : str, optional
         Package name to filter by. If None, returns all components.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+        Examples: "hvplot", "panel" or "panel_material_ui"
 
     Returns
     -------
@@ -309,7 +302,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
     for component in await _get_all_components(ctx=ctx):
         if name and component.name.lower() != name.lower():
             continue
-        if project and component.project != project:
+        if package and component.package != package:
             continue
         if module_path and not component.module_path.startswith(module_path):
             continue
@@ -319,7 +312,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
 
 
 @mcp.tool
-async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> ComponentDetails:
+async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
     """
     Get complete details about a single Panel component including docstring and parameters.
 
@@ -342,7 +335,7 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
         Examples: "panel.widgets.Button", "panel_material_ui.Button"
     package : str, optional
         Package name to filter by. If None, searches all packages.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+        Examples: "panel" or "panel_material_ui"
 
     Returns
     -------
@@ -368,20 +361,19 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     >>> get_component(module_path="panel.widgets.button.Button")
     ComponentDetails(name="Button", module_path="panel.widgets.button.Button", ...)
     """
-    components_list = await _get_component(ctx, name, module_path, project)
+    components_list = await _get_component(ctx, name, module_path, package)
 
     if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{project}'. Please check your inputs.")
+        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
     if len(components_list) > 1:
         module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
         raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
-
     component = components_list[0]
     return component
 
 
 @mcp.tool
-async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, project: str | None = None) -> dict[str, ParameterInfo]:
+async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> dict[str, ParameterInfo]:
     """
     Get detailed parameter information for a single Panel component.
 
@@ -404,7 +396,7 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
         Examples: "panel.widgets.Button", "panel_material_ui.Button"
     package : str, optional
         Package name to filter by. If None, searches all packages.
-        Examples: "panel", "panel_material_ui", "awesome_panel_extensions"
+        Examples: "hvplot", "panel" or "panel_material_ui"
 
     Returns
     -------
@@ -435,215 +427,16 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     >>> get_component_parameters(module_path="panel.widgets.Slider")
     {"start": ParameterInfo(type="Number", default=0, bounds=(0, 100)), ...}
     """
-    components_list = await _get_component(ctx, name, module_path, project)
+    components_list = await _get_component(ctx, name, module_path, package)
 
     if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{project}'. Please check your inputs.")
+        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
     if len(components_list) > 1:
         module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
         raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
 
     component = components_list[0]
     return component.parameters
-
-
-# Maps port to server state: { 'proc': Popen, 'log_path': str, 'log_file': file, 'proxy_url': str }
-_SERVERS = {}
-# Lock for thread safety
-_SERVER_LOCK = threading.Lock()
-
-
-def _serve_impl(
-    file: str,
-    dev: bool = True,
-    show: bool = True,
-    port: int = 5007,
-    dependencies: Optional[list[str]] = None,
-    python: str | None = None,
-) -> str:
-    """
-    Start the Panel server and serve the file in a new, isolated Python environment using uv.
-
-    Parameters
-    ----------
-    file : str
-        Path to the Python script to serve.
-    dev : bool, optional
-        Whether to run in development mode (default: True).
-    show : bool, optional
-        Whether to open the application in a web browser (default: True).
-    port : int, optional
-        Port to serve the application on (default: 5007).
-    dependencies : list of str, optional
-        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas", "watchfiles"].
-    python : str or None, optional
-        Python version to use for serving the application.
-
-    Returns
-    -------
-    str
-        Proxy-accessible URL where the application is served.
-    """
-    DEFAULT_DEPENDENCIES = ["panel", "hvplot", "pandas", "watchfiles"]
-    SERVER_START_TIMEOUT = 5  # seconds
-    SERVER_LOG_POLL_INTERVAL = 0.250  # seconds
-
-    if dependencies is None:
-        dependencies = DEFAULT_DEPENDENCIES.copy()
-    with _SERVER_LOCK:
-        if port in _SERVERS:
-            _close_server_impl(port)
-
-        cmd = ["uv", "run", "--no-project"]
-        for dep in dependencies:
-            cmd += ["--with", dep]
-        if python:
-            cmd += ["--python", python]
-        cmd += ["panel", "serve", file, "--port", str(port)]
-        if dev:
-            cmd.append("--dev")
-        # Do NOT use --show, we will open the browser ourselves after proxy URL resolution
-        logging.info(f"Panel server command: {cmd}")
-        log_path = f"/tmp/panel_server_{port}.log"
-        log_file = open(log_path, "w")
-        proc = subprocess.Popen(
-            cmd,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-        )
-
-        url = f"http://localhost:{port}"
-        proxy_url = to_proxy_url(url, _config.server.jupyter_server_proxy_url)
-
-        _SERVERS[port] = {
-            "proc": proc,
-            "log_path": log_path,
-            "log_file": log_file,
-            "proxy_url": proxy_url,
-        }
-
-    if show:
-        import time
-
-        start_time = time.time()
-        last_pos = 0
-        while time.time() - start_time < SERVER_START_TIMEOUT:
-            if os.path.exists(log_path):
-                with open(log_path, "r") as f:
-                    f.seek(last_pos)
-                    new_lines = f.readlines()
-                    if new_lines:
-                        for line in new_lines:
-                            logging.info(line.rstrip())
-                    last_pos = f.tell()
-                with open(log_path, "r") as f:
-                    if "Bokeh app running" in f.read():
-                        time.sleep(0.1)  # from experience
-                        break
-            time.sleep(SERVER_LOG_POLL_INTERVAL)
-        import webbrowser
-
-        webbrowser.open_new_tab(proxy_url)
-    return proxy_url
-
-
-@mcp.tool(enabled=bool(_config.server.security.allow_code_execution))
-def serve(
-    file: str,
-    dev: bool = True,
-    show: bool = True,
-    port: int = 5007,
-    dependencies: Optional[list[str]] = None,
-    python: str | None = None,
-) -> str:
-    """
-    Start the Panel server and serve the file in a new, isolated Python environment using uv.
-
-    Parameters
-    ----------
-    file : str
-        Path to the Python script to serve.
-    dev : bool, optional
-        Whether to run in development mode (default: True).
-    show : bool, optional
-        Whether to open the application in a web browser (default: True).
-    port : int, optional
-        Port to serve the application on (default: 5007).
-    dependencies : list of str, optional
-        List of Python dependencies required by the script. Defaults to ["panel", "hvplot", "pandas", "watchfiles"].
-    python : str or None, optional
-        Python version to use for serving the application.
-
-    Returns
-    -------
-    str
-        Proxy-accessible URL where the application is served.
-    """
-    return _serve_impl(file, dev, show, port, dependencies, python)
-
-
-def _get_server_logs_impl(port: int = 5007, tail: int = 100) -> str:
-    server = _SERVERS.get(port)
-    log_path = str(server["log_path"]) if server else None
-    if log_path and os.path.exists(log_path):
-        with open(log_path, "r") as f:
-            lines = f.readlines()
-            lines = [line for line in lines if "(FIXED_SIZING_MODE)" not in line and "Dropping a patch" not in line]
-            if tail is not None and tail > 0:
-                lines = lines[-tail:]
-            return "".join(lines)
-    return "No logs found."
-
-
-@mcp.tool(enabled=bool(_config.server.security.allow_code_execution))
-def get_server_logs(port: int = 5007, tail: int = 100) -> str:
-    """
-    Get the logs for the Panel application running on the given port.
-
-    For example after change a served 'file' or its dependencies, you can check the logs to see if the server
-    restarted successfully or you need to fix some errors or restart the server to add new dependencies.
-
-    Args:
-        port (int): Port where the application is served.
-        tail (int): Number of lines from the end of the log file to return. If <= 0, return all lines.
-
-    Returns
-    -------
-        str: Contents of the application logs.
-    """
-    return _get_server_logs_impl(port, tail)
-
-
-def _close_server_impl(port: int = 5007) -> None:
-    with _SERVER_LOCK:
-        server = _SERVERS.pop(port, None)
-        if not server:
-            return
-        proc = cast(subprocess.Popen, server.get("proc"))
-
-        log_file = server.get("log_file")
-        if proc:
-            proc.terminate()
-            try:
-                proc.wait(timeout=10)
-            except Exception:
-                proc.kill()
-        if log_file:
-            try:
-                log_file.close()  # type: ignore[attr-defined]
-            except Exception:
-                pass
-
-
-@mcp.tool(enabled=bool(_config.server.security.allow_code_execution))
-def close_server(port: int = 5007) -> None:
-    """
-    Close the Panel application server running on the given port and clean up the log file handle.
-
-    Args:
-        port (int): Port where the application is served.
-    """
-    return _close_server_impl(port)
 
 
 if __name__ == "__main__":
