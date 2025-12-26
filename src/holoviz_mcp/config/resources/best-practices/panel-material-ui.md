@@ -1,4 +1,14 @@
-# Panel Material UI
+---
+name: panel-material-ui-development
+description: Develop modern Panel tools, dashboards and data apps with Material UI components.
+metadata:
+  version: "1.0.0"
+  author: holoviz
+  category: web-development
+  difficulty: intermediate
+---
+
+# Panel Material UI Development Skills
 
 This guide provides best practices for using Panel Material UI. Optimized for LLMs.
 
