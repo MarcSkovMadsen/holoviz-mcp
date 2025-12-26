@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 THUMBNAILS_DIR = Path(__file__).parent / "thumbnails"
 
 
-def main() -> None:
+def main(port: int = 5006, address: str = "0.0.0.0", allow_websocket_origin="*", num_procs: int = 1) -> None:
     """Serve all Panel apps in the apps directory."""
     apps_dir = Path(__file__).parent / "apps"
     app_files = [str(f) for f in apps_dir.glob("*.py") if f.name != "__init__.py"]
@@ -23,7 +23,23 @@ def main() -> None:
         return
 
     # Use python -m panel to ensure we use the same Python environment
-    cmd = [sys.executable, "-m", "panel", "serve", *app_files, "--static-dirs", f"thumbnails={THUMBNAILS_DIR}"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "panel",
+        "serve",
+        *app_files,
+        "--static-dirs",
+        f"thumbnails={THUMBNAILS_DIR}",
+        "--port",
+        str(port),
+        "--address",
+        address,
+        "--allow-websocket-origin",
+        allow_websocket_origin,
+        "--num-procs",
+        str(num_procs),
+    ]
     logger.info(f"Running: {' '.join(cmd)}")
 
     try:

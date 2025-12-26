@@ -56,14 +56,30 @@ def update() -> None:
 
 
 @app.command()
-def serve() -> None:
+def serve(port: int = 5006, address: str = "0.0.0.0", allow_websocket_origin="*", num_procs: int = 1) -> None:
     """Serve Panel apps from the apps directory.
 
     This command starts a Panel server to host all Panel apps found in the apps directory.
+
+    Parameters
+    ----------
+    port : int, default=5006
+        The port number on which the Panel server will listen.
+    address : str, default="0.0.0.0"
+        The address to bind the server to. Use "0.0.0.0" to listen on all
+        network interfaces, or "127.0.0.1" to listen only on localhost.
+    allow_websocket_origin : str, default="*"
+        The allowed WebSocket origins. Use "*" to allow all origins, or specify
+        a comma-separated list of allowed origins for security. In production,
+        avoid using "*" and specify exact allowed domains.
+    num_procs : int, default=1
+        The number of worker processes to spawn. Increasing this value can
+        improve performance for multiple concurrent users. Keep at 1 for
+        development; increase for production based on available CPU cores.
     """
     from holoviz_mcp.serve import main as serve_main
 
-    serve_main()
+    serve_main(port=port, address=address, allow_websocket_origin=allow_websocket_origin, num_procs=num_procs)
 
 
 def cli_main() -> None:
