@@ -177,7 +177,7 @@ if pn.state.served:
 DO serve the app with
 
 ```bash
-panel serve path_to_this_file.py --show --dev `
+panel serve path_to_this_file.py --show --dev
 ```
 
 DON'T serve with `python path_to_this_file.py`.
