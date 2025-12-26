@@ -67,7 +67,7 @@ class TestCLI:
         )
 
         # Wait briefly for server to start
-        time.sleep(3)
+        time.sleep(10)
 
         # Terminate the process
         process.terminate()

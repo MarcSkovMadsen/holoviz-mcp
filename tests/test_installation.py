@@ -304,7 +304,7 @@ class TestUVInstallation:
         env["HOLOVIZ_MCP_PORT"] = "7653"  # Avoid port conflicts
 
         result = subprocess.run(
-            ["uvx", "--from", "holoviz-mcp", "holoviz-mcp", "--help"],
+            ["uvx", "holoviz-mcp", "--help"],
             capture_output=True,
             text=True,
             timeout=30,

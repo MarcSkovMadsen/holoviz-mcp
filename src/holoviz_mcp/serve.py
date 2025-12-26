@@ -23,7 +23,7 @@ def main() -> None:
         return
 
     # Use python -m panel to ensure we use the same Python environment
-    cmd = [sys.executable, "-m", "panel", "serve", *app_files, *sys.argv[1:], "--static-dirs", f"thumbnails={THUMBNAILS_DIR}"]
+    cmd = [sys.executable, "-m", "panel", "serve", *app_files, "--static-dirs", f"thumbnails={THUMBNAILS_DIR}"]
     logger.info(f"Running: {' '.join(cmd)}")
 
     try:
