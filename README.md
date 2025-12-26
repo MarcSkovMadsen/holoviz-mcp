@@ -11,7 +11,7 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 
 [![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)](https://holoviz.org)
 
-**📖 [Full Documentation](https://marcskovmadsen.github.io/holoviz-mcp/)** | **🚀 [Quick Start](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)** | **🐳 [Docker Guide](https://marcskovmadsen.github.io/holoviz-mcp/how-to/docker/)** | **🤗 [Explore the Tools](https://marcskovmadsen.github.io/holoviz-mcp/how-to/docker/)**
+**📖 [Full Documentation](https://marcskovmadsen.github.io/holoviz-mcp/)** | **🚀 [Quick Start](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)** | **🐳 [Docker Guide](https://marcskovmadsen.github.io/holoviz-mcp/how-to/docker/)** | **🤗 [Explore the Tools](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui)**
 
 ## ✨ What This Provides
 
