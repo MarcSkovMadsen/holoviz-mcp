@@ -392,7 +392,7 @@ if __name__ == "__main__":
 - **Lazy-load components** using Tabs or Accordion for heavy content
 - **Use caching** with `@pn.cache` decorator for expensive computations
 - **Use async/await**: Implement asynchronous patterns for I/O operations
-- **User faster frameworks**: Replace slower Pandas with faster Polars or DuckDB
+- **Use faster frameworks**: Replace slower Pandas with faster Polars or DuckDB
 - **Offload to threads**: Consider using threading for CPU-intensive tasks
 - **Offload to external processes**: Consider offloading heavy computations to external processes like databases, scheduled (airflow) jobs, REST apis etc.
 - **Profile callbacks** with `@pn.io.profiler` to identify bottlenecks
