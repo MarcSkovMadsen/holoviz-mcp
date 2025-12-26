@@ -268,7 +268,7 @@ class Dashboard(pn.viewable.Viewer):
     # ✅ Good: Reactive update of chart parameter
     # Will be run only one time when filter_value updates - even if multiple panes or reactive functions depend on the chart value
     @param.depends("filter_value", watch=True, on_init=True)
-    def _update__chart(self):
+    def _update_chart(self):
         # updates the chart object only, NOT a pane
         self.chart = self._get_data().hvplot.bar()
 
