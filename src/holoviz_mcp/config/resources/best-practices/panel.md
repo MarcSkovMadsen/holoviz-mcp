@@ -397,7 +397,7 @@ if __name__ == "__main__":
 - **Offload to external processes**: Consider offloading heavy computations to external processes like databases, scheduled (airflow) jobs, REST apis etc.
 - **Profile callbacks** with `@pn.io.profiler` to identify bottlenecks
 
-If you experience memory make sure to:
+If you experience memory issues, make sure to:
 
 - **Limit history**: Cap data history sizes in streaming applications
 - **Clear caches**: Periodically call `pn.state.clear_caches()`
