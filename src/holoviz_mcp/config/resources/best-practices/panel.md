@@ -361,7 +361,7 @@ DO remember to add extensions like "tabulator", "plotly" etc. to `pn.extension` 
 pn.extension("tabulator", "plotly")
 ```
 
-DON't add "bokeh". Its already loaded:
+DON'T add "bokeh". It's already loaded:
 
 ```python
 # ❌ Bad
