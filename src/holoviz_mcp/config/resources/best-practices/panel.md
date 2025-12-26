@@ -381,7 +381,7 @@ if pn.state.served:
 if __name__ == "__main__":
     main().servable()
 
-# ❌ Dont: Works, but not how we want to serve the app:
+# ❌ Don't: Works, but not how we want to serve the app:
 if __name__ == "__main__":
     main().show()
 ```
