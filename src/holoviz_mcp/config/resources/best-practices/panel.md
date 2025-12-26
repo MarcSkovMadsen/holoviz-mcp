@@ -299,7 +299,7 @@ class BadDashboard(pn.viewable.Viewer):
 **Key Rules:**
 
 1. DO create main layout structure and panes ONCE in `__init__`
-2. DO bind panes to reactive methods or parameters (DON't recreate them)
+2. DO bind panes to reactive methods or parameters (DON'T recreate them)
 3. Reactive methods should return CONTENT only (strings, plots, dataframes), NOT panes/layouts
 4. Use `@param.depends` for reactive methods that update pane content
 
