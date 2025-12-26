@@ -388,7 +388,7 @@ if __name__ == "__main__":
 
 ### Performance Optimization
 
-- **Defer load**: Defer load to after the app is shown to the user: `pn.extension(defer_load=True, loading_indicator=True, ...)
+- **Defer load**: Defer load to after the app is shown to the user: `pn.extension(defer_load=True, loading_indicator=True, ...)`
 - **Lazy-load components** using Tabs or Accordion for heavy content
 - **Use caching** with `@pn.cache` decorator for expensive computations
 - **Use async/await**: Implement asynchronous patterns for I/O operations
