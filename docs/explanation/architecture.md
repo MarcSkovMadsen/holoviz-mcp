@@ -144,26 +144,6 @@ Git clones of documentation repositories:
 
 ## Security Model
 
-### Code Execution
-
-AI agents can execute bash commands. This is:
-
-- **Configurable**: Can be disabled via configuration
-- **Monitored**: Terminal output tracks execution
-- **Flexible**: Agents can use any bash command
-
-Disable with:
-```bash
-HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false uvx holoviz-mcp
-```
-
-Or in `config.yaml`:
-```yaml
-server:
-  security:
-    allow_code_execution: false
-```
-
 ### Network Access
 
 - **STDIO mode**: No network exposure (local only)

@@ -72,19 +72,6 @@ HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp
 Override the server name.
 Default: `holoviz-mcp`
 
-### Security Configuration
-
-**HOLOVIZ_MCP_ALLOW_CODE_EXECUTION**
-Allow or block code execution features. When enabled, AI agents can execute bash commands.
-Values: `true`, `false`
-Default: `true`
-
-```bash
-HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false uvx holoviz-mcp
-```
-
-When disabled, tools that execute arbitrary code will be blocked.
-
 ### Remote Development
 
 **JUPYTER_SERVER_PROXY_URL**
@@ -142,16 +129,6 @@ After adding repositories, update the index:
 uvx --from holoviz-mcp holoviz-mcp-update
 ```
 
-## Security Configuration in YAML
-
-You can also configure security settings in the YAML file:
-
-```yaml
-server:
-  security:
-    allow_code_execution: false
-```
-
 ## IDE-Specific Configuration
 
 ### VS Code Configuration
@@ -167,7 +144,6 @@ Set environment variables in `mcp.json`:
       "args": ["holoviz-mcp"],
       "env": {
         "HOLOVIZ_MCP_LOG_LEVEL": "DEBUG",
-        "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION": "false"
       }
     }
   }

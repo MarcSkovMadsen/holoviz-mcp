@@ -9,8 +9,6 @@ server:
   transport: stdio
   anonymized_telemetry: false
   jupyter_server_proxy_url: ""
-  security:
-    allow_code_execution: True
 
 docs:
   repositories:

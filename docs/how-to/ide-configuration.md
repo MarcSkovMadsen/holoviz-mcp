@@ -145,25 +145,6 @@ You can customize server behavior using environment variables:
 }
 ```
 
-### Disable Code Execution
-
-For security, disable code execution features:
-
-```json
-{
-  "servers": {
-    "holoviz": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
-      "env": {
-        "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION": "false"
-      }
-    }
-  }
-}
-```
-
 ### Custom Configuration Directory
 
 Use a custom directory for configuration and data:

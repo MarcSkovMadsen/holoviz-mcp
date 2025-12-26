@@ -130,7 +130,7 @@ Each sub-server is a standalone FastMCP instance that gets imported with a prefi
 
 ```python
 await mcp.import_server(holoviz_mcp, prefix="docs")    # holoviz_search, holoviz_get_document, etc.
-await mcp.import_server(panel_mcp, prefix="panel")  # panel_search, panel_serve, etc.
+await mcp.import_server(panel_mcp, prefix="panel")  # panel_search, panel_list_components, panel_get_component etc.
 await mcp.import_server(hvplot_mcp, prefix="hvplot") # hvplot_list_plot_types, etc.
 ```
 
@@ -220,7 +220,6 @@ Environment variables:
 - `HOLOVIZ_MCP_HOST`: Host for HTTP transport (default: `127.0.0.1`)
 - `HOLOVIZ_MCP_PORT`: Port for HTTP transport (default: `8000`)
 - `HOLOVIZ_MCP_LOG_LEVEL`: `INFO`, `DEBUG`, `WARNING`, `ERROR`
-- `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION`: `true` (default), `false` - controls `panel_serve` tool
 - `HOLOVIZ_MCP_USER_DIR`: Custom config directory
 
 ---

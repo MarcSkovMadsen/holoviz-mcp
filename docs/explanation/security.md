@@ -8,54 +8,6 @@ HoloViz MCP is designed with security in mind, but like any tool that provides A
 
 ## Code Execution
 
-### Bash Command Execution
-
-AI agents can execute bash commands. This is powerful but requires careful consideration.
-
-**Default Behavior**: Enabled (controlled by `allow_code_execution` setting)
-
-**Why It Exists**: Allows AI agents to perform operations directly in the environment.
-
-**Risk**: Could execute malicious code if:
-- AI generates harmful commands
-- User unknowingly runs malicious code
-- Commands are manipulated
-
-### Disabling Code Execution
-
-For production environments or untrusted scenarios, disable code execution:
-
-**Environment Variable**:
-```bash
-HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false uvx holoviz-mcp
-```
-
-**Configuration File** (`~/.holoviz-mcp/config.yaml`):
-```yaml
-server:
-  security:
-    allow_code_execution: false
-```
-
-**IDE Configuration** (VS Code `mcp.json`):
-```json
-{
-  "servers": {
-    "holoviz": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
-      "env": {
-        "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION": "false"
-      }
-    }
-  }
-}
-```
-
-When disabled:
-- AI cannot execute bash commands on your behalf
-
 ## Network Exposure
 
 ### STDIO Transport (Default)
