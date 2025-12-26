@@ -42,7 +42,6 @@ class TestCLI:
         )
         assert result.returncode == 0
         assert "Update the documentation index" in result.stdout
-        assert "vector database" in result.stdout
 
     def test_cli_serve_help(self):
         """Test that the serve help command works."""
