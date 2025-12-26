@@ -111,7 +111,7 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 
 2. Create or recreate the index:
    ```bash
-   uvx --from holoviz-mcp holoviz-mcp-update
+   uvx holoviz-mcp update
    ```
 
 3. Wait for indexing to complete (5-10 minutes)
@@ -125,7 +125,7 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 
 ### Documentation Index Creation Fails
 
-**Problem**: `holoviz-mcp-update` fails or times out.
+**Problem**: `holoviz-mcp update` fails or times out.
 
 **Solution**:
 
@@ -133,13 +133,13 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 
 2. Try again with debug logging:
    ```bash
-   HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx --from holoviz-mcp holoviz-mcp-update
+   HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp update
    ```
 
 3. Clear existing data and retry:
    ```bash
    rm -rf ~/.holoviz-mcp/chroma
-   uvx --from holoviz-mcp holoviz-mcp-update
+   uvx holoviz-mcp update
    ```
 
 4. Check GitHub API rate limits (wait an hour and retry)
@@ -151,7 +151,7 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 **Solution**: Update the documentation index:
 
 ```bash
-uvx --from holoviz-mcp holoviz-mcp-update
+uvx holoviz-mcp update
 ```
 
 ## IDE Integration Issues
@@ -300,7 +300,7 @@ docker run --user $(id -u):$(id -g) ...
 4. Consider recreating documentation index:
    ```bash
    rm -rf ~/.holoviz-mcp/chroma
-   uvx --from holoviz-mcp holoviz-mcp-update
+   uvx holoviz-mcp update
    ```
 
 ### High Memory Usage

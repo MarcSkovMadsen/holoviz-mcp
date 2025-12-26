@@ -156,7 +156,7 @@ Run the update command separately:
 docker run -it --rm \
   -v ~/.holoviz-mcp:/root/.holoviz-mcp \
   ghcr.io/marcskovmadsen/holoviz-mcp:latest \
-  holoviz-mcp-update
+  holoviz-mcp update
 ```
 
 ## Integration with MCP Clients
