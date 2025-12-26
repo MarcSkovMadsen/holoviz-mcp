@@ -8,56 +8,6 @@ HoloViz MCP is designed with security in mind, but like any tool that provides A
 
 ## Code Execution
 
-### The Panel Serve Tool
-
-The `serve` tool can execute arbitrary Python code when serving Panel applications. This is powerful but requires careful consideration.
-
-**Default Behavior**: Enabled
-
-**Why It Exists**: Allows testing and demonstrating Panel applications directly from AI conversations.
-
-**Risk**: Could execute malicious code if:
-- AI generates harmful code
-- User unknowingly serves malicious files
-- File paths are manipulated
-
-### Disabling Code Execution
-
-For production environments or untrusted scenarios, disable code execution:
-
-**Environment Variable**:
-```bash
-HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false uvx holoviz-mcp
-```
-
-**Configuration File** (`~/.holoviz-mcp/config.yaml`):
-```yaml
-server:
-  security:
-    allow_code_execution: false
-```
-
-**IDE Configuration** (VS Code `mcp.json`):
-```json
-{
-  "servers": {
-    "holoviz": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
-      "env": {
-        "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION": "false"
-      }
-    }
-  }
-}
-```
-
-When disabled:
-- `serve` tool is not available
-- `get_server_logs` and `close_server` are not available
-- AI cannot execute any code on your behalf
-
 ## Network Exposure
 
 ### STDIO Transport (Default)
@@ -127,7 +77,7 @@ HoloViz MCP can read:
 - Installed Python packages (for component discovery)
 - Configuration files (`~/.holoviz-mcp/`)
 - Documentation repositories (`~/.holoviz-mcp/repos/`)
-- Files specified in `serve` tool (if enabled)
+- Files accessible via bash commands (if code execution enabled)
 
 ### Write Access
 
@@ -152,9 +102,9 @@ No explicit sandboxing is enforced. Best practices:
 
 Be aware that AI assistants can be manipulated through prompt injection. HoloViz MCP cannot prevent this, but you can:
 
-- Review code before execution
+- Review code and commands before execution
 - Disable code execution features
-- Monitor server logs
+- Monitor terminal output
 - Use trusted AI models
 
 ### Generated Code Review

@@ -81,7 +81,6 @@ Configure the server behavior using environment variables:
 | `HOLOVIZ_MCP_HOST` | Host to bind (HTTP mode) | `0.0.0.0` | Any valid IP |
 | `HOLOVIZ_MCP_PORT` | Port to bind (HTTP mode) | `8000` | Any valid port |
 | `HOLOVIZ_MCP_LOG_LEVEL` | Logging level | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
-| `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION` | Enable code execution | `true` | `true`, `false` |
 | `UPDATE_DOCS` | Update documentation index on startup | `false` | `true`, `false` |
 | `JUPYTER_SERVER_PROXY_URL` | URL prefix for Panel apps | - | URL path |
 
@@ -94,7 +93,6 @@ docker run -it --rm \
   -p 8000:8000 \
   -e HOLOVIZ_MCP_TRANSPORT=http \
   -e HOLOVIZ_MCP_LOG_LEVEL=DEBUG \
-  -e HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false \
   -v ~/.holoviz-mcp:/root/.holoviz-mcp \
   ghcr.io/marcskovmadsen/holoviz-mcp:latest
 ```
@@ -213,7 +211,6 @@ services:
     environment:
       - HOLOVIZ_MCP_TRANSPORT=http
       - HOLOVIZ_MCP_LOG_LEVEL=INFO
-      - HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=true
     volumes:
       - ~/.holoviz-mcp:/root/.holoviz-mcp
     restart: unless-stopped
@@ -239,7 +236,6 @@ services:
     environment:
       - HOLOVIZ_MCP_TRANSPORT=http
       - HOLOVIZ_MCP_LOG_LEVEL=WARNING
-      - HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=true
       - HOLOVIZ_MCP_HOST=0.0.0.0
       - HOLOVIZ_MCP_PORT=8000
     volumes:
@@ -459,14 +455,6 @@ docker run --memory=2g --memory-swap=2g ...
 ```
 
 ## Security Considerations
-
-### Code Execution
-
-By default, the Docker container allows code execution for serving Panel applications. For production or untrusted environments, disable it:
-
-```bash
--e HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false
-```
 
 ### Network Exposure
 

@@ -70,7 +70,6 @@ class TestSchemaValidation:
             "port",
             "anonymized_telemetry",
             "jupyter_server_proxy_url",
-            "security",
             "vector_db_path",
         ]
 
@@ -129,15 +128,3 @@ class TestSchemaValidation:
 
         assert config is not None
         assert config.server.name == "holoviz-mcp"
-
-    def test_schema_security_description_matches_model(self):
-        """Test that security description in schema matches the model."""
-        schema_path = get_schema_path()
-        with open(schema_path) as f:
-            schema = json.load(f)
-
-        security_desc = schema["properties"]["server"]["properties"]["security"]["properties"]["allow_code_execution"]["description"]
-
-        # Should mention danger and trusted environments
-        assert "dangerous" in security_desc.lower() or "danger" in security_desc.lower()
-        assert "trusted" in security_desc.lower()

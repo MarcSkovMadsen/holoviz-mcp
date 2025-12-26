@@ -153,21 +153,6 @@ Now that everything is set up, let's build a simple dashboard:
 
 3. Your AI assistant will provide code using HoloViz MCP's knowledge of Panel components!
 
-4. Ask your AI assistant:
-   ```
-   Using the holoviz-mcp tools serve the app
-   ```
-
-5. Ask your AI assistant:
-   ```
-   Get the panel server logs
-   ```
-
-6. Ask your AI Assistant
-  ```
-  Close the panel server
-  ```
-
 ## What's Next?
 
 Now that you have HoloViz MCP running, explore more:

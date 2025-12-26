@@ -113,7 +113,6 @@ class ConfigLoader:
                 "version": "1.0.0",
                 "description": "Model Context Protocol server for HoloViz ecosystem",
                 "log_level": "INFO",
-                "security": {"allow_code_execution": True},
             },
             "docs": {
                 "repositories": {},  # No more Python-side defaults!
@@ -219,15 +218,6 @@ class ConfigLoader:
         if "JUPYTER_SERVER_PROXY_URL" in os.environ:
             config.setdefault("server", {})["jupyter_server_proxy_url"] = os.environ["JUPYTER_SERVER_PROXY_URL"]
 
-        # Security configuration override
-        if "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION" in os.environ:
-            config.setdefault("server", {}).setdefault("security", {})["allow_code_execution"] = os.environ["HOLOVIZ_MCP_ALLOW_CODE_EXECUTION"].lower() in (
-                "true",
-                "1",
-                "yes",
-                "on",
-            )
-
         return config
 
     def get_repos_dir(self) -> Path:
@@ -265,7 +255,10 @@ class ConfigLoader:
 
         # Create default configuration
         template = {
-            "server": {"name": "holoviz-mcp", "log_level": "INFO", "security": {"allow_code_execution": True}},
+            "server": {
+                "name": "holoviz-mcp",
+                "log_level": "INFO",
+            },
             "docs": {
                 "repositories": {
                     "example-repo": {

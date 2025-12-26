@@ -144,26 +144,6 @@ Git clones of documentation repositories:
 
 ## Security Model
 
-### Code Execution
-
-The `panel_serve` tool can execute arbitrary Python code. This is:
-
-- **Configurable**: Can be disabled via configuration
-- **Sandboxed**: Runs in separate processes
-- **Monitored**: Server logs track execution
-
-Disable with:
-```bash
-HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false uvx holoviz-mcp
-```
-
-Or in `config.yaml`:
-```yaml
-server:
-  security:
-    allow_code_execution: false
-```
-
 ### Network Access
 
 - **STDIO mode**: No network exposure (local only)

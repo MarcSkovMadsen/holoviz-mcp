@@ -251,8 +251,6 @@ class TestDockerInstallation:
                     "HOLOVIZ_MCP_TRANSPORT=http",
                     "-e",
                     "HOLOVIZ_MCP_LOG_LEVEL=DEBUG",
-                    "-e",
-                    "HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false",
                     "holoviz-mcp:local",
                 ],
                 capture_output=True,

@@ -55,18 +55,6 @@
           "description": "Jupyter server proxy URL for Panel app integration",
           "default": ""
         },
-        "security": {
-          "type": "object",
-          "description": "Security configuration",
-          "properties": {
-            "allow_code_execution": {
-              "type": "boolean",
-              "description": "Allow LLM to execute arbitrary code. This can be dangerous and should only be enabled in trusted environments.",
-              "default": true
-            }
-          },
-          "additionalProperties": false
-        },
         "vector_db_path": {
           "type": "string",
           "description": "Path to the Chroma vector database",

@@ -75,44 +75,6 @@ Tools for discovering and working with Panel components.
 
 **Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
 
-### panel_serve
-
-**Purpose**: Start a Panel server for a given file (requires code execution to be enabled).
-
-**Parameters**:
-- `file_path` (string): Path to the Panel application file
-- `port` (integer, optional): Port to serve on
-
-**Use Case**: Serve and test Panel applications.
-
-**Returns**: Server URL and process information.
-
-**Example Query**: *"Serve my Panel application at app.py"*
-
-**Security Note**: This tool executes arbitrary code. Can be disabled with `HOLOVIZ_MCP_ALLOW_CODE_EXECUTION=false`.
-
-### panel_get_server_logs
-
-**Purpose**: Get logs for a running Panel application server.
-
-**Parameters**:
-- `process_id` (string): ID of the server process
-
-**Use Case**: Debug running Panel applications.
-
-**Returns**: Server logs and output.
-
-### panel_close_server
-
-**Purpose**: Close a running Panel application server.
-
-**Parameters**:
-- `process_id` (string): ID of the server process
-
-**Use Case**: Stop a running Panel server.
-
-**Returns**: Confirmation of closure.
-
 ## HoloViz Tools
 
 Tools for searching and accessing HoloViz documentation.
@@ -252,14 +214,6 @@ Find relevant information:
 - `holoviz_get_reference_guide`: Find reference docs
 - `holoviz_get_document`: Get specific document
 
-### Execution
-
-Run and manage applications:
-
-- `panel_serve`: Start Panel server
-- `panel_get_server_logs`: View server logs
-- `panel_close_server`: Stop server
-
 ## Tool Usage Patterns
 
 ### Component Discovery Pattern
@@ -289,8 +243,6 @@ Run and manage applications:
 1. User requests: "Create a dashboard"
 2. AI uses: list_components, get_component_parameters
 3. Generates: Code using component information
-4. Optional: serve to test the application
-5. Optional: get_server_logs to debug
 ```
 
 ## Best Practices for Tool Use
@@ -307,19 +259,7 @@ Run and manage applications:
 - Cross-reference documentation when unsure
 - Use specific component paths to avoid ambiguity
 
-### Security
-
-- Be cautious with `serve` tool - it executes code
-- Verify file paths before serving
-- Monitor server logs for issues
-
 ## Tool Limitations
-
-### Code Execution
-
-- `serve` tool requires code execution enabled
-- Limited to local file system
-- Subject to system resource constraints
 
 ### Documentation
 
@@ -338,4 +278,4 @@ Run and manage applications:
 - [Architecture](architecture.md): How tools are implemented
 - [Configuration](../how-to/configuration.md): Configure tool behavior
 - [Security Considerations](security.md): Security implications
-- [Serve Apps](../how-to/serve-apps.md): Serve Panel apps to explore the tools
+- [Serve Apps](../how-to/serve-apps.md): Serve Panel apps locally

@@ -134,15 +134,6 @@ class PromptConfig(BaseModel):
     search_paths: list[Path] = Field(default_factory=list, description="Additional paths to search for prompts")
 
 
-class SecurityConfig(BaseModel):
-    """Security configuration for code execution."""
-
-    allow_code_execution: bool = Field(
-        default=True,
-        description="Allow LLM to execute arbitrary code. " "This can be dangerous and should only be enabled in trusted environments.",
-    )
-
-
 class ServerConfig(BaseModel):
     """Configuration for the MCP server."""
 
@@ -155,7 +146,6 @@ class ServerConfig(BaseModel):
     port: int = Field(default=8000, description="Port to bind to when using HTTP transport")
     anonymized_telemetry: bool = Field(default=False, description="Enable anonymized telemetry")
     jupyter_server_proxy_url: str = Field(default="", description="Jupyter server proxy URL for Panel app integration")
-    security: SecurityConfig = Field(default_factory=SecurityConfig, description="Security configuration")
     vector_db_path: Path = Field(
         default_factory=lambda: (_holoviz_mcp_user_dir() / "vector_db" / "chroma").expanduser(), description="Path to the Chroma vector database."
     )

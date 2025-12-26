@@ -1,4 +1,4 @@
-How‑To: Serve HoloViz MCP Panel apps locally for exploration, learning, and validation.
+# How‑To: Serve HoloViz MCP Panel apps locally for exploration, learning, and validation.
 
 ## Local Usage
 
