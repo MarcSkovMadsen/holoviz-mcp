@@ -135,9 +135,9 @@ docs:
           url_path: ""
       base_url: https://lumen.holoviz.org
       reference_patterns:
-        - "doc/reference/**/*.md"
-        - "doc/reference/**/*.ipynb"
-        - "doc/reference/**/*.rst"
+        - "docs/reference/**/*.md"
+        - "docs/reference/**/*.ipynb"
+        - "docs/reference/**/*.rst"
     holoviz-mcp:
       url: "https://github.com/MarcSkovMadsen/holoviz-mcp.git"
       url_transform: "plotly"
