@@ -230,7 +230,7 @@ def _add_agent_resources():
             name=name + "_agent",
             description=f"{name} Agent",
             mime_type="text/markdown",
-            tags={"holoviz", "agent"},
+            tags=["holoviz", "agent"],
         )
         mcp.add_resource(resource)
 
@@ -248,7 +248,7 @@ def _add_best_practices_resources():
             name=name,
             description=f"Best practices for {name}",
             mime_type="text/markdown",
-            tags={"holoviz", "best-practices"},
+            tags=["holoviz", "best-practices"],
         )
         mcp.add_resource(resource)
 
