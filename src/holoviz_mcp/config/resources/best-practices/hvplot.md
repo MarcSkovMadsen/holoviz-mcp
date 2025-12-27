@@ -463,3 +463,4 @@ DO always start and keep running a development server `panel serve path_to_file.
 - DON'T use legacy `--autoreload` flag
 - DON't run `python path_to_file.py` to test or serve the app.
 - DO use `pn.Column, pn.Tabs, pn.Accordion` to layout multiple plots
+- If you close the server to run other commands DO remember to restart it.

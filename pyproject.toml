@@ -42,6 +42,7 @@ dependencies = [
     "chromadb",
     "fastmcp",
     "GitPython",
+    "hvplot",
     "matplotlib",
     "nbconvert",
     "packaging",
