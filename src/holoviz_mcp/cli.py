@@ -64,12 +64,14 @@ def update_copilot() -> None:
 
     config = get_config()
 
-    source = config.agents_dir()
+    source = config.agents_dir("default")
     target = Path.cwd() / ".github" / "agents"
     target.mkdir(parents=True, exist_ok=True)
     import shutil
 
     for file in source.glob("*.agent.md"):
+        relative_path = (target / file.name).relative_to(Path.cwd())
+        typer.echo(f"Updated: {relative_path}")
         shutil.copy(file, target / file.name)
 
 

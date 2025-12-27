@@ -1,6 +1,6 @@
 ---
 name: HoloViz Planner
-description: Creates detailed implementation plans for HoloViz data visualizations, dashboards, and data apps without modifying code
+description: Create a detailed implementation plans for HoloViz data visualizations, dashboards, and data apps without modifying code
 tools: ['holoviz/*', 'read/readFile', 'read/problems', 'agent/runSubagent', 'web/fetch', 'web/githubRepo', 'search/codebase', 'search/usages', 'search/searchResults', 'vscode/vscodeAPI']
 handoffs:
   - label: Implement Plan
@@ -30,7 +30,7 @@ The plan consists of a Markdown document that describes the implementation plan,
 
 Please always
 
-- Keep the plan short, concise, and professional.
+- Keep the plan short, concise, and professional. Don't write extensive code examples.
 - Ensure that the plan includes considerations for design, user experience, testability, maintainability and scalability.
 - prefer panel-material-ui components over panel components.
 
