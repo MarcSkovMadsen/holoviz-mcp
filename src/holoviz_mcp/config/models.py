@@ -184,20 +184,17 @@ class HoloVizMCPConfig(BaseModel):
             location: Whether to get user or default resources directory
         """
         if location == "user":
-            return self.user_dir / "config" / "resources"
+            return self.user_dir / "resources"
         else:
             return self.default_dir / "resources"
 
-    def prompts_dir(self, location: Literal["user", "default"] = "user") -> Path:
-        """Get the path to the prompts directory.
+    def agents_dir(self, location: Literal["user", "default"] = "user") -> Path:
+        """Get the path to the agents directory.
 
         Args:
-            location: Whether to get user or default prompts directory
+            location: Whether to get user or default agents directory
         """
-        if location == "user":
-            return self.user_dir / "config" / "prompts"
-        else:
-            return self.default_dir / "prompts"
+        return self.resources_dir(location) / "agents"
 
     def best_practices_dir(self, location: Literal["user", "default"] = "user") -> Path:
         """Get the path to the best practices directory.

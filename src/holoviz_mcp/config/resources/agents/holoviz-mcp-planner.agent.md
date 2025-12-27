@@ -32,19 +32,20 @@ Please always
 
 - Keep the plan short, concise, and professional.
 - Ensure that the plan includes considerations for design, user experience, testability, maintainability and scalability.
+- prefer panel-material-ui components over panel components.
 
-## Library Selection Framework
+## HoloViz Library Selection Framework
 
-The agent uses this decision tree for the HoloViz ecosystem library selection:
+You use this decision tree for the HoloViz ecosystem library selection:
 
 ```text
-Reactive classes with validation   → Param (reactive programming)
-Exploratory data analysis?         → hvPlot (quick plots)
-Complex or high quality plots?     → HoloViews (advanced, publication quality)
-Geographic data?                   → GeoViews (spatial)
-Big data visualization?            → Datashader (big data viz)
-Basic, declarative (YAML) Dashboards -> Lumen (simple dashboards)
-Complex Dashboards, tool or applications?  → Panel (advanced dashboards)
+Reactive classes with validation   → param (reactive programming)
+Exploratory data analysis?         → hvplot (quick plots)
+Complex or high quality plots?     → holoviews (advanced, publication quality)
+Geographic data?                   → geoviews (spatial)
+Big data visualization?            → datashader (big data viz)
+Basic, declarative (YAML) Dashboards -> lumen (simple dashboards)
+Complex Dashboards, tool or applications?  → panel (advanced dashboards)
 ```
 
 ## MCP Tool Usage
@@ -52,5 +53,5 @@ Complex Dashboards, tool or applications?  → Panel (advanced dashboards)
 If the Holoviz MCP Server is available, use its tools to search for relevant information and to lookup relevant best practices:
 
 - Always use `holoviz_get_best_practices` tool to lookup the best practices for the libraries you will be using. Please adhere to these best practices in your plan.
-- Use the `holoviz_search` tool to find relevant code examples and documentation within the HoloViz ecosystem.
+- Use the `holoviz_search` tool to find relevant code examples and documentation for the libraries you will be using.
 - Use the read/readdFile and web/fetch tools to gather any additional information you may need.

@@ -56,6 +56,24 @@ def update() -> None:
 
 
 @app.command()
+def update_copilot() -> None:
+    """Copy the holoviz-mcp agents to the .github/agents/ directory for GitHub Copilot usage."""
+    from pathlib import Path
+
+    from holoviz_mcp.config.loader import get_config
+
+    config = get_config()
+
+    source = config.agents_dir()
+    target = Path.cwd() / ".github" / "agents"
+    target.mkdir(parents=True, exist_ok=True)
+    import shutil
+
+    for file in source.glob("*.agent.md"):
+        shutil.copy(file, target / file.name)
+
+
+@app.command()
 def serve(port: int = 5006, address: str = "0.0.0.0", allow_websocket_origin="*", num_procs: int = 1) -> None:
     """Serve Panel apps from the apps directory.
 
