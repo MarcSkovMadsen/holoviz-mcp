@@ -1,6 +1,6 @@
 ---
 name: HoloViz Planner
-description: Create a detailed implementation plans for HoloViz data visualizations, dashboards, and data apps without modifying code
+description: Create a detailed implementation plan for HoloViz data visualizations, dashboards, and data apps without modifying code
 tools: ['holoviz/*', 'read/readFile', 'read/problems', 'agent/runSubagent', 'web/fetch', 'web/githubRepo', 'search/codebase', 'search/usages', 'search/searchResults', 'vscode/vscodeAPI']
 handoffs:
   - label: Implement Plan
