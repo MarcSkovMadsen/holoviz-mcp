@@ -40,8 +40,9 @@ classifiers = [
 dependencies = [
     "certifi",
     "chromadb",
-    "fastmcp",
+    "fastmcp<3",
     "GitPython",
+    "hvplot",
     "matplotlib",
     "nbconvert",
     "packaging",

@@ -6,9 +6,11 @@ Use this server to search and access documentation for HoloViz libraries, includ
 """
 
 import logging
+from pathlib import Path
 
 from fastmcp import Context
 from fastmcp import FastMCP
+from fastmcp.resources import FileResource
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
@@ -214,6 +216,45 @@ async def update_index(ctx: Context) -> str:
         error_msg = f"Failed to update documentation index: {str(e)}"
         return error_msg
 
+
+def _add_agent_resources():
+    """Add agent resources from the config/resources/agents directory."""
+    config = get_config()
+    files = config.agents_dir("default").rglob("*.agent.md")
+    for file_path in files:
+        path = Path(file_path)
+        name = path.name.replace(".agent.md", "").replace("-", "_")  # filename without suffix
+        resource = FileResource(
+            uri=f"resources://agents/{path.name}",
+            path=path.absolute(),  # Path to the actual file
+            name=name + "_agent",
+            description=f"{name} Agent",
+            mime_type="text/markdown",
+            tags=["holoviz", "agent"],
+        )
+        mcp.add_resource(resource)
+
+
+def _add_best_practices_resources():
+    """Add best practices resources from the config/resources/best-practices directory."""
+    config = get_config()
+    files = config.best_practices_dir("default").rglob("*.md")
+    for file_path in files:
+        path = Path(file_path)
+        name = path.stem.replace("-", "_")  # filename without suffix
+        resource = FileResource(
+            uri=f"resources://best-practices/{path.name}",
+            path=path.absolute(),  # Path to the actual file
+            name=name,
+            description=f"Best practices for {name}",
+            mime_type="text/markdown",
+            tags=["holoviz", "best-practices"],
+        )
+        mcp.add_resource(resource)
+
+
+_add_agent_resources()
+_add_best_practices_resources()
 
 if __name__ == "__main__":
     config = get_config()

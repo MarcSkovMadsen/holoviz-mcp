@@ -429,7 +429,7 @@ DO add tests to the `tests` folder and run them with `pytest tests/path/to/test_
 - DO fix any test errors and rerun the tests
 - DO run the tests and fix errors before serving the app and asking the user to run manual tests
 
-### Serve the App with panel serve
+### Test the app manually with panel serve
 
 DO always start and keep running a development server `panel serve path_to_file.py --dev --show` with hot reload while developing!
 
@@ -443,6 +443,7 @@ DO always start and keep running a development server `panel serve path_to_file.
 - DO remind the user to test the application on multiple screen sizes (desktop, tablet, mobile)
 - DON'T use legacy `--autoreload` flag
 - DON't run `python path_to_file.py` to test or serve the app.
+- If you close the server to run other commands DO remember to restart it.
 
 ## Quick Reference
 

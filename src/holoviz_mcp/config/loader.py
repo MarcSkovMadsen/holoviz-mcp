@@ -230,10 +230,10 @@ class ConfigLoader:
         config = self.load_config()
         return config.resources_dir()
 
-    def get_prompts_dir(self) -> Path:
-        """Get the prompts directory."""
+    def get_agents_dir(self) -> Path:
+        """Get the agents directory."""
         config = self.load_config()
-        return config.prompts_dir()
+        return config.agents_dir()
 
     def get_best_practices_dir(self) -> Path:
         """Get the best practices directory."""
