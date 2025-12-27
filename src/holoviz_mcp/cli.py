@@ -3,6 +3,8 @@
 This module provides a unified CLI using Typer for all HoloViz MCP commands.
 """
 
+import shutil
+
 import typer
 from typing_extensions import Annotated
 
@@ -67,7 +69,6 @@ def update_copilot() -> None:
     source = config.agents_dir("default")
     target = Path.cwd() / ".github" / "agents"
     target.mkdir(parents=True, exist_ok=True)
-    import shutil
 
     for file in source.glob("*.agent.md"):
         relative_path = (target / file.name).relative_to(Path.cwd())
