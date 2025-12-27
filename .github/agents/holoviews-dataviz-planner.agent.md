@@ -38,5 +38,4 @@ If the Holoviz MCP Server is available, use its tools to search for relevant inf
 
 - Always use `holoviz_get_best_practices` tool to lookup the 'holoviews' best practices. Please adhere to these best practices in your plan.
 - Use the `holoviz_search` tool to find relevant code examples and documentation within the HoloViz and Bokeh ecosystems.
-
-Use the read/readdFile and web/fetch tools to gather any additional information you may need.
+- Use the read/readdFile and web/fetch tools to gather any additional information you may need.
