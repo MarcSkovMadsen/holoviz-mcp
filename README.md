@@ -49,7 +49,13 @@ uv tool install holoviz-mcp[panel-extensions]
 Create the documentation index (takes up to 10 minutes on first run):
 
 ```bash
-uvx holoviz-mcp update
+uvx holoviz-mcp update index
+```
+
+If you are using Github Copilot run
+
+```bash
+uvx holoviz-mcp update copilot
 ```
 
 ### Configure Your IDE
@@ -92,7 +98,7 @@ uvx holoviz-mcp update
 }
 ```
 
-Restart your IDE and start asking about Panel components!
+Restart your IDE and start asking about HoloViz documentation and Panel components!
 
 ### Using Docker
 

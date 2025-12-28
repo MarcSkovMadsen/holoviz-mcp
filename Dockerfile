@@ -80,7 +80,7 @@ set -e\n\
 # Update documentation index if requested\n\
 if [ "$UPDATE_DOCS" = "true" ]; then\n\
     echo "Updating documentation index..."\n\
-    pixi run -e default holoviz-mcp-update\n\
+    pixi run -e default holoviz-mcp update index\n\
 fi\n\
 \n\
 # Start the MCP server\n\

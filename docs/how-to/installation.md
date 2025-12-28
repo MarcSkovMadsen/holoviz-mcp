@@ -35,7 +35,7 @@ This installs HoloViz MCP with Panel extensions like Material UI, Graphic Walker
 After installation, create the documentation index:
 
 ```bash
-uvx holoviz-mcp update
+uvx holoviz-mcp update index
 ```
 
 **Note**: This process takes 5-10 minutes on first run.
@@ -61,7 +61,7 @@ pip install holoviz-mcp[panel-extensions]
 Then create the documentation index:
 
 ```bash
-holoviz-mcp update
+holoviz-mcp update index
 ```
 
 ## Install with conda/mamba
@@ -81,7 +81,7 @@ mamba install -c conda-forge holoviz-mcp
 Then create the documentation index:
 
 ```bash
-holoviz-mcp update
+holoviz-mcp update index
 ```
 
 ## Install from Source
@@ -139,7 +139,7 @@ uv tool update holoviz-mcp[panel-extensions]
 After updating the package, refresh the documentation:
 
 ```bash
-holoviz-mcp update
+holoviz-mcp update index
 ```
 
 ### Convenience Aliases

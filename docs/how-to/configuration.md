@@ -126,7 +126,7 @@ docs:
 After adding repositories, update the index:
 
 ```bash
-uvx holoviz-mcp update
+uvx holoviz-mcp update index
 ```
 
 ## IDE-Specific Configuration

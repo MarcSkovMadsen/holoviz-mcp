@@ -14,6 +14,13 @@ app = typer.Typer(
     no_args_is_help=False,  # Allow running without args to start the server
 )
 
+# Create a subgroup for update commands
+update_app = typer.Typer(
+    name="update",
+    help="Update HoloViz MCP resources.",
+)
+app.add_typer(update_app)
+
 
 @app.callback(invoke_without_command=True)
 def main(
@@ -45,8 +52,8 @@ def main(
         server_main()
 
 
-@app.command()
-def update() -> None:
+@update_app.command(name="index")
+def update_index() -> None:
     """Update the documentation index.
 
     This command clones/updates HoloViz repositories and builds the vector database
@@ -57,16 +64,16 @@ def update() -> None:
     update_main()
 
 
-@app.command()
+@update_app.command(name="copilot")
 def update_copilot(agents: bool = True, skills: bool = False) -> None:
-    """Copy HoloViz MCP agents to .github/agents/ for GitHub Copilot.
+    """Copy HoloViz MCP resources to .github/ folders.
 
     Parameters
     ----------
     agents : bool, default=True
-        Copy agent files (currently always copies)
+        Copy agent files
     skills : bool, default=False
-        Copy skills/best-practices (not yet implemented)
+        Copy skills/best-practices
     """
     from pathlib import Path
 

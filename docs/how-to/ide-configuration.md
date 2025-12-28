@@ -214,7 +214,7 @@ python --version  # Should be 3.11 or higher
 
 2. **Recreate the index**:
    ```bash
-   uvx holoviz-mcp update
+   uvx holoviz-mcp update index
    ```
 
 3. **Restart your IDE**
