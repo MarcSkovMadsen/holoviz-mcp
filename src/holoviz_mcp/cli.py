@@ -58,22 +58,41 @@ def update() -> None:
 
 
 @app.command()
-def update_copilot() -> None:
-    """Copy the holoviz-mcp agents to the .github/agents/ directory for GitHub Copilot usage."""
+def update_copilot(agents: bool = True, skills: bool = False) -> None:
+    """Copy HoloViz MCP agents to .github/agents/ for GitHub Copilot.
+
+    Parameters
+    ----------
+    agents : bool, default=True
+        Copy agent files (currently always copies)
+    skills : bool, default=False
+        Copy skills/best-practices (not yet implemented)
+    """
     from pathlib import Path
 
     from holoviz_mcp.config.loader import get_config
 
     config = get_config()
 
-    source = config.agents_dir("default")
-    target = Path.cwd() / ".github" / "agents"
-    target.mkdir(parents=True, exist_ok=True)
+    if agents:
+        source = config.agents_dir("default")
+        target = Path.cwd() / ".github" / "agents"
+        target.mkdir(parents=True, exist_ok=True)
 
-    for file in source.glob("*.agent.md"):
-        relative_path = (target / file.name).relative_to(Path.cwd())
-        typer.echo(f"Updated: {relative_path}")
-        shutil.copy(file, target / file.name)
+        for file in source.glob("*.agent.md"):
+            relative_path = (target / file.name).relative_to(Path.cwd())
+            typer.echo(f"Updated: {relative_path}")
+            shutil.copy(file, target / file.name)
+
+    if skills:
+        source = config.best_practices_dir("default")
+        target = Path.cwd() / ".github" / "skills"
+        target.mkdir(parents=True, exist_ok=True)
+
+        for file in source.glob("*.md"):
+            relative_path = (target / file.name).relative_to(Path.cwd())
+            typer.echo(f"Updated: {relative_path}")
+            shutil.copy(file, target / file.name)
 
 
 @app.command()

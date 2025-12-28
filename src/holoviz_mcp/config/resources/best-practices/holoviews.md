@@ -1,6 +1,6 @@
 ---
 name: holoviews-development
-description: HoloViews provides a powerful set of features for interactive, complex and publication-quality visualizations.
+description: A collection of skills for developing interactive, complex and publication-quality data visualizations using HoloViz HoloViews
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -9,7 +9,7 @@ metadata:
 ---
 
 
-# hvPlot Development Skill
+# HoloViews Development Skills
 
 This document provides best practices for developing plots and charts with HoloViz HoloViews in notebooks and .py files.
 
@@ -32,15 +32,6 @@ Optional dependencies from the HoloViz Ecosystem:
 - **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
 - **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
 - **hvsampledata**: Shared datasets for the HoloViz projects.
-
-Optional dependencies from the wider PyData Ecosystem:
-
-- **dask**: Parallel computing library for scaling Pandas DataFrames beyond memory. Best for: processing datasets larger than RAM, parallel computation across multiple cores/machines, lazy evaluation workflows.
-- **duckdb**: High-performance analytical SQL database. Best for: fast SQL queries on DataFrames, aggregations on large datasets, when you need SQL interface, OLAP-style analytics. Much faster than Pandas for analytical queries.
-- **matplotlib**: Low-level, highly customizable plotting library. Best for: publication-quality static plots, fine-grained control over every aspect of visualization, scientific plots, when you need pixel-perfect control.
-- **Plotly**: Interactive, publication-quality visualization library. Best for: 3D plots, complex interactive charts, animations, when you need hover tooltips and interactivity. Works well with Dash and Panel.
-- **polars**: Modern, fast DataFrame library written in Rust. Best for: high-performance data processing, datasets that fit in memory but need speed, when you need lazy evaluation, better memory efficiency than Pandas.
-- **xarray**: N-dimensional labeled arrays and datasets. Best for: multidimensional scientific data (climate, satellite imagery), data with multiple dimensions and coordinates, NetCDF/HDF5 files, geospatial raster data.
 
 ## Installation for Development
 
@@ -406,7 +397,7 @@ DO add tests to the `tests` folder and run them with `pytest tests/path/to/test_
 - DO fix any test errors and rerun the tests
 - DO run the tests and fix errors before displaying or serving the plots
 
-### Serve the plot with panel serve
+### Test the app manually with panel serve
 
 DO always start and keep running a development server `panel serve path_to_file.py --dev --show` with hot reload while developing!
 

@@ -1,6 +1,6 @@
 ---
 name: panel-material-ui-development
-description: Develop modern Panel tools, dashboards and data apps with Material UI components.
+description: A collection of skills and best practices developing modern looking tools, dashboards and data apps using HoloViz Panel and Panel Material UI components.
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -15,6 +15,14 @@ This guide provides best practices for using Panel Material UI. Optimized for LL
 Please develop code, tests and documentation as an **expert Panel analytics app developer** would do when working with a **short time to market**.
 
 **For general Panel best practices, see the Panel best practices guide. This guide focuses on Panel Material UI-specific patterns. This guide takes precedence over the Panel Best Practices guide.**
+
+## Installation
+
+```bash
+pip install panel-material-ui panel watchfiles hvplot hvsampledata
+```
+
+For development in .py files DO always include watchfiles for hotreload.
 
 ## Best Practice Hello World App
 
