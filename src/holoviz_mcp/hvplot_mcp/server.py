@@ -6,7 +6,6 @@ plots in Python using best practices.
 Use this server to:
 - List available hvPlot plot types (e.g., 'line', 'scatter', 'bar', ...)
 - Get docstrings and function signatures for hvPlot plot types
-- Access hvPlot documentation and best practices
 """
 
 from typing import Literal
@@ -26,8 +25,7 @@ mcp = FastMCP(
     in Python using best practices. Use this server to:
 
     - List available hvPlot plot types
-    - Get docstrings and function signatures for hvPlot plot types
-    - Access hvPlot documentation and best practices""",
+    - Get docstrings and function signatures for hvPlot plot types""",
 )
 
 

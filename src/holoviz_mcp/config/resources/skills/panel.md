@@ -1,6 +1,6 @@
 ---
 name: panel-development
-description: A collection of skills for developing tools, dashboards and interactive data apps with HoloViz Panel. Create reactive, component-based UIs with widgets, layouts, templates, and real-time updates. Use when developing interactive data exploration tools, dashboards, data apps, or any interactive Python web application. Supports file uploads, streaming data, multi-page apps, and integration with HoloViews, hvPlot, Pandas, Polars, DuckDB and the rest of the HoloViz and PyData ecosystems.
+description: Best practices for developing tools, dashboards and interactive data apps with HoloViz Panel. Create reactive, component-based UIs with widgets, layouts, templates, and real-time updates. Use when developing interactive data exploration tools, dashboards, data apps, or any interactive Python web application. Supports file uploads, streaming data, multi-page apps, and integration with HoloViews, hvPlot, Pandas, Polars, DuckDB and the rest of the HoloViz and PyData ecosystems.
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -32,7 +32,7 @@ Optional dependencies from the HoloViz Ecosystem:
 - **datashader**: Renders large datasets (millions+ points) into images for visualization. Best for: big data visualization, geospatial datasets, scatter plots with millions of points, heatmaps of dense data. Requires hvPlot or HoloViews as frontend.
 - **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
 - **holoviews**: Declarative data visualization library with composable elements. Best for: complex multi-layered plots, advanced interactivity (linked brushing, selection), when you need fine control over plot composition, scientific visualizations. More powerful but steeper learning curve than hvPlot.
-- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
+- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and agent skills.
 - **hvplot**: High-level plotting API with Pandas `.plot()`-like syntax. Best for: quick exploratory visualizations, interactive plots from DataFrames/Xarray, when you want interactivity without verbose code. Built on HoloViews.
 - **hvsampledata**: Shared datasets for the HoloViz projects.
 

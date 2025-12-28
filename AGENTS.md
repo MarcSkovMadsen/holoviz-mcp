@@ -122,8 +122,8 @@ src/holoviz_mcp/
 
 The main server (`server.py`) uses **static composition** to combine three sub-servers:
 
-1. **holoviz_mcp**: Semantic search over HoloViz documentation (ChromaDB + sentence-transformers)
-2. **panel_mcp**: Component introspection, Panel server management, best practices
+1. **holoviz_mcp**: Semantic search over HoloViz documentation (ChromaDB + sentence-transformers), Agent skills
+2. **panel_mcp**: Component introspection
 3. **hvplot_mcp**: hvPlot plot types, signatures, and documentation
 
 Each sub-server is a standalone FastMCP instance that gets imported with a prefix:
@@ -637,18 +637,6 @@ docs: update docker installation guide
 test: add tests for hvplot signature parsing
 chore: update dependencies
 ```
-
----
-
-## Project Roadmap
-
-Current priorities (see README.md for full list):
-
-- [ ] Enhanced Panel/Panel Material UI best practices
-- [ ] Playwright MCP integration for browser testing
-- [ ] Additional HoloViz package reference guides (hvPlot, Param, HoloViews)
-- [ ] Base index on released versions instead of HEAD
-- [ ] Development tools for HoloViz contributors
 
 ---
 

@@ -73,7 +73,7 @@ def update_copilot(agents: bool = True, skills: bool = False) -> None:
     agents : bool, default=True
         Copy agent files
     skills : bool, default=False
-        Copy skills/best-practices
+        Copy skills
     """
     from pathlib import Path
 
@@ -92,7 +92,7 @@ def update_copilot(agents: bool = True, skills: bool = False) -> None:
             shutil.copy(file, target / file.name)
 
     if skills:
-        source = config.best_practices_dir("default")
+        source = config.skills_dir("default")
         target = Path.cwd() / ".github" / "skills"
         target.mkdir(parents=True, exist_ok=True)
 

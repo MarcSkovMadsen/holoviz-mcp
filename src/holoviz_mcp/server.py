@@ -26,24 +26,21 @@ logger = logging.getLogger(__name__)
 mcp: FastMCP = FastMCP(
     name="holoviz",
     instructions="""
-    [his MCP server provides comprehensive tools, resources and prompts for working with the HoloViz ecosystem following best practices.
+    This MCP server provides comprehensive tools, resources and prompts for exploring data, creating data visualizations,
+    data tools, dashboards and data apps using the HoloViz ecosystem.
+
+    Use this MCP server to get help, resources, and prompts for working with the HoloViz ecosystem effectively.
 
     HoloViz provides a set of core Python packages that make visualization easier, more accurate, and more powerful:
 
-    - [Panel](https://panel.holoviz.org): for making apps and dashboards for your plots from any supported plotting library.
-    - [hvPlot](https://hvplot.holoviz.org): to quickly generate interactive plots from your data.
-    - [HoloViews](https://holoviews.org): to help you make all of your data instantly visualizable.
-    - [GeoViews](https://geoviews.org): to extend HoloViews for geographic data.
-    - [Datashader](https://datashader.org): for rendering even the largest datasets.
-    - [Lumen](https://lumen.holoviz.org): to build data-driven dashboards from a simple YAML specification that's well suited to modern AI tools like LLMs.
-    - [Param](https://param.holoviz.org): to create declarative user-configurable objects.
     - [Colorcet](https://colorcet.holoviz.org): for perceptually uniform colormaps.
-
-    The server is composed of multiple sub-servers that provide various functionalities:
-
-    - Documentation: Search and access HoloViz documentation and reference guides
-    - Panel: Tools, resources and prompts for using Panel and Panel Extension packages
-    - hvPlot: Tools, resources and prompts for using hvPlot to develop quick, interactive plots in Python
+    - [Datashader](https://datashader.org): for rendering even the largest datasets.
+    - [GeoViews](https://geoviews.org): to extend HoloViews for geographic data.
+    - [HoloViews](https://holoviews.org): to createadvanced, interactive and high quality data visualizations.
+    - [hvPlot](https://hvplot.holoviz.org): to quickly generate interactive plots from your data.
+    - [Lumen](https://lumen.holoviz.org): to build data-driven dashboards from a simple YAML specification that's well suited to modern AI tools like LLMs.
+    - [Panel](https://panel.holoviz.org): for making data tools, dashboards and data apps using the Holoviz and wider PyData ecosystems.
+    - [Param](https://param.holoviz.org): to create declarative user-configurable objects.
     """,
 )
 

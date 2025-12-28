@@ -123,7 +123,7 @@ class DocsConfig(BaseModel):
 
 
 class ResourceConfig(BaseModel):
-    """Configuration for resources (best practices, etc.)."""
+    """Configuration for resources (agents, skills, etc.)."""
 
     search_paths: list[Path] = Field(default_factory=list, description="Additional paths to search for resources")
 
@@ -196,10 +196,10 @@ class HoloVizMCPConfig(BaseModel):
         """
         return self.resources_dir(location) / "agents"
 
-    def best_practices_dir(self, location: Literal["user", "default"] = "user") -> Path:
-        """Get the path to the best practices directory.
+    def skills_dir(self, location: Literal["user", "default"] = "user") -> Path:
+        """Get the path to the skills directory.
 
         Args:
-            location: Whether to get user or default best practices directory
+            location: Whether to get user or default skills directory
         """
-        return self.resources_dir(location) / "best-practices"
+        return self.resources_dir(location) / "skills"

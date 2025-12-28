@@ -1,6 +1,6 @@
 ---
 name: panel-material-ui-development
-description: A collection of skills and best practices developing modern looking tools, dashboards and data apps using HoloViz Panel and Panel Material UI components.
+description: Best practices for developing modern looking tools, dashboards and data apps using HoloViz Panel and Panel Material UI components.
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -14,7 +14,9 @@ This guide provides best practices for using Panel Material UI. Optimized for LL
 
 Please develop code, tests and documentation as an **expert Panel analytics app developer** would do when working with a **short time to market**.
 
-**For general Panel best practices, see the Panel best practices guide. This guide focuses on Panel Material UI-specific patterns. This guide takes precedence over the Panel Best Practices guide.**
+**If not already loaded please get the 'panel' skill**.
+
+**This guide focuses on panel-material-ui specific patterns. This guide takes precedence over the panel skills.**
 
 ## Installation
 
@@ -333,4 +335,4 @@ if pn.state.served:
     HelloWorld().servable()
 ```
 
-**For all other Panel patterns (parameter-driven architecture, reactive updates, serving, etc.), see the Panel Best Practices Guide.**
+**For all other Panel patterns (parameter-driven architecture, reactive updates, serving, etc.), refer tot the 'panel' skill.**

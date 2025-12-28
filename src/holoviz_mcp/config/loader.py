@@ -235,10 +235,10 @@ class ConfigLoader:
         config = self.load_config()
         return config.agents_dir()
 
-    def get_best_practices_dir(self) -> Path:
-        """Get the best practices directory."""
+    def get_skills_dir(self) -> Path:
+        """Get the skills directory."""
         config = self.load_config()
-        return config.best_practices_dir()
+        return config.skills_dir()
 
     def create_default_user_config(self) -> None:
         """Create a default user configuration file."""
