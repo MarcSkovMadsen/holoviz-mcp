@@ -1,6 +1,6 @@
 ---
 name: hvplot-development
-description: hvPlot provides an intuitive, pandas-like API for rapid, interactive visualization and publication-quality plots with minimal code.
+description: A collection of skills for doing quick exploratory data analysis with minimal code and a Pandas .plot like API using HoloViews hvPlot.
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -9,7 +9,7 @@ metadata:
 ---
 
 
-# hvPlot Development Skill
+# hvPlot Development Skills
 
 This document provides best practices for developing plots and charts with HoloViz hvPlot in notebooks and .py files.
 
@@ -32,15 +32,6 @@ Optional dependencies from the HoloViz Ecosystem:
 - **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
 - **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
 - **hvsampledata**: Shared datasets for the HoloViz projects.
-
-Optional dependencies from the wider PyData Ecosystem:
-
-- **dask**: Parallel computing library for scaling Pandas DataFrames beyond memory. Best for: processing datasets larger than RAM, parallel computation across multiple cores/machines, lazy evaluation workflows.
-- **duckdb**: High-performance analytical SQL database. Best for: fast SQL queries on DataFrames, aggregations on large datasets, when you need SQL interface, OLAP-style analytics. Much faster than Pandas for analytical queries.
-- **matplotlib**: Low-level, highly customizable plotting library. Best for: publication-quality static plots, fine-grained control over every aspect of visualization, scientific plots, when you need pixel-perfect control.
-- **Plotly**: Interactive, publication-quality visualization library. Best for: 3D plots, complex interactive charts, animations, when you need hover tooltips and interactivity. Works well with Dash and Panel.
-- **polars**: Modern, fast DataFrame library written in Rust. Best for: high-performance data processing, datasets that fit in memory but need speed, when you need lazy evaluation, better memory efficiency than Pandas.
-- **xarray**: N-dimensional labeled arrays and datasets. Best for: multidimensional scientific data (climate, satellite imagery), data with multiple dimensions and coordinates, NetCDF/HDF5 files, geospatial raster data.
 
 ## Installation for Development
 
@@ -133,226 +124,13 @@ if pn.state.served:
 # DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
 ```
 
-If working in a .py file DO serve the plot with hotreload:
+If working in a .py file DO always serve the plot with hotreload for manual testing while developing:
 
 ```bash
 panel serve path/to/file.py --dev --show
 ```
 
 DONT serve with `python path_to_this_file.py`.
-
-## Reference Publication Quality Bar Chart
-
-```python
-# ============================================================================
-# Publication-Quality Bar Chart - hvPlot Best Practices Example
-# ============================================================================
-# Demonstrates:
-# - Data extraction, transformation, and visualization separation
-# - Custom Bokeh themes for consistent styling
-# - Interactive tooltips with formatted data
-# - Text annotations on bars
-# - Professional fonts, grids, and axis formatting
-# - Panel integration for web serving
-# ============================================================================
-
-import hvplot.pandas  # noqa: F401
-import panel as pn
-import hvsampledata
-from bokeh.models.formatters import NumeralTickFormatter
-from bokeh.themes import Theme
-import holoviews as hv
-from holoviews.plotting.bokeh import ElementPlot
-
-ACCENT_COLOR = '#007ACC'  # Professional blue
-
-# ============================================================================
-# BOKEH THEME SETUP - Define global styling
-# ============================================================================
-
-def create_bokeh_theme(font_family='Roboto', accent_color=ACCENT_COLOR):
-    """Create custom theme with specified font. Default: Roboto"""
-    return Theme(json={
-        'attrs': {
-            'Title': {
-                'text_font': font_family,
-                'text_font_size': '16pt',
-                'text_font_style': 'bold'
-            },
-            'Axis': {
-                'axis_label_text_font': font_family,
-                'axis_label_text_font_size': '12pt',
-                'axis_label_text_font_style': 'bold',
-                'major_label_text_font': font_family,
-                'major_label_text_font_size': '10pt',
-                'major_tick_line_color': "black",  # Remove tick marks
-                'minor_tick_line_color': None
-            },
-            'Plot': {
-                'background_fill_color': '#fafafa',
-                'border_fill_color': '#fafafa'
-            },
-            'Legend': {
-                'label_text_font': font_family,
-                'label_text_font_size': '10pt'
-            },
-            'Toolbar': {
-                # "autohide": True,
-                "logo": None,
-                "stylesheets": [
-                    f"""
-                    .bk-OnOffButton.bk-active{{
-                        border-color: {accent_color} !important;
-                    }}
-                    """
-                ]
-            },
-            # Does not work via Theme, so added here for reference purposes
-            'Tooltip': {
-                "stylesheets": ["""
-                    .bk-tooltip-row-label {
-                        color: pink !important;
-                    }"""]
-
-            }
-        }
-    })
-
-# Apply theme globally - affects all plots
-hv.renderer('bokeh').theme = create_bokeh_theme()
-
-# ============================================================================
-# HOLOVIEWS OPTS SETUP - Define global configuration
-# ============================================================================
-
-GLOBAL_BACKEND_OPTS={
-    'plot.xgrid.visible': False,           # Only horizontal grid lines
-    'plot.ygrid.visible': True,
-    'plot.ygrid.grid_line_color': "black",
-    'plot.ygrid.grid_line_alpha': 0.1,
-    'plot.min_border_left': 80,            # Add padding on left (for y-axis label)
-    'plot.min_border_bottom': 80,          # Add padding on bottom (for x-axis label)
-    'plot.min_border_right': 30,           # Add padding on right
-    'plot.min_border_top': 80,             # Add padding on top
-}
-
-ElementPlot.param.backend_opts.default = GLOBAL_BACKEND_OPTS
-ElementPlot.param.yformatter.default = NumeralTickFormatter(format='0a')  # 1k,
-
-hv.opts.defaults(
-    hv.opts.Bars(
-        color=ACCENT_COLOR,           # Professional blue
-        line_color=None,            # Remove bar borders
-    )
-)
-hv.Cycle.default_cycles["default_colors"] = [ACCENT_COLOR, '#00948A', '#7E59BD', '#FFA20C', '#DA4341', '#D6F1FF', '#DAF5F4', '#F0E8FF', '#FFF8EA', '#FFF1EA', '#001142', '#003336', '#290031', '#371F00', '#3A0C13']
-
-# ============================================================================
-# DATA PIPELINE - Separate extraction, transformation, and plotting
-# ============================================================================
-
-def get_earthquake_data():
-    """Extract raw earthquake data from sample dataset"""
-    return hvsampledata.earthquakes("pandas")
-
-
-def aggregate_by_magnitude(earthquake_data):
-    """Transform: Group earthquakes by magnitude class with statistics"""
-
-    # Aggregate: count events and calculate average depth per magnitude class
-    aggregated = (
-        earthquake_data
-        .groupby('mag_class', observed=True)
-        .agg({'mag': 'count', 'depth': 'mean'})
-        .reset_index()
-        .rename(columns={'mag': 'event_count', 'depth': 'avg_depth'})
-        .sort_values('event_count', ascending=False)
-    )
-
-    # Add percentage column for tooltips
-    aggregated['percentage'] = (
-        aggregated['event_count'] / aggregated['event_count'].sum() * 100
-    )
-
-    return aggregated
-
-
-def create_bar_chart(aggregated_data):
-    """Create publication-quality bar chart with labels and tooltips"""
-
-    default_tools=['save']
-
-    # Main bar chart with professional styling
-    bar_chart = aggregated_data.hvplot.bar(
-        x='mag_class',
-        y='event_count',
-
-        # Titles and labels
-        title='Earthquake Distribution by Magnitude',
-        xlabel='Magnitude',
-        ylabel='Number of Events',
-
-        # Interactivity
-        hover_cols = ["mag_class", "event_count", "percentage", "avg_depth"],
-        hover_tooltips=[
-            ('Magnitude', '@mag_class'),
-            ('Events', '@event_count{0,0}'),      # Format: 1,234
-            ('Percentage', '@percentage{0 a}%'), # Format: 45.7%
-            ('Avg Depth', '@avg_depth{0f} km')  # Format: 99 km
-        ],
-    ).opts(default_tools=default_tools)
-
-    # Add text labels above bars
-    labels_data = aggregated_data.copy()
-    labels_data['label_y'] = labels_data['event_count'] + 20  # Offset above bars
-
-    text_labels = labels_data.hvplot.labels(
-        x='mag_class',
-        y='label_y',
-        text='event_count',
-        text_baseline='bottom',
-        text_font_size='11pt',
-        text_font_style='bold',
-        text_color='#333333',
-        hover_cols = ["mag_class", "event_count"],
-        hover_tooltips=[
-            ('Magnitude', '@mag_class'),
-            ('Events', '@event_count{0,0}'),      # Format: 1,234
-        ],
-    ).opts(default_tools=default_tools)
-
-    # Overlay: bar chart * text labels
-    return bar_chart * text_labels
-
-
-def create_plot():
-    """Main function: Extract → Transform → Plot"""
-    # Extract: Get raw data
-    earthquake_data = get_earthquake_data()
-
-    # Transform: Aggregate and calculate statistics
-    aggregated = aggregate_by_magnitude(earthquake_data)
-
-    # Visualize: Create publication-quality chart
-    chart = create_bar_chart(aggregated)
-
-    return chart
-
-
-# ============================================================================
-# PANEL APP SETUP
-# ============================================================================
-
-# Serve the chart when running with Panel
-if pn.state.served:
-    # Load Panel JavaScript extensions
-    pn.extension()
-
-    # Apply custom Bokeh theme (override the global theme)
-    # Create and serve the chart
-    chart = create_plot()
-    pn.panel(chart, sizing_mode="stretch_both", margin=25).servable()
-```
 
 ## General Instructions
 
@@ -383,6 +161,8 @@ df.hvplot(
 | 1230974 | '0.0a' | 1.2m |
 | 1460 | '0 a' | 1 k |
 | -104000 | '0a' | -104k |
+
+- For detailed styling and publication quality charts use HoloViz instead of hvPlot.
 
 ## Developing
 
@@ -448,7 +228,7 @@ DO add tests to the `tests` folder and run them with `pytest tests/path/to/test_
 - DO fix any test errors and rerun the tests
 - DO run the tests and fix errors before displaying or serving the plots
 
-### Serve the plot with panel serve
+### Test the app manually with panel serve
 
 DO always start and keep running a development server `panel serve path_to_file.py --dev --show` with hot reload while developing!
 

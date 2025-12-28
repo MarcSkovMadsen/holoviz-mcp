@@ -202,7 +202,7 @@ HOLOVIZ_MCP_TRANSPORT=http pixi run holoviz-mcp
 HOLOVIZ_MCP_LOG_LEVEL=DEBUG pixi run holoviz-mcp
 
 # Update documentation index (first-time setup or when docs change)
-pixi run holoviz-mcp-update
+pixi run holoviz-mcp update index
 # ✓ Takes 5-10 minutes, downloads and indexes HoloViz docs
 ```
 
@@ -413,7 +413,7 @@ docs:
 Then rebuild index:
 
 ```bash
-pixi run holoviz-mcp-update
+pixi run holoviz-mcp update index
 ```
 
 ---
@@ -516,7 +516,7 @@ pixi run pre-commit-run
 **Issue**: Tests fail with ChromaDB errors
 **Solution**: ChromaDB requires first-time setup. Run:
 ```bash
-pixi run holoviz-mcp-update  # Builds the vector database
+pixi run holoviz-mcp update index  # Builds the vector database
 ```
 
 **Issue**: MyPy type checking errors
@@ -557,7 +557,7 @@ First-time indexing takes 5-10 minutes:
 - Generates embeddings (sentence-transformers)
 - Stores in ChromaDB
 
-**CRITICAL**: Only run `holoviz-mcp-update` when:
+**CRITICAL**: Only run `holoviz-mcp update index` when:
 - First setting up development environment
 - Documentation repositories are updated
 - Adding new documentation sources

@@ -14,6 +14,13 @@ app = typer.Typer(
     no_args_is_help=False,  # Allow running without args to start the server
 )
 
+# Create a subgroup for update commands
+update_app = typer.Typer(
+    name="update",
+    help="Update HoloViz MCP resources.",
+)
+app.add_typer(update_app)
+
 
 @app.callback(invoke_without_command=True)
 def main(
@@ -45,8 +52,8 @@ def main(
         server_main()
 
 
-@app.command()
-def update() -> None:
+@update_app.command(name="index")
+def update_index() -> None:
     """Update the documentation index.
 
     This command clones/updates HoloViz repositories and builds the vector database
@@ -57,23 +64,42 @@ def update() -> None:
     update_main()
 
 
-@app.command()
-def update_copilot() -> None:
-    """Copy the holoviz-mcp agents to the .github/agents/ directory for GitHub Copilot usage."""
+@update_app.command(name="copilot")
+def update_copilot(agents: bool = True, skills: bool = False) -> None:
+    """Copy HoloViz MCP resources to .github/ folders.
+
+    Parameters
+    ----------
+    agents : bool, default=True
+        Copy agent files
+    skills : bool, default=False
+        Copy skills/best-practices
+    """
     from pathlib import Path
 
     from holoviz_mcp.config.loader import get_config
 
     config = get_config()
 
-    source = config.agents_dir("default")
-    target = Path.cwd() / ".github" / "agents"
-    target.mkdir(parents=True, exist_ok=True)
+    if agents:
+        source = config.agents_dir("default")
+        target = Path.cwd() / ".github" / "agents"
+        target.mkdir(parents=True, exist_ok=True)
 
-    for file in source.glob("*.agent.md"):
-        relative_path = (target / file.name).relative_to(Path.cwd())
-        typer.echo(f"Updated: {relative_path}")
-        shutil.copy(file, target / file.name)
+        for file in source.glob("*.agent.md"):
+            relative_path = (target / file.name).relative_to(Path.cwd())
+            typer.echo(f"Updated: {relative_path}")
+            shutil.copy(file, target / file.name)
+
+    if skills:
+        source = config.best_practices_dir("default")
+        target = Path.cwd() / ".github" / "skills"
+        target.mkdir(parents=True, exist_ok=True)
+
+        for file in source.glob("*.md"):
+            relative_path = (target / file.name).relative_to(Path.cwd())
+            typer.echo(f"Updated: {relative_path}")
+            shutil.copy(file, target / file.name)
 
 
 @app.command()

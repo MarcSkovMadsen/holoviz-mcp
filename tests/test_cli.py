@@ -18,8 +18,7 @@ class TestCLI:
         )
         assert result.returncode == 0
         assert "HoloViz Model Context Protocol" in result.stdout
-        assert "update" in result.stdout
-        assert "update-copilot" in result.stdout
+        assert "Update HoloViz MCP resources" in result.stdout
         assert "serve" in result.stdout
 
     def test_cli_version(self):
@@ -36,7 +35,7 @@ class TestCLI:
     def test_cli_update_help(self):
         """Test that the update help command works."""
         result = subprocess.run(
-            [sys.executable, "-m", "holoviz_mcp.cli", "update", "--help"],
+            [sys.executable, "-m", "holoviz_mcp.cli", "update", "index", "--help"],
             capture_output=True,
             text=True,
             timeout=15,
@@ -45,16 +44,15 @@ class TestCLI:
         assert "Update the documentation index" in result.stdout
 
     def test_cli_update_copilot_help(self):
-        """Test that the update-copilot help command works."""
+        """Test that the update copilot help command works."""
         result = subprocess.run(
-            [sys.executable, "-m", "holoviz_mcp.cli", "update-copilot", "--help"],
+            [sys.executable, "-m", "holoviz_mcp.cli", "update", "copilot", "--help"],
             capture_output=True,
             text=True,
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Copy the holoviz-mcp agents" in result.stdout
-        assert ".github/agents/" in result.stdout
+        assert "Copy HoloViz MCP resources" in result.stdout
 
     def test_cli_serve_help(self):
         """Test that the serve help command works."""
@@ -100,7 +98,7 @@ class TestCLI:
         assert hasattr(cli, "app")
         assert hasattr(cli, "cli_main")
         assert hasattr(cli, "main")
-        assert hasattr(cli, "update")
+        assert hasattr(cli, "update_index")
         assert hasattr(cli, "update_copilot")
         assert hasattr(cli, "serve")
 
@@ -142,15 +140,15 @@ class TestCLIEntryPoint:
         assert "Update the documentation index" in result.stdout
 
     def test_entry_point_update_copilot(self):
-        """Test that holoviz-mcp update-copilot --help works."""
+        """Test that holoviz-mcp update copilot --help works."""
         result = subprocess.run(
-            ["holoviz-mcp", "update-copilot", "--help"],
+            ["holoviz-mcp", "update", "copilot", "--help"],
             capture_output=True,
             text=True,
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Copy the holoviz-mcp agents" in result.stdout
+        assert "Copy HoloViz MCP resources" in result.stdout
 
     def test_entry_point_serve(self):
         """Test that holoviz-mcp serve --help works."""

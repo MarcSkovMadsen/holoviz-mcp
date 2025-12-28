@@ -39,7 +39,7 @@ This ensures you have the latest documentation from HoloViz projects.
 For convenience, update both the package and documentation:
 
 ```bash
-uv tool update holoviz-mcp[panel-extensions] && uvx holoviz-mcp update
+uv tool update holoviz-mcp[panel-extensions] && uvx holoviz-mcp update index
 ```
 
 ## Update Docker Image
@@ -65,7 +65,7 @@ docker-compose up -d
 Run the update command in the container:
 
 ```bash
-docker exec -it holoviz-mcp holoviz-mcp update
+docker exec -it holoviz-mcp holoviz-mcp update index
 ```
 
 Or set `UPDATE_DOCS=true` when starting:
@@ -130,7 +130,7 @@ If the documentation index gets corrupted:
 
 ```bash
 rm -rf ~/.holoviz-mcp/chroma
-uvx holoviz-mcp update
+uvx holoviz-mcp update index
 ```
 
 ## Automatic Updates
@@ -160,7 +160,7 @@ Remove unused data:
 rm -rf ~/.holoviz-mcp/chroma
 
 # Recreate
-uvx holoviz-mcp update
+uvx holoviz-mcp update index
 ```
 
 ### Verify Installation

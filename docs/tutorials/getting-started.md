@@ -38,7 +38,7 @@ This command installs HoloViz MCP along with common Panel extensions, making the
 HoloViz MCP needs to index the HoloViz documentation to provide intelligent answers. Run:
 
 ```bash
-uvx holoviz-mcp update
+uvx holoviz-mcp update index
 ```
 
 **⏱️ This takes 5-10 minutes on first run** as it downloads and indexes documentation from Panel, hvPlot, and other HoloViz libraries.
