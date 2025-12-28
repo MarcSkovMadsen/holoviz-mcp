@@ -1,6 +1,6 @@
 ---
 name: panel-material-ui-development
-description: A collection of skills and best practices developing modern looking tools, dashboards and data apps using HoloViz Panel and Panel Material UI components.
+description: A collection of skills and best practices for developing modern looking tools, dashboards and data apps using HoloViz Panel and Panel Material UI components.
 metadata:
   version: "1.0.0"
   author: holoviz
