@@ -1,6 +1,6 @@
 ---
 name: holoviews-development
-description: A collection of skills for developing interactive, complex and publication-quality data visualizations using HoloViz HoloViews
+description: A collection of skills for developing interactive, complex and publication-quality data visualizations using HoloViz HoloViews.
 metadata:
   version: "1.0.0"
   author: holoviz
