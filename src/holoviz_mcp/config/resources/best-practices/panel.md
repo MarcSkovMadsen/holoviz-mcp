@@ -164,6 +164,8 @@ class HelloWorld(pn.viewable.Viewer):
             # DO provide a list of layouts and output components in the main area of the app.
             # DO use Grid or FlexBox layouts for complex dashboard layouts instead of combination Rows and Columns.
             main=[instance._outputs],
+            # DO set main_layout=None for modern layout
+            main_layout=None,
         )
         return template
 
@@ -515,6 +517,10 @@ def kpi_value(self):
 ### Tabulator
 
 - DO set `Tabulator.disabled=True` unless you would like the user to be able to edit the table.
+
+### Markdown
+
+- DO set `Markdown.disable_anchors=True` to avoid page flickr when hovering over headers.
 
 ### Bind
 
