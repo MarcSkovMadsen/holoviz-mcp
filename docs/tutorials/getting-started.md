@@ -148,7 +148,7 @@ Now that everything is set up, let's build a simple dashboard:
 1. Create a new file called `app.py`
 2. Ask your AI assistant:
    ```
-   Create a Panel dashboard that displays a slider and shows the square of the slider's value. Use Panel best practices.
+   Create a Panel dashboard that displays a slider and shows the square of the slider's value. Use 'panel-developer' skill.
    ```
 
 3. Your AI assistant will provide code using HoloViz MCP's knowledge of Panel components!

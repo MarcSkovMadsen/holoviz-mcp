@@ -83,7 +83,7 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     >>> result = await call_tool("panel_search", {"query": "Button", "limit": 5})
     >>>
     >>> # Get documentation for a project
-    >>> result = await call_tool("holoviz_get_best_practices", {"project": "panel"})
+    >>> result = await call_tool("holoviz_get_skill", {"name": "panel"})
     """
     global _CLIENT
     async with _CLIENT_LOCK:

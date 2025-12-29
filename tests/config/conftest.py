@@ -89,13 +89,13 @@ def sample_resources_dir(temp_config_dir: Path) -> Path:
     resources_dir = temp_config_dir / "user" / "resources"
     resources_dir.mkdir(parents=True)
 
-    # Create best practices directory
-    best_practices_dir = resources_dir / "best-practices"
-    best_practices_dir.mkdir()
+    # Create skill directory
+    skills_dir = resources_dir / "skills"
+    skills_dir.mkdir()
 
-    # Create sample best practices files
-    (best_practices_dir / "panel.md").write_text("# Panel Best Practices\n\nUse Panel wisely.")
-    (best_practices_dir / "panel-material-ui.md").write_text("# Panel Material UI Best Practices\n\nUse Material UI components.")
+    # Create sample skill files
+    (skills_dir / "panel.md").write_text("# Panel skill\n\nUse Panel wisely.")
+    (skills_dir / "panel-material-ui.md").write_text("# Panel Material UI skill\n\nUse Material UI components.")
 
     return resources_dir
 

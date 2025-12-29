@@ -14,8 +14,8 @@ from fastmcp.resources import FileResource
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
-from holoviz_mcp.holoviz_mcp.data import get_best_practices as _get_best_practices
-from holoviz_mcp.holoviz_mcp.data import list_best_practices as _list_best_practices
+from holoviz_mcp.holoviz_mcp.data import get_skill as _get_skill
+from holoviz_mcp.holoviz_mcp.data import list_skills as _list_skills
 from holoviz_mcp.holoviz_mcp.models import Document
 
 logger = logging.getLogger(__name__)
@@ -46,34 +46,41 @@ mcp: FastMCP = FastMCP(
 
 
 @mcp.tool
-def get_best_practices(project: str) -> str:
-    """Get best practices for using a project with LLMs.
+def get_skill(name: str) -> str:
+    """Get the specified skill for usage with LLMs.
 
-    DO Always use this tool to get best practices for using a project with LLMs before using it!
+    Use list_skills tool to see available skills.
 
     Args:
-        project (str): The name of the project to get best practices for. For example, "panel", "panel-material-ui", etc.
+        name (str): The name of the skill to get. For example, "panel", "panel-material-ui", etc.
+
 
     Returns
     -------
-        str: A string containing the best practices for the project in Markdown format.
+        str: A string containing the skill in Markdown format.
+
+    Examples
+    --------
+    >>> get_skill("holoviews")  # Best practices for using HoloViews
+    >>> get_skill("hvplot")  # Best practices for using hvPlot
+    >>> get_skill("panel-material-ui")  # Best practices for using Panel Material UI
+    >>> get_skill("panel")  # Best practices for using Panel
     """
-    return _get_best_practices(project)
+    return _get_skill(name)
 
 
 @mcp.tool
-def list_best_practices() -> list[str]:
-    """List all available best practices projects.
+def list_skills() -> list[str]:
+    """List all available skills.
 
-    This tool discovers available best practices from both user and default directories,
-    with user resources taking precedence over default ones.
+    Use get_skill tool to retrieve a specific skill.
 
     Returns
     -------
-        list[str]: A list of project names that have best practices available.
-                   Names are returned in hyphenated format (e.g., "panel-material-ui").
+        list[str]: A list of the skills available.
+            Names are returned in hyphenated format (e.g., "panel-material-ui").
     """
-    return _list_best_practices()
+    return _list_skills()
 
 
 @mcp.tool
@@ -235,26 +242,26 @@ def _add_agent_resources():
         mcp.add_resource(resource)
 
 
-def _add_best_practices_resources():
-    """Add best practices resources from the config/resources/best-practices directory."""
+def _add_skills_resources():
+    """Add skill resources from the config/resources/skills directory."""
     config = get_config()
-    files = config.best_practices_dir("default").rglob("*.md")
+    files = config.skills_dir("default").rglob("*.md")
     for file_path in files:
         path = Path(file_path)
         name = path.stem.replace("-", "_")  # filename without suffix
         resource = FileResource(
-            uri=f"resources://best-practices/{path.name}",
+            uri=f"resources://skills/{path.name}",
             path=path.absolute(),  # Path to the actual file
             name=name,
             description=f"Best practices for {name}",
             mime_type="text/markdown",
-            tags=["holoviz", "best-practices"],
+            tags=["holoviz", "skills"],
         )
         mcp.add_resource(resource)
 
 
 _add_agent_resources()
-_add_best_practices_resources()
+_add_skills_resources()
 
 if __name__ == "__main__":
     config = get_config()

@@ -1,6 +1,6 @@
 ---
 name: hvplot-development
-description: A collection of skills for doing quick exploratory data analysis with minimal code and a Pandas .plot like API using HoloViews hvPlot.
+description: Best practices for doing quick exploratory data analysis with minimal code and a Pandas .plot like API using HoloViews hvPlot.
 metadata:
   version: "1.0.0"
   author: holoviz
@@ -30,7 +30,7 @@ Optional dependencies from the HoloViz Ecosystem:
 
 - **datashader**: Renders large datasets (millions+ points) into images for visualization. Best for: big data visualization, geospatial datasets, scatter plots with millions of points, heatmaps of dense data. Requires hvPlot or HoloViews as frontend.
 - **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
-- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and best practices.
+- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and agent skills.
 - **hvsampledata**: Shared datasets for the HoloViz projects.
 
 ## Installation for Development

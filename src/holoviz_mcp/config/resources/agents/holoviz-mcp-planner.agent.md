@@ -52,6 +52,6 @@ Complex Dashboards, tool or applications?  → panel (advanced dashboards)
 
 If the Holoviz MCP Server is available, use its tools to search for relevant information and to lookup relevant best practices:
 
-- Always use `holoviz_get_best_practices` tool to lookup the best practices for the libraries you will be using. Please adhere to these best practices in your plan.
+- Always use `holoviz_get_skill` tool to lookup the skills for the libraries (hvplot, holoviews, panel, panel-material-ui, ....) you will be using. Please adhere to these skills in your plan.
 - Use the `holoviz_search` tool to find relevant code examples and documentation for the libraries you will be using.
 - Use the read/readFile and web/fetch tools to gather any additional information you may need.

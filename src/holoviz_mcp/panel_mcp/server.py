@@ -5,8 +5,7 @@ applications, tools and dashboards in Python using best practices.
 
 Use this server to access:
 
-- Panel Best Practices: Learn how to use Panel effectively.
-- Panel Components: Get information about specific Panel components like widgets (input), panes (output) and layouts.
+- Panel Components: Detailed information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
 from importlib.metadata import distributions
