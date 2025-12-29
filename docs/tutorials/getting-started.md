@@ -190,6 +190,7 @@ Now that you have HoloViz MCP running, explore more:
 **Problem**: AI assistant doesn't recognize Panel components
 
 **Solution**:
+
 1. Check that the documentation index completed (Step 2)
 2. Verify your configuration file is correct
 3. Restart your IDE
@@ -200,6 +201,7 @@ Now that you have HoloViz MCP running, explore more:
 **Problem**: MCP server won't start
 
 **Solution**:
+
 1. Verify Python 3.11+ is installed: `python --version`
 2. Check uv installation: `uv --version`
 3. Try running the server directly: `uvx holoviz-mcp`

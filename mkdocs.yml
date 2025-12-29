@@ -93,6 +93,7 @@ nav:
     - Home: index.md
     - Tutorials:
         - Getting Started: tutorials/getting-started.md
+        - Use with Copilot: tutorials/copilot.md
     - How-To Guides:
         - Install: how-to/installation.md
         - Configure your IDE: how-to/ide-configuration.md
