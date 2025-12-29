@@ -36,7 +36,7 @@ mcp: FastMCP = FastMCP(
     - [Colorcet](https://colorcet.holoviz.org): for perceptually uniform colormaps.
     - [Datashader](https://datashader.org): for rendering even the largest datasets.
     - [GeoViews](https://geoviews.org): to extend HoloViews for geographic data.
-    - [HoloViews](https://holoviews.org): to createadvanced, interactive and high quality data visualizations.
+    - [HoloViews](https://holoviews.org): to create advanced, interactive and high quality data visualizations.
     - [hvPlot](https://hvplot.holoviz.org): to quickly generate interactive plots from your data.
     - [Lumen](https://lumen.holoviz.org): to build data-driven dashboards from a simple YAML specification that's well suited to modern AI tools like LLMs.
     - [Panel](https://panel.holoviz.org): for making data tools, dashboards and data apps using the Holoviz and wider PyData ecosystems.
