@@ -1,5 +1,5 @@
 
-# Using GitHub Copilot with HoloViz
+# Using GitHub Copilot with HoloViz MCP
 
 
 In this tutorial, you'll learn how to use the HoloViz MCP server with GitHub Copilot in VS Code to build an interactive stock dashboard. By the end, you'll have a working Panel application and understand how to leverage AI assistance for HoloViz development.
