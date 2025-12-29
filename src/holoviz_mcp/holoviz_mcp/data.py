@@ -62,63 +62,59 @@ async def log_exception(message: str, ctx: Context | None = None):
         raise Exception(message)
 
 
-def get_best_practices(project: str) -> str:
-    """Get best practices for using a project with LLMs.
+def get_skill(name: str) -> str:
+    """Get skill for using a project with LLMs.
 
-    This function searches for best practices resources in user and default directories,
+    This function searches for skill resources in user and default directories,
     with user resources taking precedence over default ones.
 
     Args:
-        project (str): The name of the project to get best practices for.
-                      Both hyphenated (e.g., "panel-material-ui") and underscored
-                      (e.g., "panel_material_ui") names are supported.
+        name (str): The name of the skill to get.
 
     Returns
     -------
-        str: A string containing the best practices for the project in Markdown format.
+        str: A string containing the skill in Markdown format.
 
     Raises
     ------
-        FileNotFoundError: If no best practices file is found for the project.
+        FileNotFoundError: If the specified skill is not found in either directory.
     """
     config = get_config()
 
     # Convert underscored names to hyphenated for file lookup
-    project_filename = project.replace("_", "-")
+    skill_filename = name.replace("_", "-") + ".md"
 
     # Search in user directory first, then default directory
     search_paths = [
-        config.best_practices_dir("user"),
-        config.best_practices_dir("default"),
+        config.skills_dir("user"),
+        config.skills_dir("default"),
     ]
 
     for search_dir in search_paths:
-        best_practices_file = search_dir / f"{project_filename}.md"
-        if best_practices_file.exists():
-            return best_practices_file.read_text(encoding="utf-8")
+        skills_file = search_dir / skill_filename
+        if skills_file.exists():
+            return skills_file.read_text(encoding="utf-8")
 
     # If not found, raise error with helpful message
     available_files = []
     for search_dir in search_paths:
         if search_dir.exists():
-            available_files.extend([f.stem for f in search_dir.glob("*.md")])
+            available_files.extend([f.name for f in search_dir.glob("*.md")])
 
     available_str = ", ".join(set(available_files)) if available_files else "None"
-    raise FileNotFoundError(
-        f"Best practices file for project '{project}' not found. " f"Available projects: {available_str}. " f"Searched in: {[str(p) for p in search_paths]}"
-    )
+    raise FileNotFoundError(f"Skill file {name} not found. " f"Available skills: {available_str}. " f"Searched in: {[str(p) for p in search_paths]}")
 
 
-def list_best_practices() -> list[str]:
-    """List all available best practices projects.
+def list_skills() -> list[str]:
+    """List all available skills.
 
-    This function discovers available best practices from both user and default directories,
+    This function discovers available skills from both user and default directories,
     with user resources taking precedence over default ones.
 
     Returns
     -------
-        list[str]: A list of project names that have best practices available.
-                   Names are returned in hyphenated format (e.g., "panel-material-ui").
+        list[str]: A list of the skills available.
+            Names are returned in hyphenated format (e.g., "panel-material-ui").
     """
     config = get_config()
 
@@ -126,8 +122,8 @@ def list_best_practices() -> list[str]:
     available_projects = set()
 
     search_paths = [
-        config.best_practices_dir("user"),
-        config.best_practices_dir("default"),
+        config.skills_dir("user"),
+        config.skills_dir("default"),
     ]
 
     for search_dir in search_paths:

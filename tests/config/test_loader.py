@@ -145,7 +145,7 @@ class TestConfigLoader:
         assert config_loader.get_repos_dir() == test_config.repos_dir
         assert config_loader.get_resources_dir() == test_config.resources_dir()
         assert config_loader.get_agents_dir() == test_config.agents_dir()
-        assert config_loader.get_best_practices_dir() == test_config.best_practices_dir()
+        assert config_loader.get_skills_dir() == test_config.skills_dir()
 
     def test_create_user_config_template(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
         """Test creating user configuration template (now default user config)."""

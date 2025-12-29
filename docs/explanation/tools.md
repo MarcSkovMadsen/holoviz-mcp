@@ -119,26 +119,26 @@ Tools for searching and accessing HoloViz documentation.
 
 **Returns**: Reference guide content.
 
-### holoviz_list_best_practices
+### holoviz_list_skills
 
-**Purpose**: List all available best practices projects.
+**Purpose**: List all available agent skills.
 
-**Use Case**: Discover available best practices guides.
+**Use Case**: Discover available agent skills.
 
-**Returns**: List of projects with best practices.
+**Returns**: List of named skills.
 
-### holoviz_get_best_practices
+### holoviz_get_skill
 
-**Purpose**: Get best practices for using a project with LLMs.
+**Purpose**: Get skill for an agent
 
 **Parameters**:
-- `project` (string): Project name
+- `name` (string): Name of skill
 
-**Use Case**: Learn recommended patterns and practices.
+**Use Case**: Extend a LLM or agent with a specific skill
 
-**Returns**: Best practices guide content.
+**Returns**: Skill description in markdown format
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_best_practices](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_best_practices)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_skill](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_skill)
 
 ## hvPlot Tools
 
@@ -193,7 +193,6 @@ Find what's available:
 - `panel_list_packages`: Available Panel packages
 - `panel_list_components`: Available Panel components
 - `hvplot_list_plot_types`: Available hvPlot plots
-- `hvplot_list_best_practices`: Available best practices
 
 ### Information
 
@@ -203,7 +202,7 @@ Get detailed information:
 - `panel_get_component_parameters`: Parameter information
 - `hvplot_get_docstring`: Plot type documentation
 - `hvplot_get_signature`: Function signatures
-- `holoviz_get_best_practices`: Best practices guide
+- `holoviz_get_skill`: Agents skills
 
 ### Search
 

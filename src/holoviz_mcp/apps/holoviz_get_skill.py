@@ -1,4 +1,4 @@
-"""Panel app for exploring the HoloViz MCP holoviz_get_best_practices tool.
+"""Panel app for exploring the HoloViz MCP holoviz_get_skill tool.
 
 Uses panel-material-ui widgets and Page layout.
 """
@@ -7,36 +7,37 @@ import panel as pn
 import panel_material_ui as pmui
 import param
 
-from holoviz_mcp.holoviz_mcp.data import get_best_practices
-from holoviz_mcp.holoviz_mcp.data import list_best_practices
+from holoviz_mcp.holoviz_mcp.data import get_skill
+from holoviz_mcp.holoviz_mcp.data import list_skills
 
 pn.extension()
 
 ABOUT = """
-## Best Practices Tool
+## Skill Tool
 
-This tool provides best practices and guidelines for using HoloViz projects with Large Language Models (LLMs).
+This tool provides skills for using HoloViz projects with Large Language Models (LLMs).
 
-### What Are Best Practices?
+### What Are Skills?
 
-Best practices are curated guidelines that help LLMs (and developers) write better code using HoloViz libraries. Each best practices document includes:
+Skills are curated guidelines that help LLMs (and developers) write better code using HoloViz libraries. Each skills document includes:
 
 - **Hello World Examples**: Annotated starter code showing proper usage patterns
 - **DO/DON'T Guidelines**: Clear rules for what to do and what to avoid
 - **Code Patterns**: Common idioms and recommended approaches
 - **LLM-Specific Guidance**: How to structure prompts and responses effectively
 
-### Available Projects
+### Available Skills
 
-This tool currently provides best practices for:
+This tool currently provides skills for:
 
-- **panel**: Core Panel library for building web apps and dashboards
+- **panel**: Core library for building tools, dashboards and data apps
 - **panel-material-ui**: Material Design UI components for Panel applications
-- **holoviz**: General HoloViz ecosystem guidelines
+- **holoviews**: Data visualization library for building complex visualizations
+- **hvplot**: Data plotting library for quick interactive plots
 
 ### How to Use
 
-Select a project in the sidebar to view its best practices.
+Select a skill in the sidebar to view its details.
 The content is displayed in Markdown format and includes code examples you can reference when building applications.
 
 ### Learn More
@@ -46,85 +47,85 @@ visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
 """
 
 
-class BestPracticesConfiguration(param.Parameterized):
+class SkillConfiguration(param.Parameterized):
     """
-    Configuration for the best practices viewer.
+    Configuration for the skills viewer.
 
-    Parameters correspond to the project selection for viewing best practices.
+    Parameters correspond to the skill selection for viewing skills.
     """
 
-    project = param.Selector(
+    skill = param.Selector(
         default=None,
         objects=[],
-        doc="Select a project to view its best practices",
+        doc="Select a skill to view its details",
     )
 
-    content = param.String(default="", doc="Markdown content of the selected best practices", precedence=-1)
+    content = param.String(default="", doc="Markdown content of the selected skill", precedence=-1)
 
     def __init__(self, **params):
-        """Initialize the BestPracticesConfiguration with available projects."""
+        """Initialize the SkillConfiguration with available skills."""
         super().__init__(**params)
-        self._load_projects()
+        self._load_skills()
 
         if pn.state.location:
-            pn.state.location.sync(self, parameters=["project"])
+            pn.state.location.sync(self, parameters=["name"])
 
-    def _load_projects(self):
-        """Load available best practices projects."""
+    def _load_skills(self):
+        """Load available skills½."""
         try:
-            projects = list_best_practices()
-            self.param.project.objects = projects
-            if projects and self.project is None:
-                self.project = projects[0]  # Default to first project
+            skills = list_skills()
+            self.param.skill.objects = skills
+            if skills and self.skill is None:
+                self.skill = skills[0]  # Default to first skill
         except Exception as e:
-            self.param.project.objects = []
-            self.content = f"**Error loading projects:** {e}"
+            self.param.skill.objects = []
+            self.content = f"**Error loading skills:** {e}"
 
-    @param.depends("project", watch=True, on_init=True)
+    @param.depends("skill", watch=True, on_init=True)
     def _update_content(self):
         """Update content when project selection changes."""
-        if self.project is None or not isinstance(self.project, str):
-            self.content = "Please select a project to view its best practices."
+        if self.skill is None or not isinstance(self.skill, str):
+            self.content = "Please select a skill to view."
             return
 
         try:
-            self.content = get_best_practices(str(self.project))
+            self.content = get_skill(str(self.skill))
         except FileNotFoundError as e:
             self.content = f"**Error:** {e}"
         except Exception as e:
-            self.content = f"**Error loading best practices:** {e}"
+            self.content = f"**Error loading skills:** {e}"
 
 
-class BestPracticesViewer(pn.viewable.Viewer):
+class SkillViewer(pn.viewable.Viewer):
     """
-    A Panel Material UI app for viewing HoloViz best practices.
+    A Panel Material UI app for viewing HoloViz skills.
 
     Features:
         - Parameter-driven reactivity
         - Modern, responsive UI using Panel Material UI
-        - Integration with HoloViz MCP holoviz_get_best_practices tool
+        - Integration with HoloViz MCP holoviz_get_skill tool
     """
 
-    title = param.String(default="HoloViz MCP - holoviz_get_best_practices Tool Demo", doc="Title of the best practices viewer")
-    config: BestPracticesConfiguration = param.Parameter(doc="Configuration for the best practices viewer")  # type: ignore
+    title = param.String(default="HoloViz MCP - holoviz_get_skill Tool Demo", doc="Title of the skill viewer")
+    config: SkillConfiguration = param.Parameter(doc="Configuration for the skill viewer")  # type: ignore
 
     def __init__(self, **params):
-        """Initialize the BestPracticesViewer with default configuration."""
-        params["config"] = params.get("config", BestPracticesConfiguration())
+        """Initialize the SkillViewer with default configuration."""
+        params["config"] = params.get("config", SkillConfiguration())
         super().__init__(**params)
 
     def _config_panel(self):
         """Create the configuration panel for the sidebar."""
-        return pmui.widgets.RadioButtonGroup.from_param(self.config.param.project, sizing_mode="stretch_width", orientation="vertical", button_style="outlined")
+        return pmui.widgets.RadioButtonGroup.from_param(self.config.param.skill, sizing_mode="stretch_width", orientation="vertical", button_style="outlined")
 
     def __panel__(self):
-        """Create the Panel layout for the best practices viewer."""
+        """Create the Panel layout for the skill viewer."""
         with pn.config.set(sizing_mode="stretch_width"):
             # About button and dialog
             about_button = pmui.IconButton(
                 label="About",
                 icon="info",
-                description="Click to learn about the Best Practices Tool.",
+                description="Click to learn about the Skill Viewer Tool.",
                 sizing_mode="fixed",
                 color="light",
                 margin=(10, 0),
@@ -170,4 +171,4 @@ class BestPracticesViewer(pn.viewable.Viewer):
 
 
 if pn.state.served:
-    BestPracticesViewer().servable()
+    SkillViewer().servable()

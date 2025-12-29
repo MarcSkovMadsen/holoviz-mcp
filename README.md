@@ -17,7 +17,9 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 
 **Documentation Access**: Search through comprehensive HoloViz documentation, including tutorials, reference guides, how-to guides, and API references.
 
-**Component Intelligence**: Discover and understand 100+ Panel components with detailed parameter information, usage examples, and best practices. Similar features are available for hvPlot.
+**Agents Skills**: Agents and Skills for LLMs.
+
+**Component Intelligence**: Discover and understand 100+ Panel components with detailed parameter information and usage examples. Similar features are available for hvPlot.
 
 **Extension Support**: Automatic detection and information about Panel extensions such as Material UI, Graphic Walker, and other community packages.
 

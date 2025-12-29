@@ -382,3 +382,8 @@ $RECYCLE.BIN/
 
 .pixi
 .github/agents/holoviz-mcp-*.agent.md
+.github/skills/holoviews.md
+.github/skills/panel.md
+.github/skills/hvplot.md
+.github/skills/holoviews.md
+.github/skills/panel-material-ui.md
