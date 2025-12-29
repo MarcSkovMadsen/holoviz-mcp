@@ -43,6 +43,7 @@ dependencies = [
     "fastmcp<3",
     "GitPython",
     "hvplot",
+    "hvsampledata",
     "matplotlib",
     "nbconvert",
     "packaging",

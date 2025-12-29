@@ -52,8 +52,13 @@ Choose your AI assistant and follow the appropriate configuration:
 ### VS Code + GitHub Copilot
 
 1. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-2. Type "MCP: Edit Settings" and press Enter
-3. Add this configuration to your `mcp.json` file:
+2. Type "MCP: Add Server..." and press Enter
+3. Choose "Command (stdio)"
+4. Choose "uvx holoviz-mcp[panel-extensions]" as the "Command to run"
+5. Enter "holoviz" as the "Server ID"
+6. Choose "Global"
+
+This will add the below configuration to you global `mcp.json` file.
 
 ```json
 {
@@ -61,17 +66,14 @@ Choose your AI assistant and follow the appropriate configuration:
     "holoviz": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["holoviz-mcp"]
+      "args": ["holoviz-mcp[panel-extensions]"]
     }
   },
   "inputs": []
 }
 ```
 
-4. Save the file and restart VS Code
-
-**For remote development**: Add this to your Remote `mcp.json` instead of User settings to ensure the server runs on the remote machine.
-**For Workspace customization**: Add this to your Workspace `mcp.json` to override the User or Remote settings.
+Please refer to the [VS Code | MCP Servers](https://code.visualstudio.com/docs/copilot/customization/mcp-servers) guide for more details.
 
 ### Claude Desktop
 
@@ -87,7 +89,7 @@ Choose your AI assistant and follow the appropriate configuration:
   "mcpServers": {
     "holoviz": {
       "command": "uvx",
-      "args": ["holoviz-mcp"]
+      "args": ["holoviz-mcp[panel-extensions]"]
     }
   }
 }
@@ -105,7 +107,7 @@ Choose your AI assistant and follow the appropriate configuration:
 {
   "name": "holoviz",
   "command": "uvx",
-  "args": ["holoviz-mcp"]
+  "args": ["holoviz-mcp[panel-extensions]"]
 }
 ```
 
@@ -115,12 +117,21 @@ Choose your AI assistant and follow the appropriate configuration:
 
 Let's verify that HoloViz MCP is working correctly!
 
+### Start the Server
+
+1. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "MCP: List Servers" and press Enter
+3. Choose the "holoviz" server
+4. Select "Start Server"
+
 ### Check Server Status
 
 In VS Code, you can monitor the MCP server:
 
-1. Open the Output panel (`View` → `Output`)
-2. Select "MCP: holoviz" from the dropdown
+1. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "MCP: List Servers" and press Enter
+3. Choose the "holoviz" server
+4. Select "Show Outpu"
 3. You should see log messages indicating the server is running
 
 ### Test with Your AI Assistant
@@ -146,12 +157,12 @@ If your AI assistant provides detailed, accurate answers with specific Panel com
 Now that everything is set up, let's build a simple dashboard:
 
 1. Create a new file called `app.py`
-2. Ask your AI assistant:
+2. Ask your AI "Agent":
    ```
-   Create a Panel dashboard that displays a slider and shows the square of the slider's value. Use 'panel-developer' skill.
+   Create a Panel dashboard in the file app.py that displays a slider and shows the square of the slider's value. Use 'panel' skills.
    ```
 
-3. Your AI assistant will provide code using HoloViz MCP's knowledge of Panel components!
+3. Your AI "Agent" will provide code using HoloViz MCP's knowledge of Panel components!
 
 ## What's Next?
 
@@ -179,6 +190,7 @@ Now that you have HoloViz MCP running, explore more:
 **Problem**: AI assistant doesn't recognize Panel components
 
 **Solution**:
+
 1. Check that the documentation index completed (Step 2)
 2. Verify your configuration file is correct
 3. Restart your IDE
@@ -189,6 +201,7 @@ Now that you have HoloViz MCP running, explore more:
 **Problem**: MCP server won't start
 
 **Solution**:
+
 1. Verify Python 3.11+ is installed: `python --version`
 2. Check uv installation: `uv --version`
 3. Try running the server directly: `uvx holoviz-mcp`
