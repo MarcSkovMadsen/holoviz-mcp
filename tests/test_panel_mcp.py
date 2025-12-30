@@ -19,6 +19,7 @@ works correctly with actual Panel installations.
 
 import pytest
 from fastmcp import Client
+from mcp.types import ImageContent
 
 from holoviz_mcp.panel_mcp.server import mcp
 
@@ -242,6 +243,7 @@ class TestPanelMCPIntegration:
             "search_components",
             "get_component",
             "get_component_parameters",
+            "take_screenshot",
         ]
 
         for tool in expected_tools:
@@ -314,3 +316,26 @@ class TestPanelMCPIntegration:
 
                 # Just check that the parameters attribute exists and is accessible
                 # The actual structure depends on the implementation
+
+    @pytest.mark.asyncio
+    async def test_take_screenshot_returns_image(self):
+        """Test the take_screenshot tool returns an image payload."""
+
+        playwright = pytest.importorskip("playwright.async_api")
+
+        # Skip cleanly if the browser binary is not available
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(headless=True)
+                await browser.close()
+            except Exception as exc:  # pragma: no cover - defensive skip
+                pytest.skip(f"Playwright chromium not available: {exc}")
+
+        client = Client(mcp)
+        async with client:
+            url = "data:text/html,<html><body><h1>Screenshot</h1></body></html>"
+            result = await client.call_tool("take_screenshot", {"url": url})
+
+        image_content = result.content[0]
+
+        assert isinstance(image_content, ImageContent)

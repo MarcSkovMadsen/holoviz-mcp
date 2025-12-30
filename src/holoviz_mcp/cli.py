@@ -97,7 +97,7 @@ def update_copilot(agents: bool = True, skills: bool = False) -> None:
         target.mkdir(parents=True, exist_ok=True)
 
         for file in source.glob("*.md"):
-            relative_path = (target / file.name).relative_to(Path.cwd())
+            relative_path = (target / file.name / "SKILL.md").relative_to(Path.cwd())
             typer.echo(f"Updated: {relative_path}")
             shutil.copy(file, target / file.name)
 

@@ -86,7 +86,9 @@ panel-extensions =[
     "panel-precision-slider",
     "panel-web-llm",
 ]
-
+playwright = [
+    "playwright",
+]
 [tool.ruff]
 exclude = [
     ".git",

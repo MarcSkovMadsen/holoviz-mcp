@@ -131,7 +131,7 @@ In VS Code, you can monitor the MCP server:
 1. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 2. Type "MCP: List Servers" and press Enter
 3. Choose the "holoviz" server
-4. Select "Show Outpu"
+4. Select "Show Output"
 3. You should see log messages indicating the server is running
 
 ### Test with Your AI Assistant
