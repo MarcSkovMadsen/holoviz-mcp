@@ -97,13 +97,11 @@ Below is a simple reference example for data exploration.
 
 ```python
 import hvsampledata
-# DO import panel if working in .py files
-import panel as pn
-# Do importing hvplot.pandas to add .hvplot namespace to Pandas DataFrames and Series
 import holoviews as hv
 
-# DO always run pn.extension() to load panel javascript extensions
-pn.extension()
+# DO always run hv.extension() to load the HoloViews javascript extensions
+# DO specify the backend you intend to use (e.g., "bokeh", "matplotlib", "plotly")
+hv.extension("bokeh")
 
 # Do keep the extraction, transformation and plotting of data clearly separate
 # Extract: earthquakes sample data
@@ -112,16 +110,31 @@ data = hvsampledata.earthquakes("pandas")
 # Transform: Group by mag_class and count occurrences
 mag_class_counts = data.groupby('mag_class').size().reset_index(name='counts')
 
-# Plot: counts by mag_class
-plot = hv.Bars(mag_class_counts, kdims='mag_class', vdims='counts').opts(title='Earthquake Counts by Magnitude Class')
+# DO Specify an *element* type. Here its hv.Bars, i.e. a Bar plot.
+plot = hv.Bars(
+    # DO provide the data explicitly
+    data = mag_class_counts,
+    # DO always specify the key dimensions (kdims) and value dimensions (vdims) as a single value or a list of values
+    kdims='mag_class',
+    vdims='counts'
+).opts(
+    # DO specify optional styling options using .opts()
+    line_color=None,
+    # DO specify optional plot options using .opts()
+    title='Earthquake Counts by Magnitude Class'
+)
 # If working in notebook DO output to plot:
 plot
-# Else if working in .py file DO:
-# DO provide a method to serve the app with `panel serve`
+# If working in .py file DO use panel:
+import panel as pn
+
+# DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
+# Instead provide pn.state.served check
 if pn.state.served:
+    # DO always run pn.extension() to load panel javascript extensions
+    pn.extension()
     # DO remember to add .servable to the panel components you want to serve with the app
     pn.panel(plot, sizing_mode="stretch_both").servable()
-# DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
 ```
 
 If working in a .py file DO serve the plot with hotreload:
@@ -131,6 +144,126 @@ panel serve path/to/file.py --dev --show
 ```
 
 DONT serve with `python path_to_this_file.py`.
+
+## Reference Group By
+
+In this example we also groupby `depth_class`, i.e. a dropdown widget is added to select the `depth_class` to filter by.
+
+```python
+import hvsampledata
+import holoviews as hv
+
+hv.extension("bokeh")
+
+data = hvsampledata.earthquakes("pandas")
+
+mag_class_counts = data.groupby(['mag_class', 'depth_class']).size().reset_index(name='counts')
+print(mag_class_counts)
+
+plot = hv.Bars(
+    data = mag_class_counts,
+    kdims=['mag_class','depth_class'],
+    vdims='counts',
+).groupby(
+    "depth_class"
+).opts(
+    # DO specify optional styling options using .opts()
+    line_color=None,
+    # DO specify optional plot options using .opts()
+    title='Earthquake Counts by Magnitude Class and Depth Class',
+    width=800,
+)
+# If working in notebook DO output to plot:
+plot
+# If working in .py file DO use panel:
+import panel as pn
+
+# DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
+# Instead provide pn.state.served check
+if pn.state.served:
+    # DO always run pn.extension() to load panel javascript extensions
+    pn.extension()
+    # DO remember to add .servable to the panel components you want to serve with the app
+    pn.panel(plot, sizing_mode="stretch_both").servable()
+```
+
+If we add `.layout` the data will be visualized as 3 individual plots (one per depth_class):
+
+```python
+import hvsampledata
+import holoviews as hv
+
+hv.extension("bokeh")
+
+data = hvsampledata.earthquakes("pandas")
+
+mag_class_counts = data.groupby(['mag_class', 'depth_class']).size().reset_index(name='counts')
+print(mag_class_counts)
+
+plot = hv.Bars(
+    data = mag_class_counts,
+    kdims=['mag_class','depth_class'],
+    vdims='counts',
+).groupby(
+    "depth_class"
+).opts(
+    # DO specify optional styling options using .opts()
+    line_color=None,
+    width=800,
+).layout()
+# If working in notebook DO output to plot:
+plot
+# If working in .py file DO use panel:
+import panel as pn
+
+# DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
+# Instead provide pn.state.served check
+if pn.state.served:
+    # DO always run pn.extension() to load panel javascript extensions
+    pn.extension()
+    # DO remember to add .servable to the panel components you want to serve with the app
+    pn.panel(plot, sizing_mode="stretch_both").servable()
+```
+
+If instead of `.layout()` we add `.overlay()`, one plot will be created, but the depth_class'es will be visualized by different colors.
+
+```python
+import hvsampledata
+import holoviews as hv
+
+hv.extension("bokeh")
+
+data = hvsampledata.earthquakes("pandas")
+
+mag_class_counts = data.groupby(['mag_class', 'depth_class']).size().reset_index(name='counts')
+print(mag_class_counts)
+
+plot = hv.Bars(
+    data = mag_class_counts,
+    kdims=['mag_class','depth_class'],
+    vdims='counts',
+).groupby(
+    "depth_class"
+).opts(
+    # DO specify optional styling options using .opts()
+    line_color=None,
+    width=800,
+).overlay()
+# If working in notebook DO output to plot:
+plot
+# If working in .py file DO use panel:
+import panel as pn
+
+# DON'T provide a `if __name__ == "__main__":` method to serve the app with `python`
+# Instead provide pn.state.served check
+if pn.state.served:
+    # DO always run pn.extension() to load panel javascript extensions
+    pn.extension()
+    # DO remember to add .servable to the panel components you want to serve with the app
+    pn.panel(plot, sizing_mode="stretch_both").servable()
+```
+
+Note: This works better for Curve or Scatter plots
 
 ## Reference Publication Quality Bar Chart
 
@@ -374,7 +507,15 @@ plot.opts(
 | 1460 | '0 a' | 1 k |
 | -104000 | '0a' | -104k |
 
-### Recommended Plot Types
+## Saving a plot
+
+You can save a plot to html with `hv.save`:
+
+```python
+hv.save(some_plot, 'some_plot.html')
+```
+
+## Recommended Plot Types
 
 Curve - Line plots for time series and continuous data
 Scatter - Scatter plots for exploring relationships between variables
