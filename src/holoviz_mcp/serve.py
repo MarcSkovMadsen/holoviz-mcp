@@ -17,7 +17,6 @@ def main(port: int = 5006, address: str = "0.0.0.0", allow_websocket_origin="*",
     """Serve all Panel apps in the apps directory."""
     apps_dir = Path(__file__).parent / "apps"
     app_files = [str(f) for f in apps_dir.glob("*.py") if f.name != "__init__.py"]
-
     if not app_files:
         logger.warning("No Panel apps found in apps directory")
         return
