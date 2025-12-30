@@ -189,7 +189,7 @@ HoloViz MCP depends on:
 ### Update Command
 
 ```bash
-uv tool update holoviz-mcp[panel-extensions]
+uv tool update holoviz-mcp
 ```
 
 ## Logging & Monitoring

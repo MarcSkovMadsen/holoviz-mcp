@@ -4,6 +4,7 @@ This module provides a unified CLI using Typer for all HoloViz MCP commands.
 """
 
 import shutil
+import subprocess
 
 import typer
 from typing_extensions import Annotated
@@ -20,6 +21,11 @@ update_app = typer.Typer(
     help="Update HoloViz MCP resources.",
 )
 app.add_typer(update_app)
+install_app = typer.Typer(
+    name="install",
+    help="Install HoloViz MCP resources.",
+)
+app.add_typer(install_app)
 
 
 @app.callback(invoke_without_command=True)
@@ -100,6 +106,15 @@ def update_copilot(agents: bool = True, skills: bool = False) -> None:
             relative_path = (target / file.name / "SKILL.md").relative_to(Path.cwd())
             typer.echo(f"Updated: {relative_path}")
             shutil.copy(file, target / file.name)
+
+
+@install_app.command(name="chromium")
+def install_chromium() -> None:
+    """Install Chromium browser for Playwright.
+
+    This command installs the Chromium browser required for taking screenshots.
+    """
+    subprocess.run(["playwright", "install", "chromium"], check=True)
 
 
 @app.command()

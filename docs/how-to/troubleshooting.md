@@ -62,7 +62,7 @@ Install a newer Python version if needed.
 4. Reinstall HoloViz MCP:
    ```bash
    uv tool uninstall holoviz-mcp
-   uv tool install holoviz-mcp[panel-extensions]
+   uv tool install holoviz-mcp
    ```
 
 ### Server Crashes

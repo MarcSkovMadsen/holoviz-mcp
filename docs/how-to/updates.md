@@ -9,13 +9,13 @@ Keep HoloViz MCP up to date to ensure you have the latest features, bug fixes, a
 Update the HoloViz MCP package:
 
 ```bash
-uv tool update holoviz-mcp[panel-extensions]
+uv tool update holoviz-mcp
 ```
 
 ### With pip
 
 ```bash
-pip install --upgrade holoviz-mcp[panel-extensions]
+pip install --upgrade holoviz-mcp
 ```
 
 ### With conda/mamba
@@ -39,7 +39,7 @@ This ensures you have the latest documentation from HoloViz projects.
 For convenience, update both the package and documentation:
 
 ```bash
-uv tool update holoviz-mcp[panel-extensions] && uvx holoviz-mcp update index
+uv tool update holoviz-mcp && uvx holoviz-mcp update index
 ```
 
 ## Update Docker Image
@@ -119,7 +119,7 @@ Update when:
 If an update causes issues, rollback to a previous version:
 
 ```bash
-uv tool install holoviz-mcp[panel-extensions]==0.1.0
+uv tool install holoviz-mcp==0.1.0
 ```
 
 Replace `0.1.0` with the desired version.

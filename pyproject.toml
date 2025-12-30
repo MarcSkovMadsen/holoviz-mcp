@@ -47,8 +47,14 @@ dependencies = [
     "matplotlib",
     "nbconvert",
     "packaging",
+    "panel-full-calendar",
+    "panel-graphic-walker",
     "panel-material-ui",
+    "panel-neuroglancer",
+    "panel-precision-slider",
+    "panel-web-llm",
     "panel",
+    "playwright",
     "plotly",
     "pydantic>=2.0",
     "PyYAML",
@@ -78,16 +84,6 @@ mypy = [
     "mypy",
     "types-requests",
     "typing-extensions",
-]
-panel-extensions =[
-    "panel-full-calendar",
-    "panel-graphic-walker",
-    "panel-neuroglancer",
-    "panel-precision-slider",
-    "panel-web-llm",
-]
-playwright = [
-    "playwright",
 ]
 [tool.ruff]
 exclude = [
