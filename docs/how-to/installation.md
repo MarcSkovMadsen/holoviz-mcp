@@ -25,17 +25,14 @@ For other installation methods, see the [uv installation guide](https://docs.ast
 Install HoloViz MCP as a uv tool:
 
 ```bash
-uv tool install holoviz-mcp[panel-extensions]
+uv tool install holoviz-mcp
 ```
 
-This installs HoloViz MCP with Panel extensions like Material UI, Graphic Walker, and others.
+### Install Chromium
 
-!!! tip
-    If you want to be able to use the `panel_take_screenshot` tool, you will need to install [playwright](https://playwright.dev/python/) and chromium
-    ```bash
-    uv tool install holoviz-mcp[panel-extensions,playwright]
-    uvx --from holoviz-mcp playwright install chromium
-    ```
+```bash
+uvx holoviz-mcp install chromium
+```
 
 ### Create Documentation Index
 
@@ -62,7 +59,7 @@ Press `Ctrl+C` to stop the server.
 You can also install HoloViz MCP using pip:
 
 ```bash
-pip install holoviz-mcp[panel-extensions]
+pip install holoviz-mcp
 ```
 
 Then create the documentation index:
@@ -101,24 +98,6 @@ cd holoviz-mcp
 pip install -e .[dev]
 ```
 
-## Optional Dependencies
-
-### Panel Extensions
-
-Install with common Panel extensions:
-
-```bash
-uv tool install holoviz-mcp[panel-extensions]
-```
-
-This includes:
-- `panel-material-ui`: Material Design components
-- `panel-graphic-walker`: Interactive data visualization
-- `panel-full-calendar`: Calendar components
-- `panel-neuroglancer`: Neuroglancer integration
-- `panel-precision-slider`: High-precision sliders
-- `panel-web-llm`: WebLLM integration
-
 ### Development Dependencies
 
 For development work:
@@ -138,7 +117,7 @@ For containerized deployment, see the [Docker Guide](docker.md).
 ### Update with uv
 
 ```bash
-uv tool update holoviz-mcp[panel-extensions]
+uv tool update holoviz-mcp
 ```
 
 ### Update Documentation Index
