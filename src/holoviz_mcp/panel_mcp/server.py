@@ -12,6 +12,8 @@ from importlib.metadata import distributions
 
 from fastmcp import Context
 from fastmcp import FastMCP
+from fastmcp.utilities.types import Image
+from mcp.types import ImageContent
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.panel_mcp.data import get_components as _get_components_org
@@ -436,6 +438,35 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
 
     component = components_list[0]
     return component.parameters
+
+
+@mcp.tool()
+async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920, height: int = 1200, full_page: bool = False) -> ImageContent:
+    """
+    Take a screenshot of the specified url.
+
+    Arguments
+    ----------
+    url : str, default="http://localhost:5006/"
+        The URL of the page to take a screenshot of.
+    width : int, default=1920
+        The width of the browser viewport.
+    height : int, default=1200
+        The height of the browser viewport.
+    full_page : bool, default=False
+        Whether to capture the full scrollable page.
+    """
+    from playwright.async_api import async_playwright
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page(ignore_https_errors=True, viewport={"width": width, "height": height})
+        await page.goto(url, wait_until="networkidle")
+        buffer = await page.screenshot(type="png", full_page=full_page)
+        await browser.close()
+
+    image = Image(data=buffer, format="png")
+    return image.to_image_content()
 
 
 if __name__ == "__main__":

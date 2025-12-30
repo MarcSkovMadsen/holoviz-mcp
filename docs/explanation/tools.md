@@ -75,6 +75,19 @@ Tools for discovering and working with Panel components.
 
 **Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
 
+### panel_take_screenshot
+
+**Purpose**: Take a screenshot of your (panel) web app.
+
+**Parameters**:
+- `url` (string): The url to take the screenshot of. Default is 'http://localhost:5006/'
+
+**Use Case**: Understand how the app looks
+
+**Returns**: ImageContent.
+
+**Example Query**: *"Take a screenshot of http://127.0.0.1:8000/"**
+
 ## HoloViz Tools
 
 Tools for searching and accessing HoloViz documentation.

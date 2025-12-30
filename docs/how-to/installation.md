@@ -30,6 +30,13 @@ uv tool install holoviz-mcp[panel-extensions]
 
 This installs HoloViz MCP with Panel extensions like Material UI, Graphic Walker, and others.
 
+!!! tip
+    If you want to be able to use the `panel_take_screenshot` tool, you will need to install [playwright](https://playwright.dev/python/) and chromium
+    ```bash
+    uv tool install holoviz-mcp[panel-extensions] --with playwright
+    uvx --from holoviz-mcp playwright install chromium
+    ```
+
 ### Create Documentation Index
 
 After installation, create the documentation index:
