@@ -88,6 +88,34 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"Take a screenshot of http://127.0.0.1:8000/"**
 
+## HoloViews Tool
+
+Tools for accessing HoloViews documentation.
+
+### holoviews_list_elements
+
+**Purpose**: List all available HoloViews visualization elements.
+
+**Use Case**: Discover what elements you can generate with HoloViews across supported backends.
+
+**Returns**: Sorted list of element names (e.g., "Annotation", "Area", "Arrow", "Bars", ...).
+
+**Example Query**: *"What HoloViews elements are available?"*
+
+### holoviews_get_docstring
+
+**Purpose**: Get the docstring and options for a specific HoloViews element for a given backend.
+
+**Parameters**:
+- `element` (string): Name of the HoloViews element (e.g., "Area", "Bars", "Curve").
+- `backend` (string): Rendering backend, one of `bokeh`, `matplotlib`, or `plotly` (default: `bokeh`).
+
+**Use Case**: Understand element parameters, style options, and reference link before coding.
+
+**Returns**: Full docstring plus parameter details, style options, and plot options for the selected backend.
+
+**Example Query**: *"Show the HoloViews docstring for Area on the bokeh backend"*
+
 ## HoloViz Tools
 
 Tools for searching and accessing HoloViz documentation.
