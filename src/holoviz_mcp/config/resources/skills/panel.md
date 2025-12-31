@@ -12,7 +12,7 @@ metadata:
 
 This document provides best practices for developing dashboards and data apps with HoloViz Panel in Python .py files.
 
-Please develop as an **Expert Python Developer** developing advanced data-driven, analytics and testable dashboards and applications would do. Keep the code short, concise, documented, testable and professional.
+Please develop as an **Expert Python and Panel Developer** developing advanced data-driven, analytics and testable dashboards and analytics apps would do. Keep the code short, concise, documented, testable and professional.
 
 ## Dependencies
 
