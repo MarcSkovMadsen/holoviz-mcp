@@ -2,6 +2,8 @@
 
 This tutorial will guide you through installing and using HoloViz MCP for the first time. By the end, you'll have HoloViz MCP running and be able to ask your AI assistant questions about Panel components!
 
+<iframe src="https://www.youtube.com/embed/nB6cI26GNzM?si=XGyPwCMvBWYOrHop" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
+
 !!! tip "What you'll learn"
     - How to install HoloViz MCP
     - How to configure it with your AI assistant (VS Code, Claude Desktop, or Cursor)
@@ -39,6 +41,8 @@ Install [Chromium](https://playwright.dev/docs/browsers) to enable the holoviz-m
 ```bash
 uvx holoviz-mcp install chromium
 ```
+
+**📦 This downloads 300MB** as it downloads the Chromium and FFMPEG engines.
 
 ## Step 3: Create the Documentation Index
 
