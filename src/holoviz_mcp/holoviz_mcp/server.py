@@ -333,7 +333,7 @@ async def display(
     >>> url = await display(code, method="panel")
     """
     config = get_config()
-    
+
     if not config.display.enabled:
         return "Error: Display server is not enabled. Set display.enabled=true in config."
 
