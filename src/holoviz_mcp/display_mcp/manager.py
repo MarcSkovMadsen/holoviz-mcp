@@ -113,9 +113,9 @@ class PanelServerManager:
 
         while time.time() - start_time < timeout:
             try:
-                # Try to connect to any page
-                response = requests.get(f"{base_url}/", timeout=2)
-                if response.status_code in (200, 404):  # 404 is OK, means server is up
+                # Try to connect to health endpoint
+                response = requests.get(f"{base_url}/health", timeout=2)
+                if response.status_code == 200:
                     return True
             except requests.RequestException:
                 pass
@@ -142,8 +142,8 @@ class PanelServerManager:
 
         try:
             base_url = f"http://{self.host}:{self.port}"
-            response = requests.get(f"{base_url}/", timeout=2)
-            return response.status_code in (200, 404)
+            response = requests.get(f"{base_url}/health", timeout=2)
+            return response.status_code == 200
         except requests.RequestException:
             return False
 
@@ -238,58 +238,20 @@ class PanelServerManager:
         base_url = f"http://{self.host}:{self.port}"
 
         try:
-            # Use GET with query params since POST isn't working reliably with Panel
-            import urllib.parse
-            
-            params = {
-                "code": code,
-                "name": name,
-                "description": description,
-                "method": method,
-            }
-            
-            url = f"{base_url}/create?{urllib.parse.urlencode(params)}"
-            response = requests.get(url, timeout=30)
+            # Use POST with JSON body now that we have proper Tornado handler
+            response = requests.post(
+                f"{base_url}/create",
+                json={
+                    "code": code,
+                    "name": name,
+                    "description": description,
+                    "method": method,
+                },
+                timeout=30,
+            )
 
             response.raise_for_status()
-            
-            # Parse JSON from HTML response
-            # Panel wraps JSON pane in HTML. Extract JSON from response.
-            # This is a pragmatic workaround for Panel's HTTP handling limitations.
-            # Future improvement: Use custom Tornado handler for proper REST API.
-            import re
-            import json
-            
-            # Try to find JSON object with 'id' field in the response
-            # Look for JSON pattern, being careful not to match HTML attributes
-            text = response.text
-            
-            # First try: Look for JSON in script tags or data attributes
-            json_patterns = [
-                r'<pre[^>]*>(\\{[^<]*"id"[^<]*\\})</pre>',  # JSON in <pre> tags
-                r'data-json="([^"]*)"',  # JSON in data attributes
-                r'\\{\\s*"id"\\s*:\\s*"[^"]*"[^}]*\\}',  # Direct JSON object
-            ]
-            
-            for pattern in json_patterns:
-                json_match = re.search(pattern, text)
-                if json_match:
-                    try:
-                        json_str = json_match.group(1) if '(' in pattern else json_match.group()
-                        return json.loads(json_str)
-                    except (json.JSONDecodeError, IndexError):
-                        continue
-            
-            # Fallback: Try to extract request ID from URL in response
-            id_match = re.search(r'view\?id=([a-f0-9\-]+)', text)
-            if id_match:
-                request_id = id_match.group(1)
-                return {
-                    "id": request_id,
-                    "url": f"{base_url}/view?id={request_id}",
-                }
-            else:
-                raise ValueError("Could not parse response - no JSON or ID found")
+            return response.json()
 
         except requests.RequestException as e:
             logger.exception(f"Error creating visualization: {e}")

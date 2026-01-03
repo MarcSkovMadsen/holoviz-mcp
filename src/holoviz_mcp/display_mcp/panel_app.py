@@ -16,6 +16,7 @@ from typing import Any
 
 import panel as pn
 import param
+from tornado.web import RequestHandler
 
 logger = logging.getLogger(__name__)
 
@@ -178,105 +179,237 @@ class DisplayApp(param.Parameterized):
                 return pn.pane.Markdown("*Code executed successfully (no servable objects found)*")
 
 
-def create_page():
-    """Handle /create requests (both GET and POST via query params or body)."""
-    # Get app instance
-    app = pn.state.cache.get("app")
+class CreateEndpoint(RequestHandler):
+    """Tornado RequestHandler for /create endpoint."""
     
-    if not app:
-        return pn.pane.JSON({"error": "InternalError", "message": "Application not initialized"})
-    
-    from holoviz_mcp.display_mcp.database import DisplayRequest
-    from holoviz_mcp.display_mcp.utils import find_extensions
-    from holoviz_mcp.display_mcp.utils import find_requirements
-    
-    try:
-        # Try to get parameters from query params or POST body
-        code = ""
-        name = ""
-        description = ""
-        method = "jupyter"
+    def post(self):
+        """Handle POST requests to create visualizations."""
+        from holoviz_mcp.display_mcp.database import DisplayRequest
+        from holoviz_mcp.display_mcp.utils import find_extensions
+        from holoviz_mcp.display_mcp.utils import find_requirements
         
-        # Check for POST body first
-        if hasattr(pn.state, "request") and pn.state.request and pn.state.request.method == "POST":
+        # Get app instance
+        app = pn.state.cache.get("app")
+        
+        if not app:
+            self.set_status(500)
+            self.set_header("Content-Type", "application/json")
+            self.write({"error": "InternalError", "message": "Application not initialized"})
+            return
+        
+        try:
+            # Parse JSON body
+            request_body = json.loads(self.request.body.decode('utf-8'))
+            
+            # Extract parameters
+            code = request_body.get("code", "")
+            name = request_body.get("name", "")
+            description = request_body.get("description", "")
+            method = request_body.get("method", "jupyter")
+            
+            if not code:
+                self.set_status(400)
+                self.set_header("Content-Type", "application/json")
+                self.write({"error": "ValueError", "message": "Code is required"})
+                return
+            
+            # Validate syntax
             try:
-                import json as json_module
-                request_body = json_module.loads(pn.state.request.body.decode('utf-8'))
+                ast.parse(code)
+            except SyntaxError as e:
+                self.set_status(400)
+                self.set_header("Content-Type", "application/json")
+                self.write({
+                    "error": "SyntaxError",
+                    "message": str(e),
+                    "code_snippet": code,
+                })
+                return
+            
+            # Infer requirements and extensions
+            packages = find_requirements(code)
+            extensions = find_extensions(code) if method == "jupyter" else []
+            
+            # Create request in database with "pending" status
+            request_obj = DisplayRequest(
+                code=code,
+                name=name,
+                description=description,
+                method=method,
+                packages=packages,
+                extensions=extensions,
+                status="pending",
+            )
+            
+            app.db.create_request(request_obj)
+            
+            # Determine base URL
+            base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
+            if not base_url:
+                # Check for Jupyter proxy
+                jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
+                if jupyter_base:
+                    port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                    base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
+                else:
+                    # Default to localhost
+                    host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+                    port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                    base_url = f"http://{host}:{port}"
+            
+            url = f"{base_url}/view?id={request_obj.id}"
+            
+            self.set_status(200)
+            self.set_header("Content-Type", "application/json")
+            self.write({
+                "id": request_obj.id,
+                "url": url,
+                "created_at": request_obj.created_at.isoformat(),
+            })
+        
+        except json.JSONDecodeError as e:
+            self.set_status(400)
+            self.set_header("Content-Type", "application/json")
+            self.write({"error": "JSONDecodeError", "message": str(e)})
+        except Exception as e:
+            logger.exception("Error in /create endpoint")
+            self.set_status(500)
+            self.set_header("Content-Type", "application/json")
+            self.write({
+                "error": "InternalError",
+                "message": str(e),
+                "traceback": traceback.format_exc(),
+            })
+
+
+class HealthEndpoint(RequestHandler):
+    """Tornado RequestHandler for /health endpoint."""
+    
+    def get(self):
+        """Handle GET requests to check server health."""
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write({
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+
+
+def health_page():
+    """Health check endpoint."""
+    return pn.pane.JSON({
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+
+
+def create_page_wrapper():
+    """Wrapper for create endpoint that handles both UI display and API calls."""
+    # Check if this is an API call (has JSON content-type) or browser request
+    if hasattr(pn.state, "request") and pn.state.request:
+        request = pn.state.request
+        content_type = request.headers.get("Content-Type", "")
+        
+        if "application/json" in content_type and request.method == "POST":
+            # This is an API call, handle it
+            from holoviz_mcp.display_mcp.database import DisplayRequest
+            from holoviz_mcp.display_mcp.utils import find_extensions
+            from holoviz_mcp.display_mcp.utils import find_requirements
+            
+            app = pn.state.cache.get("app")
+            if not app:
+                return pn.pane.JSON({"error": "InternalError", "message": "Application not initialized"})
+            
+            try:
+                # Parse JSON body
+                request_body = json.loads(request.body.decode('utf-8'))
+                
+                # Extract parameters
                 code = request_body.get("code", "")
                 name = request_body.get("name", "")
                 description = request_body.get("description", "")
                 method = request_body.get("method", "jupyter")
-            except (json_module.JSONDecodeError, UnicodeDecodeError, AttributeError) as e:
-                logger.warning(f"Failed to parse POST body: {e}")
-        
-        # Fall back to query params
-        if not code and pn.state.location:
-            params = pn.state.location.search_params
-            code = params.get("code", [""])[0] if "code" in params else ""
-            name = params.get("name", [""])[0] if "name" in params else ""
-            description = params.get("description", [""])[0] if "description" in params else ""
-            method = params.get("method", ["jupyter"])[0] if "method" in params else "jupyter"
-        
-        if not code:
-            return pn.pane.JSON({"error": "ValueError", "message": "Code is required"})
-        
-        # Validate syntax only
-        try:
-            ast.parse(code)
-        except SyntaxError as e:
-            return pn.pane.JSON({
-                "error": "SyntaxError",
-                "message": str(e),
-                "code_snippet": code,
-            })
-        
-        # Infer requirements and extensions
-        packages = find_requirements(code)
-        extensions = find_extensions(code) if method == "jupyter" else []
-        
-        # Create request in database with "pending" status
-        # We'll validate when it's actually viewed
-        request_obj = DisplayRequest(
-            code=code,
-            name=name,
-            description=description,
-            method=method,
-            packages=packages,
-            extensions=extensions,
-            status="pending",  # Will be updated when viewed
-        )
-        
-        app.db.create_request(request_obj)
-        
-        # Determine base URL
-        base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
-        if not base_url:
-            # Check for Jupyter proxy
-            jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
-            if jupyter_base:
-                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
-                base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
-            else:
-                # Default to localhost
-                host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
-                base_url = f"http://{host}:{port}"
-        
-        url = f"{base_url}/view?id={request_obj.id}"
-        
-        return pn.pane.JSON({
-            "id": request_obj.id,
-            "url": url,
-            "created_at": request_obj.created_at.isoformat(),
-        })
+                
+                if not code:
+                    return pn.pane.JSON({"error": "ValueError", "message": "Code is required"})
+                
+                # Validate syntax
+                try:
+                    ast.parse(code)
+                except SyntaxError as e:
+                    return pn.pane.JSON({
+                        "error": "SyntaxError",
+                        "message": str(e),
+                        "code_snippet": code,
+                    })
+                
+                # Infer requirements and extensions
+                packages = find_requirements(code)
+                extensions = find_extensions(code) if method == "jupyter" else []
+                
+                # Create request in database
+                request_obj = DisplayRequest(
+                    code=code,
+                    name=name,
+                    description=description,
+                    method=method,
+                    packages=packages,
+                    extensions=extensions,
+                    status="pending",
+                )
+                
+                app.db.create_request(request_obj)
+                
+                # Determine base URL
+                base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
+                if not base_url:
+                    jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
+                    if jupyter_base:
+                        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                        base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
+                    else:
+                        host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+                        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                        base_url = f"http://{host}:{port}"
+                
+                url = f"{base_url}/view?id={request_obj.id}"
+                
+                return pn.pane.JSON({
+                    "id": request_obj.id,
+                    "url": url,
+                    "created_at": request_obj.created_at.isoformat(),
+                })
+            
+            except json.JSONDecodeError as e:
+                return pn.pane.JSON({"error": "JSONDecodeError", "message": str(e)})
+            except Exception as e:
+                logger.exception("Error in /create endpoint")
+                return pn.pane.JSON({
+                    "error": "InternalError",
+                    "message": str(e),
+                    "traceback": traceback.format_exc(),
+                })
     
-    except Exception as e:
-        logger.exception("Error in /create endpoint")
-        return pn.pane.JSON({
-            "error": "InternalError",
-            "message": str(e),
-            "traceback": traceback.format_exc(),
-        })
+    # For non-API requests, redirect to /add page
+    return pn.pane.Markdown("""
+# Create Endpoint
+
+This endpoint accepts POST requests with JSON body to create visualizations.
+
+For manual creation, please use the [/add](/add) page.
+
+## API Usage
+
+```bash
+curl -X POST http://localhost:5005/create \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "code": "import pandas as pd\\npd.DataFrame({\"x\": [1,2,3]})",
+    "name": "My Visualization",
+    "method": "jupyter"
+  }'
+```
+    """)
 
 
 def view_page():
@@ -386,6 +519,132 @@ def admin_page():
     )
 
 
+def add_page():
+    """Create the /add page for manually requesting displays via the /create endpoint."""
+    # Get app instance
+    app = pn.state.cache.get("app")
+    
+    if not app:
+        return pn.pane.Markdown("# Error\n\nApplication not initialized.")
+    
+    # Create input widgets
+    code_editor = pn.widgets.CodeEditor(
+        value='import pandas as pd\ndf = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})\ndf',
+        language="python",
+        theme="monokai",
+        sizing_mode="stretch_both",
+        height=300,
+    )
+    
+    name_input = pn.widgets.TextInput(
+        name="Name",
+        placeholder="Enter visualization name",
+        sizing_mode="stretch_width",
+    )
+    
+    description_input = pn.widgets.TextAreaInput(
+        name="Description",
+        placeholder="Enter description",
+        sizing_mode="stretch_width",
+        max_length=500,
+    )
+    
+    method_select = pn.widgets.RadioButtonGroup(
+        name="Method",
+        options=["jupyter", "panel"],
+        value="jupyter",
+        button_type="success",
+    )
+    
+    submit_button = pn.widgets.Button(
+        name="Create Visualization",
+        button_type="primary",
+        sizing_mode="stretch_width",
+    )
+    
+    result_pane = pn.pane.Markdown("", sizing_mode="stretch_width")
+    
+    def on_submit(event):
+        """Handle submit button click."""
+        from holoviz_mcp.display_mcp.database import DisplayRequest
+        from holoviz_mcp.display_mcp.utils import find_extensions
+        from holoviz_mcp.display_mcp.utils import find_requirements
+        
+        code = code_editor.value
+        name = name_input.value
+        description = description_input.value
+        method = method_select.value
+        
+        if not code:
+            result_pane.object = "**Error:** Code is required"
+            return
+        
+        try:
+            # Validate syntax
+            ast.parse(code)
+            
+            # Infer requirements and extensions
+            packages = find_requirements(code)
+            extensions = find_extensions(code) if method == "jupyter" else []
+            
+            # Create request in database
+            request_obj = DisplayRequest(
+                code=code,
+                name=name,
+                description=description,
+                method=method,
+                packages=packages,
+                extensions=extensions,
+                status="pending",
+            )
+            
+            app.db.create_request(request_obj)
+            
+            # Determine base URL
+            base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
+            if not base_url:
+                host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                base_url = f"http://{host}:{port}"
+            
+            url = f"{base_url}/view?id={request_obj.id}"
+            
+            result_pane.object = f"""
+**Success!** Visualization created.
+
+**ID:** {request_obj.id}
+
+**URL:** [{url}]({url})
+
+Click the link above to view your visualization.
+"""
+        
+        except SyntaxError as e:
+            result_pane.object = f"**Syntax Error:** {str(e)}"
+        except Exception as e:
+            logger.exception("Error creating visualization")
+            result_pane.object = f"**Error:** {str(e)}"
+    
+    submit_button.on_click(on_submit)
+    
+    return pn.template.FastListTemplate(
+        title="Add Visualization",
+        sidebar=[
+            pn.pane.Markdown("### Configuration"),
+            name_input,
+            description_input,
+            method_select,
+            submit_button,
+        ],
+        main=[
+            pn.pane.Markdown("### Python Code"),
+            code_editor,
+            pn.pane.Markdown("### Result"),
+            result_pane,
+        ],
+    )
+
+
 def main():
     """Main entry point for Panel server."""
     # Get database path from environment or command line
@@ -405,11 +664,17 @@ def main():
     
     # Configure pages
     pages = {
-        "/create": create_page,
         "/view": view_page,
         "/chat": chat_page,
         "/admin": admin_page,
+        "/add": add_page,
     }
+    
+    # Configure extra patterns for Tornado handlers (REST API endpoints)
+    extra_patterns = [
+        (r"/create", CreateEndpoint),
+        (r"/health", HealthEndpoint),
+    ]
     
     # Start server
     port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
@@ -421,6 +686,7 @@ def main():
         address=host,
         show=False,
         title="HoloViz Display Server",
+        extra_patterns=extra_patterns,
     )
 
 
