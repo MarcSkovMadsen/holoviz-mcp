@@ -253,27 +253,43 @@ class PanelServerManager:
 
             response.raise_for_status()
             
-            # Parse JSON from HTML response (Panel wraps JSON in HTML)
-            # Look for the JSON content in the response
+            # Parse JSON from HTML response
+            # Panel wraps JSON pane in HTML. Extract JSON from response.
+            # This is a pragmatic workaround for Panel's HTTP handling limitations.
+            # Future improvement: Use custom Tornado handler for proper REST API.
             import re
             import json
             
-            # Try to find JSON in the response
-            json_match = re.search(r'\{[^{}]*"id"[^{}]*\}', response.text)
-            if json_match:
-                return json.loads(json_match.group())
+            # Try to find JSON object with 'id' field in the response
+            # Look for JSON pattern, being careful not to match HTML attributes
+            text = response.text
+            
+            # First try: Look for JSON in script tags or data attributes
+            json_patterns = [
+                r'<pre[^>]*>(\\{[^<]*"id"[^<]*\\})</pre>',  # JSON in <pre> tags
+                r'data-json="([^"]*)"',  # JSON in data attributes
+                r'\\{\\s*"id"\\s*:\\s*"[^"]*"[^}]*\\}',  # Direct JSON object
+            ]
+            
+            for pattern in json_patterns:
+                json_match = re.search(pattern, text)
+                if json_match:
+                    try:
+                        json_str = json_match.group(1) if '(' in pattern else json_match.group()
+                        return json.loads(json_str)
+                    except (json.JSONDecodeError, IndexError):
+                        continue
+            
+            # Fallback: Try to extract request ID from URL in response
+            id_match = re.search(r'view\?id=([a-f0-9\-]+)', text)
+            if id_match:
+                request_id = id_match.group(1)
+                return {
+                    "id": request_id,
+                    "url": f"{base_url}/view?id={request_id}",
+                }
             else:
-                # Fallback: return a generated response based on URL
-                # Extract request ID from the response if possible
-                id_match = re.search(r'id=([a-f0-9\-]+)', response.text)
-                if id_match:
-                    request_id = id_match.group(1)
-                    return {
-                        "id": request_id,
-                        "url": f"{base_url}/view?id={request_id}",
-                    }
-                else:
-                    raise ValueError("Could not parse response")
+                raise ValueError("Could not parse response - no JSON or ID found")
 
         except requests.RequestException as e:
             logger.exception(f"Error creating visualization: {e}")

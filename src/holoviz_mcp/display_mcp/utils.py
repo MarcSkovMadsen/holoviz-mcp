@@ -4,6 +4,9 @@ import ast
 import importlib.util
 from typing import Any
 
+# Check for pandas availability once at module level
+_PANDAS_AVAILABLE = importlib.util.find_spec("pandas") is not None
+
 
 def find_extensions(code: str, namespace: dict[str, Any] | None = None) -> list[str]:
     """Infer Panel extensions required for code execution.
@@ -39,23 +42,20 @@ def find_extensions(code: str, namespace: dict[str, Any] | None = None) -> list[
         extensions.append("deckgl")
     
     # Check result type if namespace provided
-    if namespace is not None:
+    if namespace is not None and _PANDAS_AVAILABLE:
         result = namespace.get("_panel_result")
         if result is not None:
-            # Check if pandas is available
-            if importlib.util.find_spec("pandas") is not None:
-                import pandas as pd
-                if isinstance(result, (pd.DataFrame, pd.Series)):
-                    extensions.append("tabulator")
+            import pandas as pd
+            if isinstance(result, (pd.DataFrame, pd.Series)):
+                extensions.append("tabulator")
     
     return list(set(extensions))  # deduplicate
 
 
 def find_requirements(code: str) -> list[str]:
-    """Find package requirements from code using panel's mime_render utility.
+    """Find package requirements from code using AST parsing.
 
-    This uses Panel's built-in requirement detection which analyzes
-    imports and object types.
+    This analyzes imports in the code to determine required packages.
 
     Parameters
     ----------
@@ -66,48 +66,6 @@ def find_requirements(code: str) -> list[str]:
     -------
     list[str]
         List of required package names
-    """
-    try:
-        # Try to use Panel's mime_render utility
-        from panel.io.mime_render import find_requirements as panel_find_requirements
-        
-        # Parse code to get imports
-        try:
-            tree = ast.parse(code)
-        except SyntaxError:
-            return []
-        
-        # Extract imported modules
-        imports = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.add(node.module.split(".")[0])
-        
-        # Use panel's function if we have objects
-        # For now, just return the imports we found
-        return list(imports)
-        
-    except ImportError:
-        # Fallback: simple import detection
-        return _simple_import_detection(code)
-
-
-def _simple_import_detection(code: str) -> list[str]:
-    """Simple fallback for detecting imports from code.
-
-    Parameters
-    ----------
-    code : str
-        Python code to analyze
-
-    Returns
-    -------
-    list[str]
-        List of imported package names
     """
     try:
         tree = ast.parse(code)

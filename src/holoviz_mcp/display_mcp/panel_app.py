@@ -206,8 +206,8 @@ def create_page():
                 name = request_body.get("name", "")
                 description = request_body.get("description", "")
                 method = request_body.get("method", "jupyter")
-            except:
-                pass
+            except (json_module.JSONDecodeError, UnicodeDecodeError, AttributeError) as e:
+                logger.warning(f"Failed to parse POST body: {e}")
         
         # Fall back to query params
         if not code and pn.state.location:
