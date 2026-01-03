@@ -58,6 +58,7 @@ dependencies = [
     "plotly",
     "pydantic>=2.0",
     "PyYAML",
+    "requests",
     "typer",
     "watchfiles",
 ]

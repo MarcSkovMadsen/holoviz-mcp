@@ -208,6 +208,60 @@
       },
       "additionalProperties": false
     },
+    "display": {
+      "type": "object",
+      "description": "Display server configuration for AI Visualizer",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the display server",
+          "default": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port for the display Panel server",
+          "minimum": 1024,
+          "maximum": 65535,
+          "default": 5005
+        },
+        "host": {
+          "type": "string",
+          "description": "Host address for the display Panel server",
+          "default": "127.0.0.1"
+        },
+        "max_restarts": {
+          "type": "integer",
+          "description": "Maximum number of restart attempts for Panel server",
+          "minimum": 0,
+          "default": 3
+        },
+        "health_check_interval": {
+          "type": "integer",
+          "description": "Health check interval in seconds",
+          "minimum": 10,
+          "default": 60
+        },
+        "auto_install_packages": {
+          "type": "boolean",
+          "description": "Auto-install missing packages",
+          "default": true
+        },
+        "preinstalled_packages": {
+          "type": "array",
+          "description": "Packages to install at startup",
+          "items": {
+            "type": "string"
+          },
+          "default": ["altair", "bokeh", "holoviews", "hvplot", "matplotlib", "numpy", "pandas", "panel", "plotly"]
+        },
+        "db_path": {
+          "type": "string",
+          "description": "Path to SQLite database for display requests",
+          "format": "path"
+        }
+      },
+      "additionalProperties": false
+    },
     "user_dir": {
       "type": "string",
       "description": "User configuration directory",

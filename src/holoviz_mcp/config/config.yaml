@@ -10,6 +10,24 @@ server:
   anonymized_telemetry: false
   jupyter_server_proxy_url: ""
 
+display:
+  enabled: true
+  port: 5005
+  host: "127.0.0.1"
+  max_restarts: 3
+  health_check_interval: 60
+  auto_install_packages: true
+  preinstalled_packages:
+    - altair
+    - bokeh
+    - holoviews
+    - hvplot
+    - matplotlib
+    - numpy
+    - pandas
+    - panel
+    - plotly
+
 docs:
   repositories:
     panel:
