@@ -25,14 +25,15 @@ class TestUtils:
     def test_find_extensions_pandas(self):
         """Test finding tabulator extension for pandas."""
         code = "import pandas as pd\ndf = pd.DataFrame()"
-        
+
         # Without namespace
         extensions = find_extensions(code)
         # Should not find tabulator without result in namespace
         assert "tabulator" not in extensions
-        
+
         # With namespace
         import pandas as pd
+
         namespace = {"_panel_result": pd.DataFrame({"x": [1, 2, 3]})}
         extensions = find_extensions(code, namespace)
         assert "tabulator" in extensions
@@ -47,7 +48,7 @@ class TestUtils:
         """Test finding package requirements."""
         code = "import pandas as pd\nimport numpy as np"
         requirements = find_requirements(code)
-        
+
         assert "pandas" in requirements
         assert "numpy" in requirements
 
@@ -55,14 +56,14 @@ class TestUtils:
         """Test finding requirements from 'from' imports."""
         code = "from matplotlib import pyplot as plt"
         requirements = find_requirements(code)
-        
+
         assert "matplotlib" in requirements
 
     def test_extract_last_expression_simple(self):
         """Test extracting last expression from simple code."""
         code = "x = 1\ny = 2\nx + y"
         statements, expr = extract_last_expression(code)
-        
+
         assert "x = 1" in statements
         assert "y = 2" in statements
         assert expr.strip() == "x + y"
@@ -71,7 +72,7 @@ class TestUtils:
         """Test code with no final expression."""
         code = "x = 1\ny = 2"
         statements, expr = extract_last_expression(code)
-        
+
         assert "x = 1" in statements
         assert "y = 2" in statements
         assert expr == ""
@@ -80,13 +81,13 @@ class TestUtils:
         """Test code that is only an expression."""
         code = "42"
         statements, expr = extract_last_expression(code)
-        
+
         assert statements == ""
         assert expr == "42"
 
     def test_extract_last_expression_syntax_error(self):
         """Test handling of syntax errors."""
         code = "x = \n  invalid"
-        
+
         with pytest.raises(ValueError, match="Syntax error"):
             extract_last_expression(code)

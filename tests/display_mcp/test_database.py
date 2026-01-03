@@ -1,7 +1,6 @@
 """Tests for display database module."""
 
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -18,10 +17,10 @@ class TestDisplayDatabase:
         """Create a temporary database for testing."""
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
-        
+
         db = DisplayDatabase(db_path)
         yield db
-        
+
         # Cleanup
         db_path.unlink(missing_ok=True)
 
@@ -33,9 +32,9 @@ class TestDisplayDatabase:
             description="Test description",
             method="jupyter",
         )
-        
+
         created = temp_db.create_request(request)
-        
+
         assert created.id == request.id
         assert created.code == "print('hello')"
         assert created.name == "Test"
@@ -48,10 +47,10 @@ class TestDisplayDatabase:
             name="Simple",
             method="jupyter",
         )
-        
+
         temp_db.create_request(request)
         retrieved = temp_db.get_request(request.id)
-        
+
         assert retrieved is not None
         assert retrieved.id == request.id
         assert retrieved.code == "x = 1"
@@ -67,18 +66,18 @@ class TestDisplayDatabase:
             code="y = 2",
             method="jupyter",
         )
-        
+
         temp_db.create_request(request)
-        
+
         # Update status
         updated = temp_db.update_request(
             request.id,
             status="success",
             execution_time=1.5,
         )
-        
+
         assert updated is True
-        
+
         # Retrieve and verify
         retrieved = temp_db.get_request(request.id)
         assert retrieved.status == "success"
@@ -94,11 +93,11 @@ class TestDisplayDatabase:
                 method="jupyter",
             )
             temp_db.create_request(request)
-        
+
         # List all
         requests = temp_db.list_requests()
         assert len(requests) == 5
-        
+
         # List with limit
         requests = temp_db.list_requests(limit=3)
         assert len(requests) == 3
@@ -109,13 +108,13 @@ class TestDisplayDatabase:
             code="z = 3",
             method="jupyter",
         )
-        
+
         temp_db.create_request(request)
-        
+
         # Delete
         deleted = temp_db.delete_request(request.id)
         assert deleted is True
-        
+
         # Verify deleted
         retrieved = temp_db.get_request(request.id)
         assert retrieved is None
@@ -128,10 +127,10 @@ class TestDisplayDatabase:
             DisplayRequest(code="import numpy", name="NumPy Test", method="jupyter"),
             DisplayRequest(code="import matplotlib", name="Plotting", method="jupyter"),
         ]
-        
+
         for req in requests:
             temp_db.create_request(req)
-        
+
         # Search for pandas
         results = temp_db.search_requests("pandas")
         assert len(results) >= 1

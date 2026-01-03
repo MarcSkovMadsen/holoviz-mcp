@@ -54,7 +54,7 @@ class DisplayDatabase:
         """Create database tables if they don't exist."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Create main table
             cursor.execute(
                 """
@@ -74,20 +74,20 @@ class DisplayDatabase:
                 )
                 """
             )
-            
+
             # Create indexes
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON display_requests(created_at DESC)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON display_requests(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_method ON display_requests(method)")
-            
+
             # Create full-text search virtual table
             cursor.execute(
                 """
-                CREATE VIRTUAL TABLE IF NOT EXISTS display_requests_fts 
+                CREATE VIRTUAL TABLE IF NOT EXISTS display_requests_fts
                 USING fts5(name, description, code, content=display_requests)
                 """
             )
-            
+
             conn.commit()
 
     @contextmanager
@@ -117,8 +117,8 @@ class DisplayDatabase:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO display_requests 
-                (id, code, name, description, method, created_at, updated_at, status, 
+                INSERT INTO display_requests
+                (id, code, name, description, method, created_at, updated_at, status,
                  error_message, execution_time, packages, extensions)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -137,7 +137,7 @@ class DisplayDatabase:
                     json.dumps(request.extensions),
                 ),
             )
-            
+
             # Update FTS index
             cursor.execute(
                 """
@@ -146,9 +146,9 @@ class DisplayDatabase:
                 """,
                 (request.id, request.name, request.description, request.code),
             )
-            
+
             conn.commit()
-        
+
         return request
 
     def get_request(self, request_id: str) -> Optional[DisplayRequest]:
@@ -168,7 +168,7 @@ class DisplayDatabase:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM display_requests WHERE id = ?", (request_id,))
             row = cursor.fetchone()
-            
+
             if row:
                 return self._row_to_request(dict(row))
             return None
@@ -206,35 +206,35 @@ class DisplayDatabase:
         """
         updates = []
         params = []
-        
+
         if status is not None:
             updates.append("status = ?")
             params.append(status)
-        
+
         if error_message is not None:
             updates.append("error_message = ?")
             params.append(error_message)
-        
+
         if execution_time is not None:
             updates.append("execution_time = ?")
-            params.append(execution_time)
-        
+            params.append(str(execution_time))
+
         if packages is not None:
             updates.append("packages = ?")
             params.append(json.dumps(packages))
-        
+
         if extensions is not None:
             updates.append("extensions = ?")
             params.append(json.dumps(extensions))
-        
+
         if not updates:
             return False
-        
+
         updates.append("updated_at = ?")
         params.append(datetime.utcnow().isoformat())
-        
+
         params.append(request_id)
-        
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -277,31 +277,31 @@ class DisplayDatabase:
         """
         query = "SELECT * FROM display_requests WHERE 1=1"
         params = []
-        
+
         if start:
             query += " AND created_at >= ?"
             params.append(start.isoformat())
-        
+
         if end:
             query += " AND created_at <= ?"
             params.append(end.isoformat())
-        
+
         if status:
             query += " AND status = ?"
             params.append(status)
-        
+
         if method:
             query += " AND method = ?"
             params.append(method)
-        
+
         query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
-        
+        params.extend([str(limit), str(offset)])
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
             rows = cursor.fetchall()
-            
+
             return [self._row_to_request(dict(row)) for row in rows]
 
     def delete_request(self, request_id: str) -> bool:
@@ -319,17 +319,17 @@ class DisplayDatabase:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Delete from FTS index
             cursor.execute(
                 "DELETE FROM display_requests_fts WHERE rowid = (SELECT rowid FROM display_requests WHERE id = ?)",
                 (request_id,),
             )
-            
+
             # Delete from main table
             cursor.execute("DELETE FROM display_requests WHERE id = ?", (request_id,))
             conn.commit()
-            
+
             return cursor.rowcount > 0
 
     def search_requests(self, query: str, limit: int = 100) -> list[DisplayRequest]:
@@ -360,7 +360,7 @@ class DisplayDatabase:
                 (query, limit),
             )
             rows = cursor.fetchall()
-            
+
             return [self._row_to_request(dict(row)) for row in rows]
 
     @staticmethod

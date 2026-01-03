@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 

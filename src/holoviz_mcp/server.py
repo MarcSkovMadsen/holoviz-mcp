@@ -57,7 +57,7 @@ async def setup_composed_server() -> None:
     await mcp.import_server(hvplot_mcp, prefix="hvplot")
     await mcp.import_server(panel_mcp, prefix="panel")
     await mcp.import_server(holoviews_mcp, prefix="holoviews")
-    
+
     # Import display_mcp if enabled
     config = get_config()
     if config.display.enabled:

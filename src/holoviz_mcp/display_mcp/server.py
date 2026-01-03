@@ -22,10 +22,10 @@ mcp = FastMCP(
     name="display",
     instructions="""
     Display MCP Server.
-    
+
     This server provides tools for visualizing Python code and data objects
     through a web-based Panel interface.
-    
+
     Use the holoviz_display tool to execute code and get a URL to view the rendered output.
     """,
 )
@@ -37,10 +37,10 @@ _manager: Optional[PanelServerManager] = None
 def _get_manager() -> Optional[PanelServerManager]:
     """Get or create the Panel server manager."""
     global _manager
-    
+
     if not _config.display.enabled:
         return None
-    
+
     if _manager is None:
         # Create manager
         _manager = PanelServerManager(
@@ -49,16 +49,16 @@ def _get_manager() -> Optional[PanelServerManager]:
             host=_config.display.host,
             max_restarts=_config.display.max_restarts,
         )
-        
+
         # Start server
         if not _manager.start():
             logger.error("Failed to start Panel server")
             _manager = None
             return None
-        
+
         # Register cleanup
         atexit.register(_cleanup_manager)
-    
+
     return _manager
 
 
@@ -136,16 +136,16 @@ async def holoviz_display(
     manager = _get_manager()
     if not manager:
         return "Error: Failed to start display server. Check logs for details."
-    
+
     # Check health
     if not manager.is_healthy():
         # Try to restart
         if ctx:
             await ctx.info("Display server is not healthy, attempting restart...")
-        
+
         if not manager.restart():
             return "Error: Display server is not healthy and failed to restart."
-    
+
     # Send request to Panel server
     try:
         response = manager.create_request(
@@ -154,36 +154,35 @@ async def holoviz_display(
             description=description,
             method=method,
         )
-        
+
         # Check for errors in response
         if "error" in response:
             error_type = response.get("error", "Unknown")
             message = response.get("message", "Unknown error")
-            
+
             if ctx:
                 await ctx.error(f"Code execution failed: {error_type}: {message}")
-            
+
             # Return detailed error
             error_msg = f"Error: {error_type}\n\n{message}"
-            
+
             if "traceback" in response:
                 error_msg += f"\n\nTraceback:\n{response['traceback']}"
-            
+
             return error_msg
-        
+
         # Success - return URL
         url = response.get("url", "")
-        
+
         if ctx:
             await ctx.info(f"Created visualization: {url}")
-        
+
         return f"Visualization created successfully!\n\nView at: {url}"
-    
+
     except Exception as e:
         logger.exception(f"Error creating visualization: {e}")
-        
+
         if ctx:
             await ctx.error(f"Failed to create visualization: {e}")
-        
-        return f"Error: Failed to create visualization: {str(e)}"
 
+        return f"Error: Failed to create visualization: {str(e)}"
