@@ -584,28 +584,17 @@ def add_page():
         sizing_mode="stretch_width",
     )
     
-    # Status indicator and result display
+    # Status indicator in sidebar
     status_pane = pn.pane.Alert("", alert_type="info", sizing_mode="stretch_width", visible=False)
-    view_button = pn.widgets.Button(
-        name="View Visualization",
-        button_type="success",
-        sizing_mode="stretch_width",
-        visible=False,
-    )
     
     def on_submit(event):
         """Handle submit button click."""
-        from holoviz_mcp.display_mcp.database import DisplayRequest
-        from holoviz_mcp.display_mcp.utils import find_extensions
-        from holoviz_mcp.display_mcp.utils import find_requirements
+        import requests
         
         code = code_editor.value
         name = name_input.value
         description = description_input.value
         method = method_select.value
-        
-        # Hide previous results
-        view_button.visible = False
         
         if not code:
             status_pane.object = "**Error:** Code is required"
@@ -614,72 +603,82 @@ def add_page():
             return
         
         try:
-            # Validate syntax
-            ast.parse(code)
+            # Determine base URL
+            host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+            port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+            base_url = f"http://{host}:{port}"
             
-            # Infer requirements and extensions
-            packages = find_requirements(code)
-            extensions = find_extensions(code) if method == "jupyter" else []
-            
-            # Create request in database
-            request_obj = DisplayRequest(
-                code=code,
-                name=name,
-                description=description,
-                method=method,
-                packages=packages,
-                extensions=extensions,
-                status="pending",
+            # Post to /create endpoint
+            response = requests.post(
+                f"{base_url}/create",
+                json={
+                    "code": code,
+                    "name": name,
+                    "description": description,
+                    "method": method,
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=30,
             )
             
-            app.db.create_request(request_obj)
-            
-            # Determine base URL
-            base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
-            if not base_url:
-                host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
-                base_url = f"http://{host}:{port}"
-            
-            url = f"{base_url}/view?id={request_obj.id}"
-            
-            # Show success message
-            status_pane.object = f"""
+            if response.status_code == 200:
+                data = response.json()
+                viz_id = data.get("id", "")
+                url = data.get("url", "")
+                
+                # Show success message
+                status_pane.object = f"""
 ### ✅ Success! Visualization created.
 
 **Name:** {name or 'Unnamed'}  
-**ID:** `{request_obj.id}`  
+**ID:** `{viz_id}`  
 **URL:** [{url}]({url})
 
-Click the "View Visualization" button below or use the URL link above.
+Click the URL link to view your visualization.
 """
-            status_pane.alert_type = "success"
-            status_pane.visible = True
-            
-            # Configure and show view button
-            view_button.visible = True
-            
-            # Set up click handler for view button
-            def open_view(event):
-                import webbrowser
-                # In a web context, we can use JavaScript to open in new tab
-                # For now, just provide the URL
-                pass
-            
-            # Store URL in button for JavaScript access
-            view_button.name = f"View Visualization →"
-            # Use Panel's built-in linking
-            view_button.js_on_click(args={'url': url}, code=f"window.open('{url}', '_blank')")
-        
-        except SyntaxError as e:
-            status_pane.object = f"""
-### ❌ Syntax Error
+                status_pane.alert_type = "success"
+                status_pane.visible = True
+            else:
+                # Handle error response
+                try:
+                    error_data = response.json()
+                    error_type = error_data.get("error", "Error")
+                    error_message = error_data.get("message", str(response.text))
+                    
+                    status_pane.object = f"""
+### ❌ {error_type}
 
-```python
+```
+{error_message}
+```
+
+Please check your code and try again.
+"""
+                except Exception:
+                    status_pane.object = f"""
+### ❌ Error
+
+Server returned status code {response.status_code}.
+
+```
+{response.text[:500]}
+```
+"""
+                status_pane.alert_type = "danger"
+                status_pane.visible = True
+        
+        except requests.exceptions.RequestException as e:
+            logger.exception("Error calling /create endpoint")
+            status_pane.object = f"""
+### ❌ Connection Error
+
+Could not connect to the server:
+
+```
 {str(e)}
 ```
 
-Please check your code for syntax errors and try again.
+Please check if the server is running.
 """
             status_pane.alert_type = "danger"
             status_pane.visible = True
@@ -688,7 +687,7 @@ Please check your code for syntax errors and try again.
             status_pane.object = f"""
 ### ❌ Error
 
-An error occurred while creating the visualization:
+An unexpected error occurred:
 
 ```
 {str(e)}
@@ -709,13 +708,12 @@ Please check the server logs for more details.
             description_input,
             method_select,
             submit_button,
+            pn.pane.Markdown("### Status"),
+            status_pane,
         ],
         main=[
             pn.pane.Markdown("### Python Code"),
             code_editor,
-            pn.pane.Markdown("### Result"),
-            status_pane,
-            view_button,
         ],
     )
 
