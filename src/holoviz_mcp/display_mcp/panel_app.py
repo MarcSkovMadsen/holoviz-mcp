@@ -20,6 +20,9 @@ from tornado.web import RequestHandler
 
 logger = logging.getLogger(__name__)
 
+# Default port for the Panel server
+DEFAULT_PORT = 5005
+
 
 class DisplayApp(param.Parameterized):
     """Main application for the display server."""
@@ -480,7 +483,7 @@ For manual creation, please use the [/add](/add) page.
 ## API Usage
 
 ```bash
-curl -X POST http://localhost:5005/create \\
+curl -X POST http://localhost:{DEFAULT_PORT}/create \\
   -H "Content-Type: application/json" \\
   -d '{
     "code": "import pandas as pd\\npd.DataFrame({\"x\": [1,2,3]})",
@@ -801,7 +804,7 @@ def main():
     ]
 
     # Start server
-    port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+    port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
     host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
 
     pn.serve(
