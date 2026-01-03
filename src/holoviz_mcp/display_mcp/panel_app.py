@@ -20,6 +20,9 @@ from tornado.web import RequestHandler
 
 logger = logging.getLogger(__name__)
 
+# Default port for the Panel server
+DEFAULT_PORT = 5005
+
 
 class DisplayApp(param.Parameterized):
     """Main application for the display server."""
@@ -249,12 +252,12 @@ class CreateEndpoint(RequestHandler):
                 # Check for Jupyter proxy
                 jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
                 if jupyter_base:
-                    port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                    port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
                     base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
                 else:
                     # Default to localhost
                     host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-                    port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                    port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
                     base_url = f"http://{host}:{port}"
             
             url = f"{base_url}/view?id={request_obj.id}"
@@ -365,11 +368,11 @@ def create_page_wrapper():
                 if not base_url:
                     jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
                     if jupyter_base:
-                        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                        port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
                         base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
                     else:
                         host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-                        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                        port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
                         base_url = f"http://{host}:{port}"
                 
                 url = f"{base_url}/view?id={request_obj.id}"
@@ -401,7 +404,7 @@ For manual creation, please use the [/add](/add) page.
 ## API Usage
 
 ```bash
-curl -X POST http://localhost:5005/create \\
+curl -X POST http://localhost:{DEFAULT_PORT}/create \\
   -H "Content-Type: application/json" \\
   -d '{
     "code": "import pandas as pd\\npd.DataFrame({\"x\": [1,2,3]})",
@@ -460,7 +463,7 @@ def chat_page():
             base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
             if not base_url:
                 host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
                 base_url = f"http://{host}:{port}"
             
             url = f"{base_url}/view?id={req.id}"
@@ -501,7 +504,7 @@ def admin_page():
     base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
     if not base_url:
         host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+        port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
         base_url = f"http://{host}:{port}"
     
     data = []
@@ -605,7 +608,7 @@ def add_page():
         try:
             # Determine base URL
             host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-            port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+            port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
             base_url = f"http://{host}:{port}"
             
             # Post to /create endpoint
@@ -750,7 +753,7 @@ def main():
     ]
     
     # Start server
-    port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+    port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
     host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
     
     pn.serve(
