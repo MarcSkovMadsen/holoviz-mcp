@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 # Default port for the Panel server
 DEFAULT_PORT = 5005
 
+pn.template.FastListTemplate.param.main_layout.default = None
+pn.pane.Markdown.param.disable_anchors.default = True
+
 
 class DisplayApp(param.Parameterized):
     """Main application for the display server."""
@@ -524,7 +527,7 @@ def chat_page():
         return pn.pane.Markdown("# Error\n\nApplication not initialized.")
 
     # Create sidebar with filters
-    limit = pn.widgets.IntInput(name="Limit", value=10, start=1, end=100)
+    limit = pn.widgets.IntInput(name="Limit", value=10, start=1, end=100, description="Number of visualizations to show")
     refresh_button = pn.widgets.Button(name="Refresh", button_type="primary")
 
     # Create chat feed
@@ -539,9 +542,12 @@ def chat_page():
 
         # Add message
         created_at = req.created_at.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        open_icon = "&#x1F517;"  # Link icon
         text = f"""\
-**[{req.name or req.id}]({url})** ({created_at})\n\n{req.description}\n
-<iframe src="{url}" style="height: 500px; width: 100%; border: 1px solid gray;" frameborder="0"></iframe>
+**{req.name or req.id}** ({created_at}) <a href="{url}" target="_blank" title="Open in new window">{open_icon}</a>\n\n{req.description}\n
+<div style="resize: vertical; overflow: hidden; height: 500px; width: 100%; max-width: 100%; border: 1px solid gray;">
+<iframe src="{url}" style="height: 100%; width: 100%; border: none;" frameborder="0"></iframe>
+</div>
 """
         with pn.config.set(sizing_mode="stretch_width"):
             message = pn.pane.Markdown(text, sizing_mode="stretch_width")
@@ -575,7 +581,6 @@ def chat_page():
         title="Display Chat",
         sidebar=[limit, refresh_button],
         main=[pn.Column(chat_feed, sizing_mode="stretch_both")],
-        main_layout=None,
     )
 
 
