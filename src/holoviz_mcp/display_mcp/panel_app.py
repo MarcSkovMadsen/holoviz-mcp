@@ -610,6 +610,7 @@ def admin_page():
                 "Status": req.status,
                 "Created": req.created_at.isoformat(),
                 "View URL": view_url,
+                "Code": req.code,  # Add code for row_content display
             }
         )
 
@@ -620,12 +621,31 @@ def admin_page():
 
     formatters = {"View URL": HTMLTemplateFormatter(template='<a href="<%= value %>" target="_blank">View</a>')}
 
+    # Define delete callback
+    def on_delete(event):
+        """Handle delete button clicks."""
+        # Get the row index
+        row_idx = event.row
+        if row_idx is not None and 0 <= row_idx < len(tabulator.value):
+            # Get the ID from the row
+            request_id = tabulator.value.iloc[row_idx]["ID"]
+            # Delete from database
+            app.db.delete_request(request_id)
+            # Remove from tabulator
+            tabulator.value = tabulator.value.drop(tabulator.value.index[row_idx]).reset_index(drop=True)
+
     tabulator = pn.widgets.Tabulator(
         df,
         formatters=formatters,
+        buttons={"Delete": "<i class='fa fa-trash'></i>"},
+        row_content=lambda row: pn.pane.Code(row["Code"], language="python", sizing_mode="stretch_width"),
         sizing_mode="stretch_both",
         page_size=20,
+        hidden_columns=["Code"],  # Hide code column from table view
     )
+
+    # Bind delete callback
+    tabulator.on_click(on_delete)
 
     return pn.template.FastListTemplate(
         title="Display Admin",
