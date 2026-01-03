@@ -562,7 +562,14 @@ def add_page():
         sizing_mode="stretch_width",
     )
     
-    result_pane = pn.pane.Markdown("", sizing_mode="stretch_width")
+    # Status indicator and result display
+    status_pane = pn.pane.Alert("", alert_type="info", sizing_mode="stretch_width", visible=False)
+    view_button = pn.widgets.Button(
+        name="View Visualization",
+        button_type="success",
+        sizing_mode="stretch_width",
+        visible=False,
+    )
     
     def on_submit(event):
         """Handle submit button click."""
@@ -575,8 +582,13 @@ def add_page():
         description = description_input.value
         method = method_select.value
         
+        # Hide previous results
+        view_button.visible = False
+        
         if not code:
-            result_pane.object = "**Error:** Code is required"
+            status_pane.object = "**Error:** Code is required"
+            status_pane.alert_type = "danger"
+            status_pane.visible = True
             return
         
         try:
@@ -609,21 +621,61 @@ def add_page():
             
             url = f"{base_url}/view?id={request_obj.id}"
             
-            result_pane.object = f"""
-**Success!** Visualization created.
+            # Show success message
+            status_pane.object = f"""
+### ✅ Success! Visualization created.
 
-**ID:** {request_obj.id}
-
+**Name:** {name or 'Unnamed'}  
+**ID:** `{request_obj.id}`  
 **URL:** [{url}]({url})
 
-Click the link above to view your visualization.
+Click the "View Visualization" button below or use the URL link above.
 """
+            status_pane.alert_type = "success"
+            status_pane.visible = True
+            
+            # Configure and show view button
+            view_button.visible = True
+            
+            # Set up click handler for view button
+            def open_view(event):
+                import webbrowser
+                # In a web context, we can use JavaScript to open in new tab
+                # For now, just provide the URL
+                pass
+            
+            # Store URL in button for JavaScript access
+            view_button.name = f"View Visualization →"
+            # Use Panel's built-in linking
+            view_button.js_on_click(args={'url': url}, code=f"window.open('{url}', '_blank')")
         
         except SyntaxError as e:
-            result_pane.object = f"**Syntax Error:** {str(e)}"
+            status_pane.object = f"""
+### ❌ Syntax Error
+
+```python
+{str(e)}
+```
+
+Please check your code for syntax errors and try again.
+"""
+            status_pane.alert_type = "danger"
+            status_pane.visible = True
         except Exception as e:
             logger.exception("Error creating visualization")
-            result_pane.object = f"**Error:** {str(e)}"
+            status_pane.object = f"""
+### ❌ Error
+
+An error occurred while creating the visualization:
+
+```
+{str(e)}
+```
+
+Please check the server logs for more details.
+"""
+            status_pane.alert_type = "danger"
+            status_pane.visible = True
     
     submit_button.on_click(on_submit)
     
@@ -640,7 +692,8 @@ Click the link above to view your visualization.
             pn.pane.Markdown("### Python Code"),
             code_editor,
             pn.pane.Markdown("### Result"),
-            result_pane,
+            status_pane,
+            view_button,
         ],
     )
 
