@@ -518,7 +518,7 @@ def view_page():
     return app.create_view(request_id)
 
 
-def chat_page():
+def feed_page():
     """Create the /chat page."""
     # Get app instance
     app: DisplayApp = pn.state.cache.get("app")
@@ -797,7 +797,7 @@ def main():
     # Configure pages
     pages = {
         "/view": view_page,
-        "/chat": chat_page,
+        "/feed": feed_page,
         "/admin": admin_page,
         "/add": add_page,
     }
@@ -811,7 +811,7 @@ def main():
     # Start server
     port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
     host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-
+    port = 5004
     pn.serve(
         pages,
         port=port,

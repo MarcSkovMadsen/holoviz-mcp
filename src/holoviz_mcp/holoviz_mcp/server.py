@@ -16,6 +16,7 @@ from fastmcp import FastMCP
 from fastmcp.resources import FileResource
 
 from holoviz_mcp.config.loader import get_config
+from holoviz_mcp.display_mcp.manager import PanelServerManager
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
 from holoviz_mcp.holoviz_mcp.data import get_skill as _get_skill
 from holoviz_mcp.holoviz_mcp.data import list_skills as _list_skills
@@ -285,7 +286,7 @@ async def display(
     returning a URL where you can view the output. The code is validated
     before execution and any errors are reported immediately.
 
-    When composed into the main server with prefix "holoviz", this tool 
+    When composed into the main server with prefix "holoviz", this tool
     becomes available as "holoviz_display".
 
     Parameters
@@ -294,7 +295,7 @@ async def display(
         The Python code to execute. For "jupyter" method, the last line is displayed.
         For "panel" method, objects marked .servable() are displayed.
     name : str, optional
-        A name for the visualization (displayed in admin/chat views)
+        A name for the visualization (displayed in admin/feed views)
     description : str, optional
         A short description of the visualization
     method : {"jupyter", "panel"}, default "jupyter"
@@ -431,6 +432,10 @@ def _add_skills_resources():
 
 _add_agent_resources()
 _add_skills_resources()
+
+config = get_config()
+if config.display.enabled:
+    manager = _get_display_manager()
 
 if __name__ == "__main__":
     config = get_config()
