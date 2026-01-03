@@ -414,8 +414,12 @@ curl -X POST http://localhost:5005/create \\
 
 def view_page():
     """Create the /view page."""
-    # Get request ID from query parameters
-    request_id = pn.state.location.search_params.get("id", [""])[0] if pn.state.location else ""
+    # Get request ID from query parameters using session_args
+    request_id = ""
+    if hasattr(pn.state, "session_args"):
+        # session_args is a dict with bytes keys and list of bytes values
+        request_id_bytes = pn.state.session_args.get(b"id", [b""])[0]
+        request_id = request_id_bytes.decode("utf-8") if request_id_bytes else ""
     
     if not request_id:
         return pn.pane.Markdown("# Error\n\nNo request ID provided.")
@@ -493,8 +497,16 @@ def admin_page():
     # Convert to DataFrame
     import pandas as pd
     
+    # Determine base URL for links
+    base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
+    if not base_url:
+        host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+        base_url = f"http://{host}:{port}"
+    
     data = []
     for req in requests:
+        view_url = f"{base_url}/view?id={req.id}"
         data.append({
             "ID": req.id,
             "Name": req.name,
@@ -502,13 +514,23 @@ def admin_page():
             "Method": req.method,
             "Status": req.status,
             "Created": req.created_at.isoformat(),
+            "View URL": view_url,
         })
     
     df = pd.DataFrame(data)
     
-    # Create tabulator
+    # Create tabulator with formatters for the URL column
+    from bokeh.models.widgets.tables import HTMLTemplateFormatter
+    
+    formatters = {
+        "View URL": HTMLTemplateFormatter(
+            template='<a href="<%= value %>" target="_blank">View</a>'
+        )
+    }
+    
     tabulator = pn.widgets.Tabulator(
         df,
+        formatters=formatters,
         sizing_mode="stretch_both",
         page_size=20,
     )
