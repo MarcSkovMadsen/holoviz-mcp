@@ -17,8 +17,6 @@ import os
 from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.display_mcp.server import _get_manager
-from holoviz_mcp.display_mcp.server import mcp as display_mcp
 from holoviz_mcp.holoviews_mcp.server import mcp as holoviews_mcp
 from holoviz_mcp.holoviz_mcp.server import mcp as holoviz_mcp
 from holoviz_mcp.hvplot_mcp.server import mcp as hvplot_mcp
@@ -58,12 +56,6 @@ async def setup_composed_server() -> None:
     await mcp.import_server(hvplot_mcp, prefix="hvplot")
     await mcp.import_server(panel_mcp, prefix="panel")
     await mcp.import_server(holoviews_mcp, prefix="holoviews")
-
-    # Import display_mcp if enabled
-    config = get_config()
-    if config.display.enabled:
-        _get_manager()
-        await mcp.import_server(display_mcp, prefix="display")
 
 
 def main() -> None:
