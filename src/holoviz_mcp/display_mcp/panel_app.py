@@ -34,13 +34,6 @@ class DisplayApp(param.Parameterized):
         from holoviz_mcp.display_mcp.database import DisplayDatabase
         
         self.db = DisplayDatabase(Path(self.db_path))
-        
-        # Set up periodic callback to trigger updates
-        pn.state.add_periodic_callback(self._periodic_update, period=2000)
-    
-    def _periodic_update(self):
-        """Periodically trigger update parameter."""
-        self.param.trigger("update")
     
     def create_view(self, request_id: str) -> pn.viewable.Viewable:
         """Create a view for a single visualization request.
@@ -60,6 +53,38 @@ class DisplayApp(param.Parameterized):
         if not request:
             return pn.pane.Markdown(f"# Error\n\nRequest {request_id} not found.")
         
+        # If pending, try to execute now
+        if request.status == "pending":
+            start_time = datetime.utcnow()
+            try:
+                result = self._execute_code(request)
+                execution_time = (datetime.utcnow() - start_time).total_seconds()
+                
+                # Update as success
+                self.db.update_request(
+                    request_id,
+                    status="success",
+                    execution_time=execution_time,
+                )
+                
+                return result
+                
+            except Exception as e:
+                execution_time = (datetime.utcnow() - start_time).total_seconds()
+                error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+                
+                # Update as error
+                self.db.update_request(
+                    request_id,
+                    status="error",
+                    error_message=error_msg,
+                    execution_time=execution_time,
+                )
+                
+                # Update request object for display
+                request.status = "error"
+                request.error_message = error_msg
+        
         if request.status == "error":
             # Display error message
             return pn.Column(
@@ -73,7 +98,7 @@ class DisplayApp(param.Parameterized):
                 sizing_mode="stretch_width",
             )
         
-        # Execute code and display result
+        # Execute code and display result (status is success)
         try:
             result = self._execute_code(request)
             return result
@@ -153,127 +178,105 @@ class DisplayApp(param.Parameterized):
                 return pn.pane.Markdown("*Code executed successfully (no servable objects found)*")
 
 
-def create_endpoint(app: DisplayApp):
-    """Create the /create REST API endpoint.
+def create_page():
+    """Handle /create requests (both GET and POST via query params or body)."""
+    # Get app instance
+    app = pn.state.cache.get("app")
     
-    Parameters
-    ----------
-    app : DisplayApp
-        Application instance
+    if not app:
+        return pn.pane.JSON({"error": "InternalError", "message": "Application not initialized"})
+    
+    from holoviz_mcp.display_mcp.database import DisplayRequest
+    from holoviz_mcp.display_mcp.utils import find_extensions
+    from holoviz_mcp.display_mcp.utils import find_requirements
+    
+    try:
+        # Try to get parameters from query params or POST body
+        code = ""
+        name = ""
+        description = ""
+        method = "jupyter"
         
-    Returns
-    -------
-    callable
-        Endpoint function
-    """
-    async def endpoint(request_body: dict) -> dict:
-        """Handle POST /create requests."""
-        from holoviz_mcp.display_mcp.database import DisplayRequest
-        from holoviz_mcp.display_mcp.utils import find_extensions
-        from holoviz_mcp.display_mcp.utils import find_requirements
+        # Check for POST body first
+        if hasattr(pn.state, "request") and pn.state.request and pn.state.request.method == "POST":
+            try:
+                import json as json_module
+                request_body = json_module.loads(pn.state.request.body.decode('utf-8'))
+                code = request_body.get("code", "")
+                name = request_body.get("name", "")
+                description = request_body.get("description", "")
+                method = request_body.get("method", "jupyter")
+            except:
+                pass
         
+        # Fall back to query params
+        if not code and pn.state.location:
+            params = pn.state.location.search_params
+            code = params.get("code", [""])[0] if "code" in params else ""
+            name = params.get("name", [""])[0] if "name" in params else ""
+            description = params.get("description", [""])[0] if "description" in params else ""
+            method = params.get("method", ["jupyter"])[0] if "method" in params else "jupyter"
+        
+        if not code:
+            return pn.pane.JSON({"error": "ValueError", "message": "Code is required"})
+        
+        # Validate syntax only
         try:
-            # Extract parameters
-            code = request_body.get("code", "")
-            name = request_body.get("name", "")
-            description = request_body.get("description", "")
-            method = request_body.get("method", "jupyter")
-            
-            if not code:
-                return {"error": "ValueError", "message": "Code is required"}
-            
-            # Validate syntax
-            try:
-                ast.parse(code)
-            except SyntaxError as e:
-                return {
-                    "error": "SyntaxError",
-                    "message": str(e),
-                    "code_snippet": code,
-                }
-            
-            # Infer requirements and extensions
-            packages = find_requirements(code)
-            extensions = find_extensions(code) if method == "jupyter" else []
-            
-            # Create request in database
-            request = DisplayRequest(
-                code=code,
-                name=name,
-                description=description,
-                method=method,
-                packages=packages,
-                extensions=extensions,
-                status="pending",
-            )
-            
-            app.db.create_request(request)
-            
-            # Try to validate by executing
-            start_time = datetime.utcnow()
-            try:
-                _ = app._execute_code(request)
-                execution_time = (datetime.utcnow() - start_time).total_seconds()
-                
-                # Update as success
-                app.db.update_request(
-                    request.id,
-                    status="success",
-                    execution_time=execution_time,
-                )
-                
-                # Trigger update
-                app.param.trigger("update")
-                
-                # Determine base URL
-                base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
-                if not base_url:
-                    # Check for Jupyter proxy
-                    jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
-                    if jupyter_base:
-                        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
-                        base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
-                    else:
-                        # Default to localhost
-                        host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-                        port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
-                        base_url = f"http://{host}:{port}"
-                
-                url = f"{base_url}/view?id={request.id}"
-                
-                return {
-                    "id": request.id,
-                    "url": url,
-                    "created_at": request.created_at.isoformat(),
-                }
-                
-            except Exception as e:
-                execution_time = (datetime.utcnow() - start_time).total_seconds()
-                error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
-                
-                # Update as error
-                app.db.update_request(
-                    request.id,
-                    status="error",
-                    error_message=error_msg,
-                    execution_time=execution_time,
-                )
-                
-                return {
-                    "error": type(e).__name__,
-                    "message": str(e),
-                    "traceback": traceback.format_exc(),
-                }
-        
-        except Exception as e:
-            logger.exception("Error in /create endpoint")
-            return {
-                "error": "InternalError",
+            ast.parse(code)
+        except SyntaxError as e:
+            return pn.pane.JSON({
+                "error": "SyntaxError",
                 "message": str(e),
-                "traceback": traceback.format_exc(),
-            }
+                "code_snippet": code,
+            })
+        
+        # Infer requirements and extensions
+        packages = find_requirements(code)
+        extensions = find_extensions(code) if method == "jupyter" else []
+        
+        # Create request in database with "pending" status
+        # We'll validate when it's actually viewed
+        request_obj = DisplayRequest(
+            code=code,
+            name=name,
+            description=description,
+            method=method,
+            packages=packages,
+            extensions=extensions,
+            status="pending",  # Will be updated when viewed
+        )
+        
+        app.db.create_request(request_obj)
+        
+        # Determine base URL
+        base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
+        if not base_url:
+            # Check for Jupyter proxy
+            jupyter_base = os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT")
+            if jupyter_base:
+                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                base_url = f"{jupyter_base.rstrip('/')}/proxy/{port}"
+            else:
+                # Default to localhost
+                host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+                port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+                base_url = f"http://{host}:{port}"
+        
+        url = f"{base_url}/view?id={request_obj.id}"
+        
+        return pn.pane.JSON({
+            "id": request_obj.id,
+            "url": url,
+            "created_at": request_obj.created_at.isoformat(),
+        })
     
-    return endpoint
+    except Exception as e:
+        logger.exception("Error in /create endpoint")
+        return pn.pane.JSON({
+            "error": "InternalError",
+            "message": str(e),
+            "traceback": traceback.format_exc(),
+        })
 
 
 def view_page():
@@ -303,6 +306,7 @@ def chat_page():
     
     # Create sidebar with filters
     limit = pn.widgets.IntInput(name="Limit", value=10, start=1, end=100)
+    refresh_button = pn.widgets.Button(name="Refresh", button_type="primary")
     
     # Create chat feed
     chat_feed = pn.chat.ChatFeed(sizing_mode="stretch_both")
@@ -328,8 +332,8 @@ def chat_page():
             message = f"**{req.name or req.id}**\n\n{req.description}\n\n[View]({url})"
             chat_feed.send(message, user="System", respond=False)
     
-    # Watch for updates
-    pn.bind(update_chat, app.param.update, watch=True)
+    # Watch for button clicks and limit changes
+    refresh_button.on_click(update_chat)
     limit.param.watch(update_chat, "value")
     
     # Initial update
@@ -337,7 +341,7 @@ def chat_page():
     
     return pn.template.FastListTemplate(
         title="Display Chat",
-        sidebar=[limit],
+        sidebar=[limit, refresh_button],
         main=[chat_feed],
     )
 
@@ -399,11 +403,9 @@ def main():
     # Store in state cache
     pn.state.cache["app"] = app
     
-    # Set up endpoints
-    create_ep = create_endpoint(app)
-    
     # Configure pages
     pages = {
+        "/create": create_page,
         "/view": view_page,
         "/chat": chat_page,
         "/admin": admin_page,
@@ -418,7 +420,6 @@ def main():
         port=port,
         address=host,
         show=False,
-        rest_endpoints={"/create": (create_ep, "POST")},
         title="HoloViz Display Server",
     )
 

@@ -238,19 +238,42 @@ class PanelServerManager:
         base_url = f"http://{self.host}:{self.port}"
 
         try:
-            response = requests.post(
-                f"{base_url}/create",
-                json={
-                    "code": code,
-                    "name": name,
-                    "description": description,
-                    "method": method,
-                },
-                timeout=30,
-            )
+            # Use GET with query params since POST isn't working reliably with Panel
+            import urllib.parse
+            
+            params = {
+                "code": code,
+                "name": name,
+                "description": description,
+                "method": method,
+            }
+            
+            url = f"{base_url}/create?{urllib.parse.urlencode(params)}"
+            response = requests.get(url, timeout=30)
 
             response.raise_for_status()
-            return response.json()
+            
+            # Parse JSON from HTML response (Panel wraps JSON in HTML)
+            # Look for the JSON content in the response
+            import re
+            import json
+            
+            # Try to find JSON in the response
+            json_match = re.search(r'\{[^{}]*"id"[^{}]*\}', response.text)
+            if json_match:
+                return json.loads(json_match.group())
+            else:
+                # Fallback: return a generated response based on URL
+                # Extract request ID from the response if possible
+                id_match = re.search(r'id=([a-f0-9\-]+)', response.text)
+                if id_match:
+                    request_id = id_match.group(1)
+                    return {
+                        "id": request_id,
+                        "url": f"{base_url}/view?id={request_id}",
+                    }
+                else:
+                    raise ValueError("Could not parse response")
 
         except requests.RequestException as e:
             logger.exception(f"Error creating visualization: {e}")
