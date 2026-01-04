@@ -8,6 +8,7 @@ import pandas as pd
 import panel as pn
 from bokeh.models.widgets.tables import HTMLTemplateFormatter
 
+from holoviz_mcp.display_mcp.database import get_db
 from holoviz_mcp.display_mcp.utils import get_url
 
 
@@ -16,19 +17,10 @@ def admin_page():
 
     Provides an administrative interface for managing all snippets in the database.
     """
-    # Import here to avoid circular dependency
-    from holoviz_mcp.display_mcp.app import DisplayApp
-
-    # Get app instance
-    app: DisplayApp = pn.state.cache.get("app")
-
     pn.extension("codeeditor", "tabulator")
 
-    if not app:
-        return pn.pane.Markdown("# Error\n\nApplication not initialized.")
-
     # Get all requests
-    requests = app.db.list_requests(limit=1000)
+    requests = get_db().list_requests(limit=1000)
 
     # Convert to DataFrame
     data = []
@@ -62,7 +54,7 @@ def admin_page():
                 # Get the ID from the row
                 request_id = tabulator.value.iloc[row_idx]["ID"]  # type: ignore[has-type]
                 # Delete from database
-                app.db.delete_request(request_id)
+                get_db().delete_request(request_id)
                 # Remove from tabulator
                 tabulator.value = tabulator.value.drop(tabulator.value.index[row_idx]).reset_index(drop=True)  # type: ignore[has-type]
 

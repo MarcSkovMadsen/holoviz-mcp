@@ -13,18 +13,17 @@ from typing import Any
 import panel as pn
 
 from holoviz_mcp.display_mcp.database import Snippet
+from holoviz_mcp.display_mcp.database import get_db
 from holoviz_mcp.display_mcp.utils import extract_last_expression
 
 logger = logging.getLogger(__name__)
 
 
-def create_view(app, request_id: str) -> pn.viewable.Viewable | None:
+def create_view(request_id: str) -> pn.viewable.Viewable | None:
     """Create a view for a single visualization request.
 
     Parameters
     ----------
-    app : DisplayApp
-        Application instance with database access
     request_id : str
         ID of the request to display
 
@@ -33,7 +32,8 @@ def create_view(app, request_id: str) -> pn.viewable.Viewable | None:
     pn.viewable.Viewable
         Panel component displaying the visualization
     """
-    request = app.db.get_request(request_id)
+    db = get_db()
+    request = db.get_request(request_id)
 
     pn.extension("codeeditor")
 
@@ -50,7 +50,7 @@ def create_view(app, request_id: str) -> pn.viewable.Viewable | None:
         request.error_message = ""
 
         # Update as success
-        app.db.update_request(
+        get_db().update_request(
             request_id,
             status=request.status,
             error_message=request.error_message,
@@ -64,7 +64,7 @@ def create_view(app, request_id: str) -> pn.viewable.Viewable | None:
         error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
 
         # Update as error
-        app.db.update_request(
+        get_db().update_request(
             request_id,
             status="error",
             error_message=error_msg,
@@ -167,9 +167,6 @@ def view_page():
 
     Renders a single visualization by ID from the query string parameter.
     """
-    # Import here to avoid circular dependency
-    from holoviz_mcp.display_mcp.app import DisplayApp
-
     # Get request ID from query parameters using session_args
     request_id = ""
     if hasattr(pn.state, "session_args"):
@@ -180,10 +177,4 @@ def view_page():
     if not request_id:
         return pn.pane.Markdown("# Error\n\nNo request ID provided.")
 
-    # Get app instance from state
-    app: DisplayApp = pn.state.cache.get("app")
-
-    if not app:
-        return pn.pane.Markdown("# Error\n\nApplication not initialized.")
-
-    return create_view(app, request_id)
+    return create_view(request_id)

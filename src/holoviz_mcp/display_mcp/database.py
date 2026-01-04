@@ -4,7 +4,9 @@ This module handles SQLite database operations for storing and retrieving
 visualization requests.
 """
 
+import ast
 import json
+import os
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -370,6 +372,84 @@ class SnippetDatabase:
 
             return [self._row_to_request(dict(row)) for row in rows]
 
+    def create_visualization(
+        self,
+        code: str,
+        name: str = "",
+        description: str = "",
+        method: Literal["jupyter", "panel"] = "jupyter",
+    ) -> dict[str, str]:
+        """Create a visualization request.
+
+        This is the core business logic for creating visualizations,
+        shared by both the HTTP API endpoint and the UI form.
+
+        Parameters
+        ----------
+        code : str
+            Python code to execute
+        name : str, optional
+            Display name for the visualization
+        description : str, optional
+            Description of the visualization
+        method : str, optional
+            Execution method: "jupyter" or "panel"
+
+        Returns
+        -------
+        dict[str, str]
+            Dictionary with 'id', 'url', and 'created_at' keys
+
+        Raises
+        ------
+        ValueError
+            If code is empty or contains unsupported operations
+        SyntaxError
+            If code has syntax errors
+        Exception
+            If database operation or other errors occur
+        """
+        # Import here to avoid circular dependency
+        from holoviz_mcp.display_mcp.utils import find_extensions
+        from holoviz_mcp.display_mcp.utils import find_requirements
+        from holoviz_mcp.display_mcp.utils import get_url
+
+        # Validate code is not empty
+        if not code:
+            raise ValueError("Code is required")
+        if ".show(" in code:
+            raise ValueError("`.show()` calls are not supported in this environment")
+
+        # Validate syntax
+        ast.parse(code)  # Raises SyntaxError if invalid
+
+        # Infer requirements and extensions
+        packages = find_requirements(code)
+        extensions = find_extensions(code) if method == "jupyter" else []
+
+        # Create request in database with "pending" status
+        request_obj = Snippet(
+            code=code,
+            name=name,
+            description=description,
+            method=method,
+            packages=packages,
+            extensions=extensions,
+            status="pending",
+        )
+
+        self.create_request(request_obj)
+
+        # Generate URL
+        url = get_url(id=request_obj.id)
+
+        # Return result
+        return {
+            "id": request_obj.id,
+            "url": url,
+            "created_at": request_obj.created_at.isoformat(),
+        }
+
     @staticmethod
     def _row_to_request(row: dict) -> Snippet:
         """Convert a database row to a Snippet."""
@@ -387,3 +467,51 @@ class SnippetDatabase:
             packages=json.loads(row["packages"]) if row["packages"] else [],
             extensions=json.loads(row["extensions"]) if row["extensions"] else [],
         )
+
+
+# Global database instance cache
+_db_instance: Optional[SnippetDatabase] = None
+
+
+def get_db(db_path: Optional[Path] = None) -> SnippetDatabase:
+    """Get or create the SnippetDatabase instance.
+
+    This function implements lazy initialization with a global cache.
+    The database instance is created once and reused across the application.
+
+    Parameters
+    ----------
+    db_path : Optional[Path]
+        Path to database file. If None, uses default from environment/config.
+        Only used on first call; subsequent calls ignore this parameter.
+
+    Returns
+    -------
+    SnippetDatabase
+        Shared database instance
+    """
+    global _db_instance
+
+    if _db_instance is None:
+        if db_path is None:
+            # Try environment variable first
+            env_path = os.getenv("DISPLAY_DB_PATH", "")
+
+            if env_path:
+                db_path = Path(env_path)
+            else:
+                # Fall back to default location
+                db_path = Path.home() / ".holoviz-mcp" / "snippets" / "snippets.db"
+
+        _db_instance = SnippetDatabase(db_path)
+
+    return _db_instance
+
+
+def reset_db() -> None:
+    """Reset the database instance.
+
+    This is primarily for testing purposes to ensure a clean state.
+    """
+    global _db_instance
+    _db_instance = None

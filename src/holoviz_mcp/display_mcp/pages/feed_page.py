@@ -6,6 +6,7 @@ in a feed-style layout with live updates.
 
 import panel as pn
 
+from holoviz_mcp.display_mcp.database import get_db
 from holoviz_mcp.display_mcp.utils import get_url
 
 
@@ -14,15 +15,6 @@ def feed_page():
 
     Displays a feed of recent visualizations with automatic updates.
     """
-    # Import here to avoid circular dependency
-    from holoviz_mcp.display_mcp.app import DisplayApp
-
-    # Get app instance
-    app: DisplayApp = pn.state.cache.get("app")
-
-    if not app:
-        return pn.pane.Markdown("# Error\n\nApplication not initialized.")
-
     # Create sidebar with filters
     limit = pn.widgets.IntSlider(name="Limit", value=3, start=1, end=100)
 
@@ -84,7 +76,7 @@ def feed_page():
 
     def update_chat(*events):
         """Update chat feed with latest visualizations."""
-        requests = app.db.list_requests(limit=limit.value)
+        requests = get_db().list_requests(limit=limit.value)
 
         # Clear and repopulate
         objects: list[pn.viewable.Viewable] = []

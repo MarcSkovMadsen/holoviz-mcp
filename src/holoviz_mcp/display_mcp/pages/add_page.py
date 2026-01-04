@@ -8,6 +8,8 @@ import logging
 
 import panel as pn
 
+from holoviz_mcp.display_mcp.database import get_db
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,15 +18,6 @@ def add_page():
 
     Provides a UI form for entering code, name, description, and execution method.
     """
-    # Import here to avoid circular dependency
-    from holoviz_mcp.display_mcp.app import DisplayApp
-
-    # Get app instance
-    app: DisplayApp = pn.state.cache.get("app")
-
-    if not app:
-        return pn.pane.Markdown("# Error\n\nApplication not initialized.")
-
     # Create input widgets
     code_editor = pn.widgets.CodeEditor(
         value='import pandas as pd\ndf = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})\ndf',
@@ -72,7 +65,7 @@ def add_page():
 
         try:
             # Call shared business logic directly (no HTTP roundtrip)
-            result = app.create_visualization(
+            result = get_db().create_visualization(
                 code=code,
                 name=name,
                 description=description,

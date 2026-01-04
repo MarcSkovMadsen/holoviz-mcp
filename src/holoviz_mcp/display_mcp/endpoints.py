@@ -10,8 +10,9 @@ import traceback
 from datetime import datetime
 from datetime import timezone
 
-import panel as pn
 from tornado.web import RequestHandler
+
+from holoviz_mcp.display_mcp.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +22,8 @@ class SnippetEndpoint(RequestHandler):
 
     def post(self):
         """Handle POST requests to store snippets and create visualizations."""
-        # Import here to avoid circular dependency
-        from holoviz_mcp.display_mcp.app import DisplayApp
-
-        # Get app instance
-        app: DisplayApp = pn.state.cache.get("app")
-
-        if not app:
-            self.set_status(500)
-            self.set_header("Content-Type", "application/json")
-            self.write({"error": "InternalError", "message": "Application not initialized"})
-            return
+        # Get database instance
+        db = get_db()
 
         try:
             # Parse JSON body
@@ -44,7 +36,7 @@ class SnippetEndpoint(RequestHandler):
             method = request_body.get("method", "jupyter")
 
             # Call shared business logic
-            result = app.create_visualization(
+            result = db.create_visualization(
                 code=code,
                 name=name,
                 description=description,
