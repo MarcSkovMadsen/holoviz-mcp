@@ -55,9 +55,9 @@ def find_extensions(code: str, namespace: dict[str, Any] | None = None) -> list[
 
 
 def find_requirements(code: str) -> list[str]:
-    """Find package requirements from code using AST parsing.
+    """Find package requirements from code.
 
-    This analyzes imports in the code to determine required packages.
+    Uses Panel's built-in find_requirements function to detect package dependencies.
 
     Parameters
     ----------
@@ -70,20 +70,27 @@ def find_requirements(code: str) -> list[str]:
         List of required package names
     """
     try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return []
+        # Import panel's find_requirements function
+        from panel.io.mime_render import find_requirements as panel_find_requirements
 
-    imports = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                imports.add(alias.name.split(".")[0])
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.add(node.module.split(".")[0])
+        return panel_find_requirements(code)
+    except (ImportError, AttributeError):
+        # Fallback to simple AST-based parsing if panel function not available
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return []
 
-    return list(imports)
+        imports = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name.split(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.add(node.module.split(".")[0])
+
+        return list(imports)
 
 
 def extract_last_expression(code: str) -> tuple[str, str]:

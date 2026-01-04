@@ -159,21 +159,6 @@ class DisplayConfig(BaseModel):
     host: str = Field(default="127.0.0.1", description="Host address for the display Panel server")
     max_restarts: int = Field(default=3, description="Maximum number of restart attempts for Panel server")
     health_check_interval: int = Field(default=60, description="Health check interval in seconds")
-    auto_install_packages: bool = Field(default=True, description="Auto-install missing packages")
-    preinstalled_packages: list[str] = Field(
-        default_factory=lambda: [
-            "altair",
-            "bokeh",
-            "holoviews",
-            "hvplot",
-            "matplotlib",
-            "numpy",
-            "pandas",
-            "panel",
-            "plotly",
-        ],
-        description="Packages to install at startup",
-    )
     db_path: Path = Field(
         default_factory=lambda: _holoviz_mcp_user_dir() / "display" / "requests.db",
         description="Path to SQLite database for display requests",

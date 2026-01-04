@@ -16,8 +16,11 @@ from typing import Generator
 from typing import Literal
 from typing import Optional
 
+import re
+
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import field_validator
 
 
 class Snippet(BaseModel):
@@ -38,6 +41,22 @@ class Snippet(BaseModel):
     execution_time: Optional[float] = Field(default=None, description="Execution time in seconds")
     packages: list[str] = Field(default_factory=list, description="Inferred required packages")
     extensions: list[str] = Field(default_factory=list, description="Inferred Panel extensions")
+    user: str = Field(default="guest", description="User who created the snippet")
+    tags: list[str] = Field(default_factory=list, description="List of tags")
+    slug: str = Field(default="", description="URL-friendly slug for persistent links")
+
+    @field_validator("slug")
+    @classmethod
+    def validate_slug(cls, v: str) -> str:
+        """Validate that slug is either empty or a valid URL slug."""
+        if v == "":
+            return v
+        # Valid slug: lowercase letters, numbers, hyphens only
+        if not re.match(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", v):
+            raise ValueError(
+                "Slug must be empty or contain only lowercase letters, numbers, and hyphens (no consecutive hyphens)"
+            )
+        return v
 
 
 class SnippetDatabase:
@@ -79,7 +98,10 @@ class SnippetDatabase:
                     error_message TEXT,
                     execution_time REAL,
                     packages TEXT,
-                    extensions TEXT
+                    extensions TEXT,
+                    user TEXT DEFAULT 'guest',
+                    tags TEXT,
+                    slug TEXT DEFAULT ''
                 )
                 """
             )
@@ -88,6 +110,8 @@ class SnippetDatabase:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON snippets(created_at DESC)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON snippets(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_method ON snippets(method)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_slug ON snippets(slug)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_user ON snippets(user)")
 
             # Create full-text search virtual table
             cursor.execute(
@@ -128,8 +152,8 @@ class SnippetDatabase:
                 """
                 INSERT INTO snippets
                 (id, code, name, description, method, created_at, updated_at, status,
-                 error_message, execution_time, packages, extensions)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 error_message, execution_time, packages, extensions, user, tags, slug)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     snippet.id,
@@ -144,6 +168,9 @@ class SnippetDatabase:
                     snippet.execution_time,
                     json.dumps(snippet.packages),
                     json.dumps(snippet.extensions),
+                    snippet.user,
+                    json.dumps(snippet.tags),
+                    snippet.slug,
                 ),
             )
 
@@ -176,6 +203,31 @@ class SnippetDatabase:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM snippets WHERE id = ?", (snippet_id,))
+            row = cursor.fetchone()
+
+            if row:
+                return self._row_to_snippet(dict(row))
+            return None
+
+    def get_snippet_by_slug(self, slug: str) -> Optional[Snippet]:
+        """Get the most recent snippet record by slug.
+
+        Parameters
+        ----------
+        slug : str
+            Snippet slug
+
+        Returns
+        -------
+        Optional[Snippet]
+            Most recent snippet record with this slug if found, None otherwise
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM snippets WHERE slug = ? ORDER BY created_at DESC LIMIT 1",
+                (slug,),
+            )
             row = cursor.fetchone()
 
             if row:
@@ -466,6 +518,9 @@ class SnippetDatabase:
             execution_time=row["execution_time"],
             packages=json.loads(row["packages"]) if row["packages"] else [],
             extensions=json.loads(row["extensions"]) if row["extensions"] else [],
+            user=row.get("user", "guest"),
+            tags=json.loads(row["tags"]) if row.get("tags") else [],
+            slug=row.get("slug", ""),
         )
 
 

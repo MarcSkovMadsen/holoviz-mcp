@@ -165,16 +165,31 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
 def view_page():
     """Create the /view page.
 
-    Renders a single visualization by ID from the query string parameter.
+    Renders a single visualization by ID or slug from the query string parameter.
+    Supports ?id=... or ?slug=... query parameters. If both are provided, id takes precedence.
     """
-    # Get snippet ID from query parameters using session_args
+    # Get snippet ID or slug from query parameters using session_args
     snippet_id = ""
+    slug = ""
+    
     if hasattr(pn.state, "session_args"):
         # session_args is a dict with bytes keys and list of bytes values
-        snippet_id_bytes = pn.state.session_args.get("id", [b""])[0]
+        snippet_id_bytes = pn.state.session_args.get(b"id", [b""])[0]
         snippet_id = snippet_id_bytes.decode("utf-8") if snippet_id_bytes else ""
+        
+        slug_bytes = pn.state.session_args.get(b"slug", [b""])[0]
+        slug = slug_bytes.decode("utf-8") if slug_bytes else ""
 
-    if not snippet_id:
-        return pn.pane.Markdown("# Error\n\nNo snippet ID provided.")
-
-    return create_view(snippet_id)
+    # Prefer ID over slug
+    if snippet_id:
+        return create_view(snippet_id)
+    elif slug:
+        # Get the most recent snippet with this slug
+        db = get_db()
+        snippet = db.get_snippet_by_slug(slug)
+        if snippet:
+            return create_view(snippet.id)
+        else:
+            return pn.pane.Markdown(f"# Error\n\nNo snippet found with slug '{slug}'.")
+    else:
+        return pn.pane.Markdown("# Error\n\nNo snippet ID or slug provided.")
