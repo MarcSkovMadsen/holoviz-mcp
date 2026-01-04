@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from holoviz_mcp.display_mcp.database import DisplayDatabase
-from holoviz_mcp.display_mcp.database import DisplayRequest
+from holoviz_mcp.display_mcp.database import Snippet
+from holoviz_mcp.display_mcp.database import SnippetDatabase
 
 
-class TestDisplayDatabase:
-    """Tests for DisplayDatabase."""
+class TestSnippetDatabase:
+    """Tests for SnippetDatabase."""
 
     @pytest.fixture
     def temp_db(self):
@@ -18,7 +18,7 @@ class TestDisplayDatabase:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
 
-        db = DisplayDatabase(db_path)
+        db = SnippetDatabase(db_path)
         yield db
 
         # Cleanup
@@ -26,7 +26,7 @@ class TestDisplayDatabase:
 
     def test_create_request(self, temp_db):
         """Test creating a display request."""
-        request = DisplayRequest(
+        request = Snippet(
             code="print('hello')",
             name="Test",
             description="Test description",
@@ -42,7 +42,7 @@ class TestDisplayDatabase:
 
     def test_get_request(self, temp_db):
         """Test retrieving a request."""
-        request = DisplayRequest(
+        request = Snippet(
             code="x = 1",
             name="Simple",
             method="jupyter",
@@ -62,7 +62,7 @@ class TestDisplayDatabase:
 
     def test_update_request(self, temp_db):
         """Test updating a request."""
-        request = DisplayRequest(
+        request = Snippet(
             code="y = 2",
             method="jupyter",
         )
@@ -87,7 +87,7 @@ class TestDisplayDatabase:
         """Test listing requests."""
         # Create multiple requests
         for i in range(5):
-            request = DisplayRequest(
+            request = Snippet(
                 code=f"x = {i}",
                 name=f"Test {i}",
                 method="jupyter",
@@ -104,7 +104,7 @@ class TestDisplayDatabase:
 
     def test_delete_request(self, temp_db):
         """Test deleting a request."""
-        request = DisplayRequest(
+        request = Snippet(
             code="z = 3",
             method="jupyter",
         )
@@ -123,9 +123,9 @@ class TestDisplayDatabase:
         """Test full-text search."""
         # Create requests with different content
         requests = [
-            DisplayRequest(code="import pandas", name="Pandas Test", method="jupyter"),
-            DisplayRequest(code="import numpy", name="NumPy Test", method="jupyter"),
-            DisplayRequest(code="import matplotlib", name="Plotting", method="jupyter"),
+            Snippet(code="import pandas", name="Pandas Test", method="jupyter"),
+            Snippet(code="import numpy", name="NumPy Test", method="jupyter"),
+            Snippet(code="import matplotlib", name="Plotting", method="jupyter"),
         ]
 
         for req in requests:

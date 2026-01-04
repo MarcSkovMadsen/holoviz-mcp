@@ -18,8 +18,11 @@ from pydantic import BaseModel
 from pydantic import Field
 
 
-class DisplayRequest(BaseModel):
-    """Model for a display request stored in the database."""
+class Snippet(BaseModel):
+    """Model for a code snippet stored in the database.
+
+    Represents a code snippet submitted to the Display System for visualization.
+    """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     code: str = Field(..., description="Python code to execute")
@@ -35,8 +38,12 @@ class DisplayRequest(BaseModel):
     extensions: list[str] = Field(default_factory=list, description="Inferred Panel extensions")
 
 
-class DisplayDatabase:
-    """SQLite database manager for display requests."""
+class SnippetDatabase:
+    """SQLite database manager for code snippets.
+
+    Manages storage and retrieval of Snippet records (code snippets)
+    submitted to the Display System.
+    """
 
     def __init__(self, db_path: Path):
         """Initialize the database.
@@ -58,7 +65,7 @@ class DisplayDatabase:
             # Create main table
             cursor.execute(
                 """
-                CREATE TABLE IF NOT EXISTS display_requests (
+                CREATE TABLE IF NOT EXISTS snippets (
                     id TEXT PRIMARY KEY,
                     code TEXT NOT NULL,
                     name TEXT DEFAULT '',
@@ -76,15 +83,15 @@ class DisplayDatabase:
             )
 
             # Create indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON display_requests(created_at DESC)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON display_requests(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_method ON display_requests(method)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON snippets(created_at DESC)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON snippets(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_method ON snippets(method)")
 
             # Create full-text search virtual table
             cursor.execute(
                 """
-                CREATE VIRTUAL TABLE IF NOT EXISTS display_requests_fts
-                USING fts5(name, description, code, content=display_requests)
+                CREATE VIRTUAL TABLE IF NOT EXISTS snippets_fts
+                USING fts5(name, description, code, content=snippets)
                 """
             )
 
@@ -100,24 +107,24 @@ class DisplayDatabase:
         finally:
             conn.close()
 
-    def create_request(self, request: DisplayRequest) -> DisplayRequest:
-        """Create a new display request.
+    def create_request(self, request: Snippet) -> Snippet:
+        """Create a new snippet record.
 
         Parameters
         ----------
-        request : DisplayRequest
-            Request to create
+        request : Snippet
+            Snippet record to create
 
         Returns
         -------
-        DisplayRequest
-            Created request with ID
+        Snippet
+            Created snippet record with ID
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO display_requests
+                INSERT INTO snippets
                 (id, code, name, description, method, created_at, updated_at, status,
                  error_message, execution_time, packages, extensions)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -141,8 +148,8 @@ class DisplayDatabase:
             # Update FTS index
             cursor.execute(
                 """
-                INSERT INTO display_requests_fts(rowid, name, description, code)
-                VALUES ((SELECT rowid FROM display_requests WHERE id = ?), ?, ?, ?)
+                INSERT INTO snippets_fts(rowid, name, description, code)
+                VALUES ((SELECT rowid FROM snippets WHERE id = ?), ?, ?, ?)
                 """,
                 (request.id, request.name, request.description, request.code),
             )
@@ -151,22 +158,22 @@ class DisplayDatabase:
 
         return request
 
-    def get_request(self, request_id: str) -> Optional[DisplayRequest]:
-        """Get a display request by ID.
+    def get_request(self, request_id: str) -> Optional[Snippet]:
+        """Get a snippet record by ID.
 
         Parameters
         ----------
         request_id : str
-            Request ID
+            Snippet ID
 
         Returns
         -------
-        Optional[DisplayRequest]
-            Request if found, None otherwise
+        Optional[Snippet]
+            Snippet record if found, None otherwise
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM display_requests WHERE id = ?", (request_id,))
+            cursor.execute("SELECT * FROM snippets WHERE id = ?", (request_id,))
             row = cursor.fetchone()
 
             if row:
@@ -182,12 +189,12 @@ class DisplayDatabase:
         packages: Optional[list[str]] = None,
         extensions: Optional[list[str]] = None,
     ) -> bool:
-        """Update a display request.
+        """Update a snippet record.
 
         Parameters
         ----------
         request_id : str
-            Request ID
+            Snippet ID
         status : Optional[str]
             New status
         error_message : Optional[str]
@@ -238,7 +245,7 @@ class DisplayDatabase:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                f"UPDATE display_requests SET {', '.join(updates)} WHERE id = ?",
+                f"UPDATE snippets SET {', '.join(updates)} WHERE id = ?",
                 params,
             )
             conn.commit()
@@ -252,19 +259,19 @@ class DisplayDatabase:
         end: Optional[datetime] = None,
         status: Optional[str] = None,
         method: Optional[str] = None,
-    ) -> list[DisplayRequest]:
-        """List display requests with filters.
+    ) -> list[Snippet]:
+        """List snippet records with filters.
 
         Parameters
         ----------
         limit : int
-            Maximum number of requests to return
+            Maximum number of snippets to return
         offset : int
-            Number of requests to skip
+            Number of snippets to skip
         start : Optional[datetime]
-            Filter requests after this time
+            Filter snippets created after this time
         end : Optional[datetime]
-            Filter requests before this time
+            Filter snippets created before this time
         status : Optional[str]
             Filter by status
         method : Optional[str]
@@ -272,10 +279,10 @@ class DisplayDatabase:
 
         Returns
         -------
-        list[DisplayRequest]
-            List of requests
+        list[Snippet]
+            List of snippet records
         """
-        query = "SELECT * FROM display_requests WHERE 1=1"
+        query = "SELECT * FROM snippets WHERE 1=1"
         params = []
 
         if start:
@@ -305,12 +312,12 @@ class DisplayDatabase:
             return [self._row_to_request(dict(row)) for row in rows]
 
     def delete_request(self, request_id: str) -> bool:
-        """Delete a display request.
+        """Delete a snippet record.
 
         Parameters
         ----------
         request_id : str
-            Request ID
+            Snippet ID
 
         Returns
         -------
@@ -322,18 +329,18 @@ class DisplayDatabase:
 
             # Delete from FTS index
             cursor.execute(
-                "DELETE FROM display_requests_fts WHERE rowid = (SELECT rowid FROM display_requests WHERE id = ?)",
+                "DELETE FROM snippets_fts WHERE rowid = (SELECT rowid FROM snippets WHERE id = ?)",
                 (request_id,),
             )
 
             # Delete from main table
-            cursor.execute("DELETE FROM display_requests WHERE id = ?", (request_id,))
+            cursor.execute("DELETE FROM snippets WHERE id = ?", (request_id,))
             conn.commit()
 
             return cursor.rowcount > 0
 
-    def search_requests(self, query: str, limit: int = 100) -> list[DisplayRequest]:
-        """Search requests using full-text search.
+    def search_requests(self, query: str, limit: int = 100) -> list[Snippet]:
+        """Search snippet records using full-text search.
 
         Parameters
         ----------
@@ -344,16 +351,16 @@ class DisplayDatabase:
 
         Returns
         -------
-        list[DisplayRequest]
-            Matching requests
+        list[Snippet]
+            Matching snippet records
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT r.* FROM display_requests r
-                JOIN display_requests_fts fts ON r.rowid = fts.rowid
-                WHERE display_requests_fts MATCH ?
+                SELECT r.* FROM snippets r
+                JOIN snippets_fts fts ON r.rowid = fts.rowid
+                WHERE snippets_fts MATCH ?
                 ORDER BY r.created_at DESC
                 LIMIT ?
                 """,
@@ -364,9 +371,9 @@ class DisplayDatabase:
             return [self._row_to_request(dict(row)) for row in rows]
 
     @staticmethod
-    def _row_to_request(row: dict) -> DisplayRequest:
-        """Convert a database row to a DisplayRequest."""
-        return DisplayRequest(
+    def _row_to_request(row: dict) -> Snippet:
+        """Convert a database row to a Snippet."""
+        return Snippet(
             id=row["id"],
             code=row["code"],
             name=row["name"] or "",

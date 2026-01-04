@@ -59,8 +59,8 @@ class PanelServerManager:
             return True
 
         try:
-            # Get path to panel_app.py
-            panel_app_path = Path(__file__).parent / "panel_app.py"
+            # Get path to app.py
+            app_path = Path(__file__).parent / "app.py"
 
             # Set up environment
             env = os.environ.copy()
@@ -71,7 +71,7 @@ class PanelServerManager:
             # Start subprocess
             logger.info(f"Starting Panel server on {self.host}:{self.port}")
             self.process = subprocess.Popen(
-                [sys.executable, str(panel_app_path)],
+                [sys.executable, str(app_path)],
                 env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -205,8 +205,8 @@ class PanelServerManager:
             return base.rstrip("/")
 
         # Check Jupyter proxy
-        if jupyter_base := os.getenv("JUPYTERHUB_BASE_URL") or os.getenv("JUPYTER_SERVER_ROOT"):
-            return f"{jupyter_base.rstrip('/')}/proxy/{self.port}"
+        if jupyter_base := os.getenv("JUPYTER_SERVER_PROXY_URL"):
+            return f"{jupyter_base.rstrip('/')}/{self.port}"
 
         # Default to localhost
         return f"http://{self.host}:{self.port}"
@@ -238,7 +238,7 @@ class PanelServerManager:
         try:
             # Use POST with JSON body now that we have proper Tornado handler
             response = requests.post(
-                f"{base_url}/create",
+                f"{base_url}/api/snippet",
                 json={
                     "code": code,
                     "name": name,

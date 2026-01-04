@@ -2,6 +2,7 @@
 
 import ast
 import importlib.util
+import os
 from typing import Any
 
 # Check for pandas availability once at module level
@@ -121,3 +122,37 @@ def extract_last_expression(code: str) -> tuple[str, str]:
     else:
         # No expression at end, return all as statements
         return code, ""
+
+
+def get_url(id: str) -> str:
+    """Get the URL for viewing a visualization.
+
+    Constructs the full URL to view a visualization based on the environment.
+    Checks HOLOVIZ_DISPLAY_BASE_URL first, then Jupyter proxy settings,
+    finally falls back to localhost.
+
+    Parameters
+    ----------
+    id : str
+        Visualization/request ID
+
+    Returns
+    -------
+    str
+        Full URL to view the visualization (e.g., http://localhost:5005/view?id=xyz)
+    """
+    base_url = os.getenv("HOLOVIZ_DISPLAY_BASE_URL", "")
+    if not base_url:
+        # Check for Jupyter proxy
+        jupyter_base = os.getenv("JUPYTER_SERVER_PROXY_URL")
+        if jupyter_base:
+            port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+            base_url = f"{jupyter_base.rstrip('/')}/{port}"
+        else:
+            # Default to localhost
+            host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+            port = int(os.getenv("PANEL_SERVER_PORT", "5005"))
+            base_url = f"http://{host}:{port}"
+
+    url = f"{base_url}/view?id={id}"
+    return url

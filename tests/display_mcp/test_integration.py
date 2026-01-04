@@ -3,11 +3,12 @@
 These tests verify the full functionality including Panel server startup,
 code execution, and visualization display.
 
-NOTE: The REST API endpoint /create currently has limitations with Panel's
+NOTE: The REST API endpoint /api/snippet currently has limitations with Panel's
 HTTP handling. These tests are marked as slow/integration and may be skipped
 in CI. The core functionality (database, utils, UI pages) is fully tested.
 """
 
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -172,5 +173,8 @@ arr.mean()
         url = manager.get_base_url()
 
         # Should be localhost for testing
-        assert "127.0.0.1" in url or "localhost" in url
+        if os.getenv("JUPYTER_SERVER_PROXY_URL"):
+            assert os.getenv("JUPYTER_SERVER_PROXY_URL") in url
+        else:
+            assert "127.0.0.1" in url or "localhost" in url
         assert "5006" in url  # Test port
