@@ -24,54 +24,54 @@ class TestSnippetDatabase:
         # Cleanup
         db_path.unlink(missing_ok=True)
 
-    def test_create_request(self, temp_db):
-        """Test creating a display request."""
-        request = Snippet(
+    def test_create_snippet(self, temp_db):
+        """Test creating a display snippet."""
+        snippet = Snippet(
             code="print('hello')",
             name="Test",
             description="Test description",
             method="jupyter",
         )
 
-        created = temp_db.create_request(request)
+        created = temp_db.create_snippet(snippet)
 
-        assert created.id == request.id
+        assert created.id == snippet.id
         assert created.code == "print('hello')"
         assert created.name == "Test"
         assert created.status == "pending"
 
-    def test_get_request(self, temp_db):
-        """Test retrieving a request."""
-        request = Snippet(
+    def test_get_snippet(self, temp_db):
+        """Test retrieving a snippet."""
+        snippet = Snippet(
             code="x = 1",
             name="Simple",
             method="jupyter",
         )
 
-        temp_db.create_request(request)
-        retrieved = temp_db.get_request(request.id)
+        temp_db.create_snippet(snippet)
+        retrieved = temp_db.get_snippet(snippet.id)
 
         assert retrieved is not None
-        assert retrieved.id == request.id
+        assert retrieved.id == snippet.id
         assert retrieved.code == "x = 1"
 
-    def test_get_nonexistent_request(self, temp_db):
-        """Test getting a request that doesn't exist."""
-        result = temp_db.get_request("nonexistent")
+    def test_get_nonexistent_snippet(self, temp_db):
+        """Test getting a snippet that doesn't exist."""
+        result = temp_db.get_snippet("nonexistent")
         assert result is None
 
-    def test_update_request(self, temp_db):
-        """Test updating a request."""
-        request = Snippet(
+    def test_update_snippet(self, temp_db):
+        """Test updating a snippet."""
+        snippet = Snippet(
             code="y = 2",
             method="jupyter",
         )
 
-        temp_db.create_request(request)
+        temp_db.create_snippet(snippet)
 
         # Update status
-        updated = temp_db.update_request(
-            request.id,
+        updated = temp_db.update_snippet(
+            snippet.id,
             status="success",
             execution_time=1.5,
         )
@@ -79,59 +79,59 @@ class TestSnippetDatabase:
         assert updated is True
 
         # Retrieve and verify
-        retrieved = temp_db.get_request(request.id)
+        retrieved = temp_db.get_snippet(snippet.id)
         assert retrieved.status == "success"
         assert retrieved.execution_time == 1.5
 
-    def test_list_requests(self, temp_db):
-        """Test listing requests."""
-        # Create multiple requests
+    def test_list_snippets(self, temp_db):
+        """Test listing snippets."""
+        # Create multiple snippets
         for i in range(5):
-            request = Snippet(
+            snippet = Snippet(
                 code=f"x = {i}",
                 name=f"Test {i}",
                 method="jupyter",
             )
-            temp_db.create_request(request)
+            temp_db.create_snippet(snippet)
 
         # List all
-        requests = temp_db.list_requests()
-        assert len(requests) == 5
+        snippets = temp_db.list_snippets()
+        assert len(snippets) == 5
 
         # List with limit
-        requests = temp_db.list_requests(limit=3)
-        assert len(requests) == 3
+        snippets = temp_db.list_snippets(limit=3)
+        assert len(snippets) == 3
 
-    def test_delete_request(self, temp_db):
-        """Test deleting a request."""
-        request = Snippet(
+    def test_delete_snippet(self, temp_db):
+        """Test deleting a snippet."""
+        snippet = Snippet(
             code="z = 3",
             method="jupyter",
         )
 
-        temp_db.create_request(request)
+        temp_db.create_snippet(snippet)
 
         # Delete
-        deleted = temp_db.delete_request(request.id)
+        deleted = temp_db.delete_snippet(snippet.id)
         assert deleted is True
 
         # Verify deleted
-        retrieved = temp_db.get_request(request.id)
+        retrieved = temp_db.get_snippet(snippet.id)
         assert retrieved is None
 
-    def test_search_requests(self, temp_db):
+    def test_search_snippets(self, temp_db):
         """Test full-text search."""
-        # Create requests with different content
-        requests = [
+        # Create snippets with different content
+        snippets = [
             Snippet(code="import pandas", name="Pandas Test", method="jupyter"),
             Snippet(code="import numpy", name="NumPy Test", method="jupyter"),
             Snippet(code="import matplotlib", name="Plotting", method="jupyter"),
         ]
 
-        for req in requests:
-            temp_db.create_request(req)
+        for snippet in snippets:
+            temp_db.create_snippet(snippet)
 
         # Search for pandas
-        results = temp_db.search_requests("pandas")
+        results = temp_db.search_snippets("pandas")
         assert len(results) >= 1
         assert any("pandas" in r.code.lower() or "pandas" in r.name.lower() for r in results)

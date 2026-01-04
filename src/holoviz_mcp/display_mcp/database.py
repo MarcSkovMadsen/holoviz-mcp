@@ -109,12 +109,12 @@ class SnippetDatabase:
         finally:
             conn.close()
 
-    def create_request(self, request: Snippet) -> Snippet:
+    def create_snippet(self, snippet: Snippet) -> Snippet:
         """Create a new snippet record.
 
         Parameters
         ----------
-        request : Snippet
+        snippet : Snippet
             Snippet record to create
 
         Returns
@@ -132,18 +132,18 @@ class SnippetDatabase:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    request.id,
-                    request.code,
-                    request.name,
-                    request.description,
-                    request.method,
-                    request.created_at.isoformat(),
-                    request.updated_at.isoformat(),
-                    request.status,
-                    request.error_message,
-                    request.execution_time,
-                    json.dumps(request.packages),
-                    json.dumps(request.extensions),
+                    snippet.id,
+                    snippet.code,
+                    snippet.name,
+                    snippet.description,
+                    snippet.method,
+                    snippet.created_at.isoformat(),
+                    snippet.updated_at.isoformat(),
+                    snippet.status,
+                    snippet.error_message,
+                    snippet.execution_time,
+                    json.dumps(snippet.packages),
+                    json.dumps(snippet.extensions),
                 ),
             )
 
@@ -153,19 +153,19 @@ class SnippetDatabase:
                 INSERT INTO snippets_fts(rowid, name, description, code)
                 VALUES ((SELECT rowid FROM snippets WHERE id = ?), ?, ?, ?)
                 """,
-                (request.id, request.name, request.description, request.code),
+                (snippet.id, snippet.name, snippet.description, snippet.code),
             )
 
             conn.commit()
 
-        return request
+        return snippet
 
-    def get_request(self, request_id: str) -> Optional[Snippet]:
+    def get_snippet(self, snippet_id: str) -> Optional[Snippet]:
         """Get a snippet record by ID.
 
         Parameters
         ----------
-        request_id : str
+        snippet_id : str
             Snippet ID
 
         Returns
@@ -175,16 +175,16 @@ class SnippetDatabase:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM snippets WHERE id = ?", (request_id,))
+            cursor.execute("SELECT * FROM snippets WHERE id = ?", (snippet_id,))
             row = cursor.fetchone()
 
             if row:
-                return self._row_to_request(dict(row))
+                return self._row_to_snippet(dict(row))
             return None
 
-    def update_request(
+    def update_snippet(
         self,
-        request_id: str,
+        snippet_id: str,
         status: Optional[str] = None,
         error_message: Optional[str] = None,
         execution_time: Optional[float] = None,
@@ -195,7 +195,7 @@ class SnippetDatabase:
 
         Parameters
         ----------
-        request_id : str
+        snippet_id : str
             Snippet ID
         status : Optional[str]
             New status
@@ -242,7 +242,7 @@ class SnippetDatabase:
         updates.append("updated_at = ?")
         params.append(datetime.utcnow().isoformat())
 
-        params.append(request_id)
+        params.append(snippet_id)
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -253,7 +253,7 @@ class SnippetDatabase:
             conn.commit()
             return cursor.rowcount > 0
 
-    def list_requests(
+    def list_snippets(
         self,
         limit: int = 100,
         offset: int = 0,
@@ -311,14 +311,14 @@ class SnippetDatabase:
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-            return [self._row_to_request(dict(row)) for row in rows]
+            return [self._row_to_snippet(dict(row)) for row in rows]
 
-    def delete_request(self, request_id: str) -> bool:
+    def delete_snippet(self, snippet_id: str) -> bool:
         """Delete a snippet record.
 
         Parameters
         ----------
-        request_id : str
+        snippet_id : str
             Snippet ID
 
         Returns
@@ -332,16 +332,16 @@ class SnippetDatabase:
             # Delete from FTS index
             cursor.execute(
                 "DELETE FROM snippets_fts WHERE rowid = (SELECT rowid FROM snippets WHERE id = ?)",
-                (request_id,),
+                (snippet_id,),
             )
 
             # Delete from main table
-            cursor.execute("DELETE FROM snippets WHERE id = ?", (request_id,))
+            cursor.execute("DELETE FROM snippets WHERE id = ?", (snippet_id,))
             conn.commit()
 
             return cursor.rowcount > 0
 
-    def search_requests(self, query: str, limit: int = 100) -> list[Snippet]:
+    def search_snippets(self, query: str, limit: int = 100) -> list[Snippet]:
         """Search snippet records using full-text search.
 
         Parameters
@@ -370,7 +370,7 @@ class SnippetDatabase:
             )
             rows = cursor.fetchall()
 
-            return [self._row_to_request(dict(row)) for row in rows]
+            return [self._row_to_snippet(dict(row)) for row in rows]
 
     def create_visualization(
         self,
@@ -427,8 +427,8 @@ class SnippetDatabase:
         packages = find_requirements(code)
         extensions = find_extensions(code) if method == "jupyter" else []
 
-        # Create request in database with "pending" status
-        request_obj = Snippet(
+        # Create snippet in database with "pending" status
+        snippet_obj = Snippet(
             code=code,
             name=name,
             description=description,
@@ -438,20 +438,20 @@ class SnippetDatabase:
             status="pending",
         )
 
-        self.create_request(request_obj)
+        self.create_snippet(snippet_obj)
 
         # Generate URL
-        url = get_url(id=request_obj.id)
+        url = get_url(id=snippet_obj.id)
 
         # Return result
         return {
-            "id": request_obj.id,
+            "id": snippet_obj.id,
             "url": url,
-            "created_at": request_obj.created_at.isoformat(),
+            "created_at": snippet_obj.created_at.isoformat(),
         }
 
     @staticmethod
-    def _row_to_request(row: dict) -> Snippet:
+    def _row_to_snippet(row: dict) -> Snippet:
         """Convert a database row to a Snippet."""
         return Snippet(
             id=row["id"],

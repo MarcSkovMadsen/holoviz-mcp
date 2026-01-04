@@ -211,8 +211,8 @@ class PanelServerManager:
         # Default to localhost
         return f"http://{self.host}:{self.port}"
 
-    def create_request(self, code: str, name: str = "", description: str = "", method: str = "jupyter") -> dict:
-        """Send a create request to the Panel server.
+    def create_snippet(self, code: str, name: str = "", description: str = "", method: str = "jupyter") -> dict:
+        """Send a create snippet request to the Panel server.
 
         Parameters
         ----------

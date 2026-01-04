@@ -19,13 +19,13 @@ from holoviz_mcp.display_mcp.utils import extract_last_expression
 logger = logging.getLogger(__name__)
 
 
-def create_view(request_id: str) -> pn.viewable.Viewable | None:
-    """Create a view for a single visualization request.
+def create_view(snippet_id: str) -> pn.viewable.Viewable | None:
+    """Create a view for a single visualization snippet.
 
     Parameters
     ----------
-    request_id : str
-        ID of the request to display
+    snippet_id : str
+        ID of the snippet to display
 
     Returns
     -------
@@ -33,27 +33,27 @@ def create_view(request_id: str) -> pn.viewable.Viewable | None:
         Panel component displaying the visualization
     """
     db = get_db()
-    request = db.get_request(request_id)
+    snippet = db.get_snippet(snippet_id)
 
     pn.extension("codeeditor")
 
-    if not request:
-        return pn.pane.Markdown(f"# Error\n\nRequest {request_id} not found.")
+    if not snippet:
+        return pn.pane.Markdown(f"# Error\n\nSnippet {snippet_id} not found.")
 
     # If pending, try to execute now
 
     start_time = datetime.now(timezone.utc)
     try:
-        result = _execute_code(request)
+        result = _execute_code(snippet)
         execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
-        request.status = "success"
-        request.error_message = ""
+        snippet.status = "success"
+        snippet.error_message = ""
 
         # Update as success
-        get_db().update_request(
-            request_id,
-            status=request.status,
-            error_message=request.error_message,
+        get_db().update_snippet(
+            snippet_id,
+            status=snippet.status,
+            error_message=snippet.error_message,
             execution_time=execution_time,
         )
 
@@ -64,36 +64,36 @@ def create_view(request_id: str) -> pn.viewable.Viewable | None:
         error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
 
         # Update as error
-        get_db().update_request(
-            request_id,
+        get_db().update_snippet(
+            snippet_id,
             status="error",
             error_message=error_msg,
             execution_time=execution_time,
         )
 
-        # Update request object for display
-        request.status = "error"
-        request.error_message = error_msg
+        # Update snippet object for display
+        snippet.status = "error"
+        snippet.error_message = error_msg
 
-    if request.status == "error":
+    if snippet.status == "error":
         # Display error message
         error_content = f"""
-# Error: {request.name or request_id}
+# Error: {snippet.name or snippet_id}
 
-**Description:** {request.description}
+**Description:** {snippet.description}
 
-**Method:** {request.method}
+**Method:** {snippet.method}
 
 ## Error Message
 
 ```bash
-{request.error_message}
+{snippet.error_message}
 ```
 
 ## Code
 
 ```python
-{request.code}
+{snippet.code}
 ```
 """
         return pn.pane.Markdown(error_content, sizing_mode="stretch_width")
@@ -101,30 +101,30 @@ def create_view(request_id: str) -> pn.viewable.Viewable | None:
     return result
 
 
-def _execute_code(request: Snippet) -> pn.viewable.Viewable | None:
+def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
     """Execute code and return Panel component.
 
     Parameters
     ----------
-    request : Snippet
-        Request to execute
+    snippet : Snippet
+        Snippet to execute
 
     Returns
     -------
     pn.viewable.Viewable
         Panel component with result
     """
-    if request.method == "jupyter":
+    if snippet.method == "jupyter":
         # Load extensions if specified
-        if request.extensions:
+        if snippet.extensions:
             try:
-                pn.extension(*request.extensions)
+                pn.extension(*snippet.extensions)
             except Exception as e:
-                logger.warning(f"Failed to load extensions {request.extensions}: {e}")
+                logger.warning(f"Failed to load extensions {snippet.extensions}: {e}")
 
         # Extract last expression
         try:
-            statements, last_expr = extract_last_expression(request.code)
+            statements, last_expr = extract_last_expression(snippet.code)
         except ValueError as e:
             raise ValueError(f"Failed to parse code: {e}") from e
 
@@ -139,7 +139,7 @@ def _execute_code(request: Snippet) -> pn.viewable.Viewable | None:
             namespace["_panel_result"] = result
         else:
             # No expression, just execute all
-            exec(request.code, namespace)
+            exec(snippet.code, namespace)
             result = None
 
         # Wrap in panel
@@ -152,10 +152,10 @@ def _execute_code(request: Snippet) -> pn.viewable.Viewable | None:
     else:  # panel method
         # Execute code that should call .servable()
         panel_namespace: dict[str, Any] = {}
-        exec(request.code, panel_namespace)
+        exec(snippet.code, panel_namespace)
 
         # Find servable objects
-        servables = ".servable()" in request.code
+        servables = ".servable()" in snippet.code
 
         if not servables:
             pn.pane.Markdown("*Code executed successfully (no servable objects found)*").servable()
@@ -167,14 +167,14 @@ def view_page():
 
     Renders a single visualization by ID from the query string parameter.
     """
-    # Get request ID from query parameters using session_args
-    request_id = ""
+    # Get snippet ID from query parameters using session_args
+    snippet_id = ""
     if hasattr(pn.state, "session_args"):
         # session_args is a dict with bytes keys and list of bytes values
-        request_id_bytes = pn.state.session_args.get("id", [b""])[0]
-        request_id = request_id_bytes.decode("utf-8") if request_id_bytes else ""
+        snippet_id_bytes = pn.state.session_args.get("id", [b""])[0]
+        snippet_id = snippet_id_bytes.decode("utf-8") if snippet_id_bytes else ""
 
-    if not request_id:
-        return pn.pane.Markdown("# Error\n\nNo request ID provided.")
+    if not snippet_id:
+        return pn.pane.Markdown("# Error\n\nNo snippet ID provided.")
 
-    return create_view(request_id)
+    return create_view(snippet_id)

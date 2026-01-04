@@ -76,7 +76,7 @@ def feed_page():
 
     def update_chat(*events):
         """Update chat feed with latest visualizations."""
-        requests = get_db().list_requests(limit=limit.value)
+        requests = get_db().list_snippets(limit=limit.value)
 
         # Clear and repopulate
         objects: list[pn.viewable.Viewable] = []

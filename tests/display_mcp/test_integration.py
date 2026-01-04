@@ -65,7 +65,7 @@ df = pd.DataFrame({'x': [1, 2, 3], 'y': [4, 5, 6]})
 df
 """
 
-        response = manager.create_request(
+        response = manager.create_snippet(
             code=code,
             name="Test DataFrame",
             description="A simple test",
@@ -86,7 +86,7 @@ df
         """Test creating a visualization with syntax error."""
         code = "x = \n  invalid syntax"
 
-        response = manager.create_request(
+        response = manager.create_snippet(
             code=code,
             name="Syntax Error Test",
             method="jupyter",
@@ -101,7 +101,7 @@ df
         """Test creating a visualization with runtime error."""
         code = "1 / 0"  # Division by zero
 
-        response = manager.create_request(
+        response = manager.create_snippet(
             code=code,
             name="Runtime Error Test",
             method="jupyter",
@@ -119,7 +119,7 @@ arr = np.array([1, 2, 3, 4, 5])
 arr.mean()
 """
 
-        response = manager.create_request(
+        response = manager.create_snippet(
             code=code,
             name="NumPy Test",
             method="jupyter",
@@ -141,7 +141,7 @@ arr.mean()
 
         responses = []
         for i, code in enumerate(codes):
-            response = manager.create_request(
+            response = manager.create_snippet(
                 code=code,
                 name=f"Test {i}",
                 method="jupyter",

@@ -370,7 +370,7 @@ async def display(
 
     # Send request to Panel server
     try:
-        response = manager.create_request(
+        response = manager.create_snippet(
             code=code,
             name=name,
             description=description,

@@ -1,16 +1,18 @@
 # Display MCP Module
 
-The Display MCP module provides an AI Visualizer tool that allows AI assistants to execute Python code and display the results in a web browser through a Panel interface.
+The Display MCP module provides a visualization system that allows AI assistants to execute Python code and display the results in a web browser. It enables easy sharing of visualizations through instant URLs - no devops or infrastructure required.
 
 ## Features
 
 - **Code Execution**: Execute Python code with jupyter or panel methods
-- **Web UI**: View visualizations through /view, /chat, and /admin pages
-- **Database Storage**: SQLite-based storage with full-text search
+- **Web UI**: View visualizations through /view, /feed, /admin, and /add pages
+- **Database Storage**: SQLite-based snippet storage with full-text search
 - **Subprocess Management**: Panel server runs as isolated subprocess
 - **Health Monitoring**: Automatic health checks and restart capability
 - **Extension Inference**: Automatically detect required Panel extensions
 - **Error Handling**: Comprehensive error reporting and display
+- **RESTful API**: Clean REST endpoints (POST /api/snippet, GET /api/health)
+- **Function-based Singleton**: Simple database access via get_db()
 
 ## Architecture
 
@@ -29,14 +31,28 @@ The Display MCP module provides an AI Visualizer tool that allows AI assistants 
          ▼
 ┌─────────────────┐
 │  Panel Server   │  Web server on port 5005
-│ (panel_app.py)  │  /create, /view, /chat, /admin
+│    (app.py)     │  Pages + REST API
 └────────┬────────┘
          │
-         ▼
-┌─────────────────┐
-│   Database      │  SQLite with FTS5 search
-│ (database.py)   │  Request storage and retrieval
-└─────────────────┘
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+┌────────┐ ┌────────────┐
+│ Pages  │ │ Endpoints  │
+│        │ │            │
+│ view   │ │ /api/      │
+│ feed   │ │ snippet    │
+│ admin  │ │ health     │
+│ add    │ │            │
+└───┬────┘ └─────┬──────┘
+    │            │
+    └─────┬──────┘
+          │
+          ▼
+    ┌─────────────┐
+    │  Database   │  SQLite with FTS5 search
+    │(database.py)│  Snippet storage (get_db())
+    └─────────────┘
 ```
 
 ## Usage
@@ -62,6 +78,22 @@ pn.pane.Markdown("# Hello World").servable()
 url = await holoviz_display(code, method="panel")
 ```
 
+### From REST API
+
+```bash
+# Create a visualization
+curl -X POST http://localhost:5005/api/snippet \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "import pandas as pd\npd.DataFrame({\"x\": [1,2,3]})",
+    "name": "My DataFrame",
+    "method": "jupyter"
+  }'
+
+# Check server health
+curl http://localhost:5005/api/health
+```
+
 ### Configuration
 
 ```yaml
@@ -83,16 +115,28 @@ display:
 ## Components
 
 ### Database (`database.py`)
-- `DisplayDatabase`: SQLite database manager
-- `DisplayRequest`: Pydantic model for requests
-- CRUD operations with search
+- `SnippetDatabase`: SQLite database manager
+- `Snippet`: Pydantic model for code snippets
+- `get_db()`: Function-based singleton for database access
+- `reset_db()`: Reset database instance (for testing)
+- `create_visualization()`: Method on SnippetDatabase for creating snippets
+- CRUD operations with full-text search
 
-### Panel Server (`panel_app.py`)
-- `DisplayApp`: Main application class
-- `/create`: Create new visualization (GET with query params)
-- `/view`: Display visualization by ID
-- `/chat`: ChatFeed view of recent visualizations
-- `/admin`: Tabulator admin interface
+### Panel Server (`app.py`)
+- Main application entry point (~50 lines)
+- Page routing configuration
+- REST API endpoint registration
+- Database initialization via get_db()
+
+### Pages (`pages/`)
+- `view_page.py`: Display single visualization by ID
+- `feed_page.py`: Feed view of recent visualizations (ChatFeed)
+- `admin_page.py`: Tabulator admin interface for snippet management
+- `add_page.py`: Form to manually add new visualizations
+
+### Endpoints (`endpoints.py`)
+- `SnippetEndpoint`: POST /api/snippet - Create visualization
+- `HealthEndpoint`: GET /api/health - Server health check
 
 ### Manager (`manager.py`)
 - `PanelServerManager`: Subprocess lifecycle manager
@@ -101,6 +145,7 @@ display:
 - Request creation interface
 
 ### Utilities (`utils.py`)
+- `get_url()`: Construct visualization URL (supports local/Jupyter proxy/cloud)
 - `find_extensions()`: Infer Panel extensions from code
 - `find_requirements()`: Extract package requirements
 - `extract_last_expression()`: Parse code for jupyter method
@@ -108,29 +153,42 @@ display:
 ## Testing
 
 ```bash
-# Unit tests
-pytest tests/display_mcp/test_database.py  # 7 tests
-pytest tests/display_mcp/test_utils.py     # 10 tests
+# All display_mcp tests
+pytest tests/display_mcp/ -v
+# Current results: 8 passed, 5 skipped
 
-# Integration tests
-pytest tests/display_mcp/test_integration.py  # 3 tests
+# Specific test files
+pytest tests/display_mcp/test_database.py      # Database operations
+pytest tests/display_mcp/test_integration.py   # Integration tests
+
+# Pre-commit checks (linting, formatting, type checking)
+pixi run pre-commit-run
 ```
+
+## Key Design Patterns
+
+1. **Function-based Singleton**: `get_db()` provides global database access without class wrapper or cache injection
+2. **Page Functions**: Each UI page is a standalone function returning Panel viewable
+3. **Lazy Execution**: Code executes on first /view access, not on /api/snippet creation
+4. **Iframe Embedding**: /feed page embeds /view iframes for snippet preview
+5. **REST Endpoints**: Tornado RequestHandler via pn.serve extra_patterns
 
 ## Known Limitations
 
-1. **REST API**: Uses GET with query params instead of POST with JSON body due to Panel's HTTP handling limitations. Works correctly but not RESTful.
+1. **Package Installation**: Auto-installation not yet implemented. Use preinstalled_packages configuration.
 
-2. **Package Installation**: Auto-installation not yet implemented. Use preinstalled_packages configuration.
+2. **Security**: Designed for local, trusted environments. Code execution is not sandboxed.
 
-3. **Security**: Designed for local, trusted environments. Code execution is not sandboxed.
+3. **UI Tests**: Playwright tests for pages not yet implemented (planned Phase 6).
 
 ## Future Enhancements
 
-- Proper REST API with POST/JSON
-- Package auto-installation
-- More UI polish
-- Additional visualization templates
+- Package auto-installation with find_requirements()
+- UI tests with Playwright
+- Snippet slugs for human-readable URLs
 - Export/import functionality
+- Snippet tags and categorization
+- Public gallery of shared visualizations
 
 ## License
 

@@ -20,7 +20,7 @@ def admin_page():
     pn.extension("codeeditor", "tabulator")
 
     # Get all requests
-    requests = get_db().list_requests(limit=1000)
+    requests = get_db().list_snippets(limit=1000)
 
     # Convert to DataFrame
     data = []
@@ -52,9 +52,9 @@ def admin_page():
             row_idx = event.row
             if row_idx is not None and 0 <= row_idx < len(tabulator.value):  # type: ignore[has-type]
                 # Get the ID from the row
-                request_id = tabulator.value.iloc[row_idx]["ID"]  # type: ignore[has-type]
+                snippet_id = tabulator.value.iloc[row_idx]["ID"]  # type: ignore[has-type]
                 # Delete from database
-                get_db().delete_request(request_id)
+                get_db().delete_snippet(snippet_id)
                 # Remove from tabulator
                 tabulator.value = tabulator.value.drop(tabulator.value.index[row_idx]).reset_index(drop=True)  # type: ignore[has-type]
 
