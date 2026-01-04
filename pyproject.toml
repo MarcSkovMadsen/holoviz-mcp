@@ -173,3 +173,4 @@ raw-options = { version_scheme = "no-guess-dev" }
 
 [project.scripts]
 "holoviz-mcp" = "holoviz_mcp.cli:cli_main"
+"display-server" = "holoviz_mcp.display_mcp.cli:main"

@@ -50,8 +50,8 @@ def main():
     ]
 
     # Start server
-    port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
-    host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
+    port = int(os.getenv("DISPLAY_SERVER_PORT", os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT))))
+    host = os.getenv("DISPLAY_SERVER_HOST", os.getenv("PANEL_SERVER_HOST", "127.0.0.1"))
 
     pn.serve(
         pages,
