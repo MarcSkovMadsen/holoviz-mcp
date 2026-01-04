@@ -6,7 +6,7 @@ Use this server to search and access documentation for HoloViz libraries, includ
 """
 
 import atexit
-import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 from typing import Optional
@@ -15,14 +15,13 @@ from fastmcp import Context
 from fastmcp import FastMCP
 from fastmcp.resources import FileResource
 
+from holoviz_mcp.config import logger
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.display_mcp.manager import PanelServerManager
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
 from holoviz_mcp.holoviz_mcp.data import get_skill as _get_skill
 from holoviz_mcp.holoviz_mcp.data import list_skills as _list_skills
 from holoviz_mcp.holoviz_mcp.models import Document
-
-logger = logging.getLogger(__name__)
 
 # Global indexer instance
 _indexer = None
@@ -78,6 +77,23 @@ def _cleanup_display_manager():
         logger.info("Cleaning up Panel server for display tool")
         _display_manager.stop()
         _display_manager = None
+
+
+# Create the lifespan context manager
+@asynccontextmanager
+async def app_lifespan(server: FastMCP):
+    """Lifespan context manager for HoloViz MCP server."""
+    # Initialize resources on startup
+    try:
+        # Make resources available during operation
+        _get_display_manager()  # Ensure display manager is started
+        yield None
+    except Exception as e:
+        logger.error(f"Error during app lifespan: {e}")
+        raise
+    finally:
+        # Clean up resources on shutdown
+        pass
 
 
 # The HoloViz MCP server instance
@@ -432,10 +448,6 @@ def _add_skills_resources():
 
 _add_agent_resources()
 _add_skills_resources()
-
-config = get_config()
-if config.display.enabled:
-    manager = _get_display_manager()
 
 if __name__ == "__main__":
     config = get_config()

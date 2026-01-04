@@ -1,5 +1,7 @@
 """Configuration package for HoloViz MCP server."""
 
+from fastmcp.server.server import logger
+
 from .loader import ConfigLoader
 from .loader import ConfigurationError
 from .loader import get_config
@@ -13,6 +15,7 @@ from .models import ResourceConfig
 from .models import ServerConfig
 
 __all__ = [
+    "logger",
     # Loader
     "ConfigLoader",
     "ConfigurationError",

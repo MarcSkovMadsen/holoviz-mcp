@@ -11,6 +11,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import Any
 
@@ -42,7 +43,7 @@ class DisplayApp(param.Parameterized):
 
         self.db = DisplayDatabase(Path(self.db_path))
 
-    def create_view(self, request_id: str) -> pn.viewable.Viewable:
+    def create_view(self, request_id: str) -> pn.viewable.Viewable | None:
         """Create a view for a single visualization request.
 
         Parameters
@@ -63,67 +64,66 @@ class DisplayApp(param.Parameterized):
             return pn.pane.Markdown(f"# Error\n\nRequest {request_id} not found.")
 
         # If pending, try to execute now
-        if request.status == "pending":
-            start_time = datetime.utcnow()
-            try:
-                result = self._execute_code(request)
-                execution_time = (datetime.utcnow() - start_time).total_seconds()
 
-                # Update as success
-                self.db.update_request(
-                    request_id,
-                    status="success",
-                    execution_time=execution_time,
-                )
+        start_time = datetime.now(timezone.utc)
+        try:
+            result = self._execute_code(request)
+            execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
+            request.status = "success"
+            request.error_message = ""
 
-                return result
+            # Update as success
+            self.db.update_request(
+                request_id,
+                status=request.status,
+                error_message=request.error_message,
+                execution_time=execution_time,
+            )
 
-            except Exception as e:
-                execution_time = (datetime.utcnow() - start_time).total_seconds()
-                error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+            return result
 
-                # Update as error
-                self.db.update_request(
-                    request_id,
-                    status="error",
-                    error_message=error_msg,
-                    execution_time=execution_time,
-                )
+        except Exception as e:
+            execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
+            error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
 
-                # Update request object for display
-                request.status = "error"
-                request.error_message = error_msg
+            # Update as error
+            self.db.update_request(
+                request_id,
+                status="error",
+                error_message=error_msg,
+                execution_time=execution_time,
+            )
+
+            # Update request object for display
+            request.status = "error"
+            request.error_message = error_msg
 
         if request.status == "error":
             # Display error message
-            return pn.Column(
-                pn.pane.Markdown(f"# Error: {request.name or request_id}"),
-                pn.pane.Markdown(f"**Description:** {request.description}"),
-                pn.pane.Markdown(f"**Method:** {request.method}"),
-                pn.pane.Markdown("## Error Message"),
-                pn.pane.Markdown(f"```\n{request.error_message}\n```"),
-                pn.pane.Markdown("## Code"),
-                pn.widgets.CodeEditor(value=request.code, language="python"),
-                sizing_mode="stretch_width",
-            )
+            error_content = f"""
+# Error: {request.name or request_id}
 
-        # Execute code and display result (status is success)
-        try:
-            result = self._execute_code(request)
-            return result
-        except Exception as e:
-            logger.exception(f"Error executing code for request {request_id}")
-            return pn.Column(
-                pn.pane.Markdown(f"# Execution Error: {request.name or request_id}"),
-                pn.pane.Markdown(f"**Description:** {request.description}"),
-                pn.pane.Markdown("## Error"),
-                pn.pane.Markdown(f"```\n{str(e)}\n{traceback.format_exc()}\n```"),
-                pn.pane.Markdown("## Code"),
-                pn.widgets.CodeEditor(value=request.code, language="python"),
-                sizing_mode="stretch_width",
-            )
+**Description:** {request.description}
 
-    def _execute_code(self, request) -> pn.viewable.Viewable:
+**Method:** {request.method}
+
+## Error Message
+
+```bash
+{request.error_message}
+```
+
+## Code
+
+```python
+{request.code}
+```
+"""
+            return pn.pane.Markdown(error_content, sizing_mode="stretch_width")
+
+        return result
+
+    def _execute_code(self, request) -> pn.viewable.Viewable | None:
         """Execute code and return Panel component.
 
         Parameters
@@ -179,16 +179,11 @@ class DisplayApp(param.Parameterized):
             exec(request.code, panel_namespace)
 
             # Find servable objects
-            servables = [obj for obj in panel_namespace.values() if hasattr(obj, "_servable")]
+            servables = ".servable()" in request.code
 
-            if servables:
-                # Return first servable
-                # Cast to Viewable since ServableMixin is compatible
-                from typing import cast
-
-                return cast(pn.viewable.Viewable, servables[0])
-            else:
-                return pn.pane.Markdown("*Code executed successfully (no servable objects found)*")
+            if not servables:
+                pn.pane.Markdown("*Code executed successfully (no servable objects found)*").servable()
+        return None
 
     @staticmethod
     def get_url(id: str) -> str:
@@ -264,6 +259,8 @@ class DisplayApp(param.Parameterized):
         # Validate code is not empty
         if not code:
             raise ValueError("Code is required")
+        if ".show(" in code:
+            raise ValueError("`.show()` calls are not supported in this environment")
 
         # Validate syntax
         ast.parse(code)  # Raises SyntaxError if invalid
@@ -302,7 +299,7 @@ class CreateEndpoint(RequestHandler):
     def post(self):
         """Handle POST requests to create visualizations."""
         # Get app instance
-        app = pn.state.cache.get("app")
+        app: DisplayApp = pn.state.cache.get("app")
 
         if not app:
             self.set_status(500)
@@ -369,7 +366,7 @@ class CreateEndpoint(RequestHandler):
 
 
 class HealthEndpoint(RequestHandler):
-    """Tornado RequestHandler for /health endpoint."""
+    """Tornado RequestHandler for /api/health endpoint."""
 
     def get(self):
         """Handle GET requests to check server health."""
@@ -378,7 +375,7 @@ class HealthEndpoint(RequestHandler):
         self.write(
             {
                 "status": "healthy",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -388,7 +385,7 @@ def health_page():
     return pn.pane.JSON(
         {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )
 
@@ -527,8 +524,7 @@ def feed_page():
         return pn.pane.Markdown("# Error\n\nApplication not initialized.")
 
     # Create sidebar with filters
-    limit = pn.widgets.IntInput(name="Limit", value=10, start=1, end=100, description="Number of visualizations to show")
-    refresh_button = pn.widgets.Button(name="Refresh", button_type="primary")
+    limit = pn.widgets.IntSlider(name="Limit", value=3, start=1, end=100)
 
     # Create chat feed
     chat_feed = pn.Column(sizing_mode="stretch_both")
@@ -542,15 +538,46 @@ def feed_page():
 
         # Add message
         created_at = req.created_at.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-        open_icon = "&#x1F517;"  # Link icon
-        text = f"""\
-**{req.name or req.id}** ({created_at}) <a href="{url}" target="_blank" title="Open in new window">{open_icon}</a>\n\n{req.description}\n
-<div style="resize: vertical; overflow: hidden; height: 500px; width: 100%; max-width: 100%; border: 1px solid gray;">
-<iframe src="{url}" style="height: 100%; width: 100%; border: none;" frameborder="0"></iframe>
-</div>
+        title = f"""\
+**{req.name or req.id}** ({created_at})\n\n{req.description}\n
 """
+        iframe = f"""<div style="resize: vertical; overflow: hidden; height: 500px; width: 100%; max-width: 100%; border: 1px solid gray;">
+<iframe src="{url}" style="height: 100%; width: 100%; border: none;" frameborder="0"></iframe>
+</div>"""
         with pn.config.set(sizing_mode="stretch_width"):
-            message = pn.pane.Markdown(text, sizing_mode="stretch_width")
+            # Create copy button with JavaScript callback
+            open_button = pn.widgets.Button(
+                name="🔗 Full Screen",
+                button_type="light",
+                width=80,
+                description="Open visualization in new tab",
+            )
+            open_button.js_on_click(
+                code=f"""
+                window.open("{url}", "_blank");
+            """
+            )
+
+            copy_button = pn.widgets.Button(
+                name="📋 Copy Code",
+                button_type="light",
+                width=120,
+                description="Copy code to clipboard",
+            )
+
+            # JavaScript callback to copy code to clipboard
+            code_escaped = req.code.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+            copy_button.js_on_click(
+                args={"code": code_escaped},
+                code="""
+                navigator.clipboard.writeText(code)
+            """,
+            )
+
+            with pn.config.set(sizing_mode="stretch_width"):
+                message = pn.Column(
+                    pn.pane.Markdown(title), pn.pane.Markdown(iframe), pn.Row(pn.HSpacer(), open_button, copy_button, margin=(0, 10, 0, 10), align="end")
+                )
 
         pn.state.cache["views"][req.id] = message
         return message
@@ -569,17 +596,13 @@ def feed_page():
         chat_feed[:] = objects
         chat_feed.scroll_to(0)
 
-    # Watch for button clicks and limit changes
-    refresh_button.on_click(update_chat)
-    limit.param.watch(update_chat, "value")
-
     # Initial update
     update_chat()
     pn.state.add_periodic_callback(update_chat, 1000)  # Refresh every 1 seconds
 
     return pn.template.FastListTemplate(
         title="Display Chat",
-        sidebar=[limit, refresh_button],
+        sidebar=[limit],
         main=[pn.Column(chat_feed, sizing_mode="stretch_both")],
     )
 
@@ -588,6 +611,8 @@ def admin_page():
     """Create the /admin page."""
     # Get app instance
     app = pn.state.cache.get("app")
+
+    pn.extension("codeeditor", "tabulator")
 
     if not app:
         return pn.pane.Markdown("# Error\n\nApplication not initialized.")
@@ -619,29 +644,31 @@ def admin_page():
     # Create tabulator with formatters for the URL column
     from bokeh.models.widgets.tables import HTMLTemplateFormatter
 
-    formatters = {"View URL": HTMLTemplateFormatter(template='<a href="<%= value %>" target="_blank">View</a>')}
+    formatters = {"View URL": HTMLTemplateFormatter(template='<a href="<%= value %>" target="_blank"><i class="fa fa-link"></i></a>')}
 
     # Define delete callback
     def on_delete(event):
         """Handle delete button clicks."""
-        # Get the row index
-        row_idx = event.row
-        if row_idx is not None and 0 <= row_idx < len(tabulator.value):
-            # Get the ID from the row
-            request_id = tabulator.value.iloc[row_idx]["ID"]
-            # Delete from database
-            app.db.delete_request(request_id)
-            # Remove from tabulator
-            tabulator.value = tabulator.value.drop(tabulator.value.index[row_idx]).reset_index(drop=True)
+        if event.column == "Delete":
+            # Get the row index
+            row_idx = event.row
+            if row_idx is not None and 0 <= row_idx < len(tabulator.value):
+                # Get the ID from the row
+                request_id = tabulator.value.iloc[row_idx]["ID"]
+                # Delete from database
+                app.db.delete_request(request_id)
+                # Remove from tabulator
+                tabulator.value = tabulator.value.drop(tabulator.value.index[row_idx]).reset_index(drop=True)
 
     tabulator = pn.widgets.Tabulator(
         df,
         formatters=formatters,
         buttons={"Delete": "<i class='fa fa-trash'></i>"},
-        row_content=lambda row: pn.pane.Code(row["Code"], language="python", sizing_mode="stretch_width"),
+        row_content=lambda row: pn.pane.Markdown(f"```python\n{row['Code']}\n```", sizing_mode="stretch_width"),
         sizing_mode="stretch_both",
         page_size=20,
         hidden_columns=["Code"],  # Hide code column from table view
+        disabled=True,
     )
 
     # Bind delete callback
@@ -825,13 +852,13 @@ def main():
     # Configure extra patterns for Tornado handlers (REST API endpoints)
     extra_patterns = [
         (r"/create", CreateEndpoint),
-        (r"/health", HealthEndpoint),
+        (r"/api/health", HealthEndpoint),
     ]
 
     # Start server
     port = int(os.getenv("PANEL_SERVER_PORT", str(DEFAULT_PORT)))
     host = os.getenv("PANEL_SERVER_HOST", "127.0.0.1")
-    port = 5004
+
     pn.serve(
         pages,
         port=port,

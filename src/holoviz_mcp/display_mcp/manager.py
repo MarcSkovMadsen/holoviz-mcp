@@ -4,7 +4,6 @@ This module manages the Panel server as a subprocess, including
 startup, health checks, and shutdown.
 """
 
-import logging
 import os
 import subprocess
 import sys
@@ -14,7 +13,7 @@ from typing import Optional
 
 import requests  # type: ignore[import-untyped]
 
-logger = logging.getLogger(__name__)
+from holoviz_mcp.config import logger
 
 
 class PanelServerManager:
@@ -114,7 +113,7 @@ class PanelServerManager:
         while time.time() - start_time < timeout:
             try:
                 # Try to connect to health endpoint
-                response = requests.get(f"{base_url}/health", timeout=2)
+                response = requests.get(f"{base_url}/api/health", timeout=2)
                 if response.status_code == 200:
                     return True
             except requests.RequestException:
@@ -142,7 +141,7 @@ class PanelServerManager:
 
         try:
             base_url = f"http://{self.host}:{self.port}"
-            response = requests.get(f"{base_url}/health", timeout=2)
+            response = requests.get(f"{base_url}/api/health", timeout=2)
             return response.status_code == 200
         except requests.RequestException:
             return False
@@ -190,7 +189,6 @@ class PanelServerManager:
 
         self.restart_count += 1
         logger.info(f"Restarting Panel server (attempt {self.restart_count}/{self.max_restarts})")
-
         self.stop()
         return self.start()
 
