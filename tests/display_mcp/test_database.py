@@ -36,7 +36,7 @@ class TestSnippetDatabase:
         created = temp_db.create_snippet(snippet)
 
         assert created.id == snippet.id
-        assert created.code == "print('hello')"
+        assert created.app == "print('hello')"
         assert created.name == "Test"
         assert created.status == "pending"
 
@@ -53,7 +53,7 @@ class TestSnippetDatabase:
 
         assert retrieved is not None
         assert retrieved.id == snippet.id
-        assert retrieved.code == "x = 1"
+        assert retrieved.app == "x = 1"
 
     def test_get_nonexistent_snippet(self, temp_db):
         """Test getting a snippet that doesn't exist."""
@@ -134,4 +134,4 @@ class TestSnippetDatabase:
         # Search for pandas
         results = temp_db.search_snippets("pandas")
         assert len(results) >= 1
-        assert any("pandas" in r.code.lower() or "pandas" in r.name.lower() for r in results)
+        assert any("pandas" in r.app.lower() or "pandas" in r.name.lower() for r in results)
