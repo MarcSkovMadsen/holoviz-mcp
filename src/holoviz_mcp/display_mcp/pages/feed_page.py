@@ -97,3 +97,4 @@ def feed_page():
         sidebar=[limit],
         main=[pn.Column(chat_feed, sizing_mode="stretch_both")],
     )
+

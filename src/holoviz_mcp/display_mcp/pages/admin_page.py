@@ -76,3 +76,4 @@ def admin_page():
         title="Snippet Manager",
         main=[tabulator],
     )
+

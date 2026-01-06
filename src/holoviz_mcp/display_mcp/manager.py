@@ -254,3 +254,4 @@ class PanelServerManager:
         except requests.RequestException as e:
             logger.exception(f"Error creating visualization: {e}")
             raise RuntimeError(f"Failed to create visualization: {e}") from e
+

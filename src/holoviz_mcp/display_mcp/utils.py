@@ -163,3 +163,4 @@ def get_url(id: str) -> str:
 
     url = f"{base_url}/view?id={id}"
     return url
+
