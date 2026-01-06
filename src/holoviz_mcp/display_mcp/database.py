@@ -30,16 +30,17 @@ class Snippet(BaseModel):
     """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    code: str = Field(..., description="Python code to execute")
+    app: str = Field(..., description="Python code to execute")
     name: str = Field(default="", description="User-provided name")
-    description: str = Field(default="", description="User-provided description")
+    description: str = Field(default="", description="Short description of the app")
+    readme: str = Field(default="", description="Longer documentation describing the app")
     method: Literal["jupyter", "panel"] = Field(..., description="Execution method")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     status: Literal["pending", "success", "error"] = Field(default="pending")
     error_message: Optional[str] = Field(default=None, description="Error details if status='error'")
     execution_time: Optional[float] = Field(default=None, description="Execution time in seconds")
-    packages: list[str] = Field(default_factory=list, description="Inferred required packages")
+    requirements: list[str] = Field(default_factory=list, description="Inferred required packages")
     extensions: list[str] = Field(default_factory=list, description="Inferred Panel extensions")
     user: str = Field(default="guest", description="User who created the snippet")
     tags: list[str] = Field(default_factory=list, description="List of tags")
@@ -88,16 +89,17 @@ class SnippetDatabase:
                 """
                 CREATE TABLE IF NOT EXISTS snippets (
                     id TEXT PRIMARY KEY,
-                    code TEXT NOT NULL,
+                    app TEXT NOT NULL,
                     name TEXT DEFAULT '',
                     description TEXT DEFAULT '',
+                    readme TEXT DEFAULT '',
                     method TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     status TEXT DEFAULT 'pending',
                     error_message TEXT,
                     execution_time REAL,
-                    packages TEXT,
+                    requirements TEXT,
                     extensions TEXT,
                     user TEXT DEFAULT 'guest',
                     tags TEXT,
@@ -117,7 +119,7 @@ class SnippetDatabase:
             cursor.execute(
                 """
                 CREATE VIRTUAL TABLE IF NOT EXISTS snippets_fts
-                USING fts5(name, description, code, content=snippets)
+                USING fts5(name, description, readme, app, content=snippets)
                 """
             )
 
@@ -151,22 +153,23 @@ class SnippetDatabase:
             cursor.execute(
                 """
                 INSERT INTO snippets
-                (id, code, name, description, method, created_at, updated_at, status,
-                 error_message, execution_time, packages, extensions, user, tags, slug)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, app, name, description, readme, method, created_at, updated_at, status,
+                 error_message, execution_time, requirements, extensions, user, tags, slug)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     snippet.id,
-                    snippet.code,
+                    snippet.app,
                     snippet.name,
                     snippet.description,
+                    snippet.readme,
                     snippet.method,
                     snippet.created_at.isoformat(),
                     snippet.updated_at.isoformat(),
                     snippet.status,
                     snippet.error_message,
                     snippet.execution_time,
-                    json.dumps(snippet.packages),
+                    json.dumps(snippet.requirements),
                     json.dumps(snippet.extensions),
                     snippet.user,
                     json.dumps(snippet.tags),
@@ -177,10 +180,10 @@ class SnippetDatabase:
             # Update FTS index
             cursor.execute(
                 """
-                INSERT INTO snippets_fts(rowid, name, description, code)
-                VALUES ((SELECT rowid FROM snippets WHERE id = ?), ?, ?, ?)
+                INSERT INTO snippets_fts(rowid, name, description, readme, app)
+                VALUES ((SELECT rowid FROM snippets WHERE id = ?), ?, ?, ?, ?)
                 """,
-                (snippet.id, snippet.name, snippet.description, snippet.code),
+                (snippet.id, snippet.name, snippet.description, snippet.readme, snippet.app),
             )
 
             conn.commit()
@@ -240,7 +243,7 @@ class SnippetDatabase:
         status: Optional[str] = None,
         error_message: Optional[str] = None,
         execution_time: Optional[float] = None,
-        packages: Optional[list[str]] = None,
+        requirements: Optional[list[str]] = None,
         extensions: Optional[list[str]] = None,
     ) -> bool:
         """Update a snippet record.
@@ -255,7 +258,7 @@ class SnippetDatabase:
             Error message
         execution_time : Optional[float]
             Execution time
-        packages : Optional[list[str]]
+        requirements : Optional[list[str]]
             Required packages
         extensions : Optional[list[str]]
             Required extensions
@@ -280,9 +283,9 @@ class SnippetDatabase:
             updates.append("execution_time = ?")
             params.append(str(execution_time))
 
-        if packages is not None:
-            updates.append("packages = ?")
-            params.append(json.dumps(packages))
+        if requirements is not None:
+            updates.append("requirements = ?")
+            params.append(json.dumps(requirements))
 
         if extensions is not None:
             updates.append("extensions = ?")
@@ -426,9 +429,10 @@ class SnippetDatabase:
 
     def create_visualization(
         self,
-        code: str,
+        app: str,
         name: str = "",
         description: str = "",
+        readme: str = "",
         method: Literal["jupyter", "panel"] = "jupyter",
     ) -> dict[str, str]:
         """Create a visualization request.
@@ -438,12 +442,14 @@ class SnippetDatabase:
 
         Parameters
         ----------
-        code : str
+        app : str
             Python code to execute
         name : str, optional
             Display name for the visualization
         description : str, optional
-            Description of the visualization
+            Short description of the visualization
+        readme : str, optional
+            Longer documentation describing the app
         method : str, optional
             Execution method: "jupyter" or "panel"
 
@@ -455,9 +461,9 @@ class SnippetDatabase:
         Raises
         ------
         ValueError
-            If code is empty or contains unsupported operations
+            If app is empty or contains unsupported operations
         SyntaxError
-            If code has syntax errors
+            If app has syntax errors
         Exception
             If database operation or other errors occur
         """
@@ -466,26 +472,27 @@ class SnippetDatabase:
         from holoviz_mcp.display_mcp.utils import find_requirements
         from holoviz_mcp.display_mcp.utils import get_url
 
-        # Validate code is not empty
-        if not code:
-            raise ValueError("Code is required")
-        if ".show(" in code:
+        # Validate app is not empty
+        if not app:
+            raise ValueError("App code is required")
+        if ".show(" in app:
             raise ValueError("`.show()` calls are not supported in this environment")
 
         # Validate syntax
-        ast.parse(code)  # Raises SyntaxError if invalid
+        ast.parse(app)  # Raises SyntaxError if invalid
 
         # Infer requirements and extensions
-        packages = find_requirements(code)
-        extensions = find_extensions(code) if method == "jupyter" else []
+        requirements = find_requirements(app)
+        extensions = find_extensions(app) if method == "jupyter" else []
 
         # Create snippet in database with "pending" status
         snippet_obj = Snippet(
-            code=code,
+            app=app,
             name=name,
             description=description,
+            readme=readme,
             method=method,
-            packages=packages,
+            requirements=requirements,
             extensions=extensions,
             status="pending",
         )
@@ -507,16 +514,17 @@ class SnippetDatabase:
         """Convert a database row to a Snippet."""
         return Snippet(
             id=row["id"],
-            code=row["code"],
+            app=row["app"],
             name=row["name"] or "",
             description=row["description"] or "",
+            readme=row.get("readme", ""),
             method=row["method"],
             created_at=datetime.fromisoformat(row["created_at"]),
             updated_at=datetime.fromisoformat(row["updated_at"]),
             status=row["status"],
             error_message=row["error_message"],
             execution_time=row["execution_time"],
-            packages=json.loads(row["packages"]) if row["packages"] else [],
+            requirements=json.loads(row["requirements"]) if row["requirements"] else [],
             extensions=json.loads(row["extensions"]) if row["extensions"] else [],
             user=row.get("user", "guest"),
             tags=json.loads(row["tags"]) if row.get("tags") else [],

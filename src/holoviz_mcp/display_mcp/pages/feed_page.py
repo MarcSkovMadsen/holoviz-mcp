@@ -45,7 +45,7 @@ def feed_page():
                 description="Open visualization in new tab",
             )
             open_button.js_on_click(
-                code=f"""
+                app=f"""
                 window.open("{url}", "_blank");
             """
             )
@@ -58,10 +58,10 @@ def feed_page():
             )
 
             # JavaScript callback to copy code to clipboard
-            code_escaped = req.code.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+            code_escaped = req.app.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
             copy_button.js_on_click(
-                args={"code": code_escaped},
-                code="""
+                args={"app": code_escaped},
+                app="""
                 navigator.clipboard.writeText(code)
             """,
             )

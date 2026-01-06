@@ -27,7 +27,7 @@ class TestSnippetDatabase:
     def test_create_snippet(self, temp_db):
         """Test creating a display snippet."""
         snippet = Snippet(
-            code="print('hello')",
+            app="print('hello')",
             name="Test",
             description="Test description",
             method="jupyter",
@@ -43,7 +43,7 @@ class TestSnippetDatabase:
     def test_get_snippet(self, temp_db):
         """Test retrieving a snippet."""
         snippet = Snippet(
-            code="x = 1",
+            app="x = 1",
             name="Simple",
             method="jupyter",
         )
@@ -63,7 +63,7 @@ class TestSnippetDatabase:
     def test_update_snippet(self, temp_db):
         """Test updating a snippet."""
         snippet = Snippet(
-            code="y = 2",
+            app="y = 2",
             method="jupyter",
         )
 
@@ -88,7 +88,7 @@ class TestSnippetDatabase:
         # Create multiple snippets
         for i in range(5):
             snippet = Snippet(
-                code=f"x = {i}",
+                app=f"x = {i}",
                 name=f"Test {i}",
                 method="jupyter",
             )
@@ -105,7 +105,7 @@ class TestSnippetDatabase:
     def test_delete_snippet(self, temp_db):
         """Test deleting a snippet."""
         snippet = Snippet(
-            code="z = 3",
+            app="z = 3",
             method="jupyter",
         )
 
@@ -123,9 +123,9 @@ class TestSnippetDatabase:
         """Test full-text search."""
         # Create snippets with different content
         snippets = [
-            Snippet(code="import pandas", name="Pandas Test", method="jupyter"),
-            Snippet(code="import numpy", name="NumPy Test", method="jupyter"),
-            Snippet(code="import matplotlib", name="Plotting", method="jupyter"),
+            Snippet(app="import pandas", name="Pandas Test", method="jupyter"),
+            Snippet(app="import numpy", name="NumPy Test", method="jupyter"),
+            Snippet(app="import matplotlib", name="Plotting", method="jupyter"),
         ]
 
         for snippet in snippets:

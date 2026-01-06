@@ -93,7 +93,7 @@ def create_view(snippet_id: str) -> pn.viewable.Viewable | None:
 ## Code
 
 ```python
-{snippet.code}
+{snippet.app}
 ```
 """
         return pn.pane.Markdown(error_content, sizing_mode="stretch_width")
@@ -124,7 +124,7 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
 
         # Extract last expression
         try:
-            statements, last_expr = extract_last_expression(snippet.code)
+            statements, last_expr = extract_last_expression(snippet.app)
         except ValueError as e:
             raise ValueError(f"Failed to parse code: {e}") from e
 
@@ -139,7 +139,7 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
             namespace["_panel_result"] = result
         else:
             # No expression, just execute all
-            exec(snippet.code, namespace)
+            exec(snippet.app, namespace)
             result = None
 
         # Wrap in panel
@@ -152,10 +152,10 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
     else:  # panel method
         # Execute code that should call .servable()
         panel_namespace: dict[str, Any] = {}
-        exec(snippet.code, panel_namespace)
+        exec(snippet.app, panel_namespace)
 
         # Find servable objects
-        servables = ".servable()" in snippet.code
+        servables = ".servable()" in snippet.app
 
         if not servables:
             pn.pane.Markdown("*Code executed successfully (no servable objects found)*").servable()

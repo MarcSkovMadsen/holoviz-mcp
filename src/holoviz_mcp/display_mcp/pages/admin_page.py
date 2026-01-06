@@ -35,7 +35,7 @@ def admin_page():
                 "Status": req.status,
                 "Created": req.created_at.isoformat(),
                 "View URL": view_url,
-                "Code": req.code,  # Add code for row_content display
+                "App": req.app,  # Add code for row_content display
             }
         )
 
@@ -65,7 +65,7 @@ def admin_page():
         row_content=lambda row: pn.pane.Markdown(f"```python\n{row['Code']}\n```", sizing_mode="stretch_width"),
         sizing_mode="stretch_both",
         page_size=20,
-        hidden_columns=["Code"],  # Hide code column from table view
+        hidden_columns=["App"],  # Hide code column from table view
         disabled=True,
     )
 

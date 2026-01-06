@@ -66,7 +66,7 @@ def add_page():
         try:
             # Call shared business logic directly (no HTTP roundtrip)
             result = get_db().create_visualization(
-                code=code,
+                app=code,
                 name=name,
                 description=description,
                 method=method,

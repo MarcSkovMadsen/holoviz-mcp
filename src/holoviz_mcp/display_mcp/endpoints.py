@@ -37,7 +37,7 @@ class SnippetEndpoint(RequestHandler):
 
             # Call shared business logic
             result = db.create_visualization(
-                code=code,
+                app=code,
                 name=name,
                 description=description,
                 method=method,
