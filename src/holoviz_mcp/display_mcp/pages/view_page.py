@@ -193,4 +193,3 @@ def view_page():
             return pn.pane.Markdown(f"# Error\n\nNo snippet found with slug '{slug}'.")
     else:
         return pn.pane.Markdown("# Error\n\nNo snippet ID or slug provided.")
-

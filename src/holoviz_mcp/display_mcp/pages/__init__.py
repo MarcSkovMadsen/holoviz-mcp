@@ -10,4 +10,3 @@ from holoviz_mcp.display_mcp.pages.feed_page import feed_page
 from holoviz_mcp.display_mcp.pages.view_page import view_page
 
 __all__ = ["add_page", "admin_page", "feed_page", "view_page"]
-

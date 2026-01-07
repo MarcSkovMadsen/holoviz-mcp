@@ -211,12 +211,12 @@ class PanelServerManager:
         # Default to localhost
         return f"http://{self.host}:{self.port}"
 
-    def create_snippet(self, code: str, name: str = "", description: str = "", method: str = "jupyter") -> dict:
+    def create_snippet(self, app: str, name: str = "", description: str = "", method: str = "jupyter") -> dict:
         """Send a create snippet request to the Panel server.
 
         Parameters
         ----------
-        code : str
+        app : str
             Python code to execute
         name : str
             Name for the visualization
@@ -240,7 +240,7 @@ class PanelServerManager:
             response = requests.post(
                 f"{base_url}/api/snippet",
                 json={
-                    "code": code,
+                    "code": app,  # REST API still uses "code" for backward compatibility
                     "name": name,
                     "description": description,
                     "method": method,
@@ -254,4 +254,3 @@ class PanelServerManager:
         except requests.RequestException as e:
             logger.exception(f"Error creating visualization: {e}")
             raise RuntimeError(f"Failed to create visualization: {e}") from e
-

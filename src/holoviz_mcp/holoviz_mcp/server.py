@@ -452,4 +452,3 @@ _add_skills_resources()
 if __name__ == "__main__":
     config = get_config()
     mcp.run(transport=config.server.transport)
-

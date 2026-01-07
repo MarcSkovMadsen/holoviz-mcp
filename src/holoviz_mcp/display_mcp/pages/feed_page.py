@@ -45,7 +45,7 @@ def feed_page():
                 description="Open visualization in new tab",
             )
             open_button.js_on_click(
-                app=f"""
+                code=f"""
                 window.open("{url}", "_blank");
             """
             )
@@ -60,8 +60,8 @@ def feed_page():
             # JavaScript callback to copy code to clipboard
             code_escaped = req.app.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
             copy_button.js_on_click(
-                args={"app": code_escaped},
-                app="""
+                args={"code": code_escaped},
+                code="""
                 navigator.clipboard.writeText(code)
             """,
             )
@@ -97,4 +97,3 @@ def feed_page():
         sidebar=[limit],
         main=[pn.Column(chat_feed, sizing_mode="stretch_both")],
     )
-

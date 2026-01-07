@@ -7,6 +7,7 @@ visualization requests.
 import ast
 import json
 import os
+import re
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -15,8 +16,6 @@ from pathlib import Path
 from typing import Generator
 from typing import Literal
 from typing import Optional
-
-import re
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -54,9 +53,7 @@ class Snippet(BaseModel):
             return v
         # Valid slug: lowercase letters, numbers, hyphens only
         if not re.match(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", v):
-            raise ValueError(
-                "Slug must be empty or contain only lowercase letters, numbers, and hyphens (no consecutive hyphens)"
-            )
+            raise ValueError("Slug must be empty or contain only lowercase letters, numbers, and hyphens (no consecutive hyphens)")
         return v
 
 
@@ -578,4 +575,3 @@ def reset_db() -> None:
     """
     global _db_instance
     _db_instance = None
-

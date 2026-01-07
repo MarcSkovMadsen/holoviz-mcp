@@ -218,4 +218,3 @@ class HoloVizMCPConfig(BaseModel):
             location: Whether to get user or default skills directory
         """
         return self.resources_dir(location) / "skills"
-

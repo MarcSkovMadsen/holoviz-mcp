@@ -96,4 +96,3 @@ class HealthEndpoint(RequestHandler):
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
-

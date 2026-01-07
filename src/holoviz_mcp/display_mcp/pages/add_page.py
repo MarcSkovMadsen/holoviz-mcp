@@ -151,4 +151,3 @@ Please check the server logs for more details.
             code_editor,
         ],
     )
-
