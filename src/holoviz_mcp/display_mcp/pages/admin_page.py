@@ -63,7 +63,7 @@ def admin_page():
         df,
         formatters=formatters,
         buttons={"Delete": "<i class='fa fa-trash'></i>"},
-        row_content=lambda row: pn.pane.Markdown(f"```python\n{row['Code']}\n```", sizing_mode="stretch_width"),
+        row_content=lambda row: pn.pane.Markdown(f"```python\n{row['App']}\n```", sizing_mode="stretch_width"),
         sizing_mode="stretch_both",
         page_size=20,
         hidden_columns=["App"],  # Hide code column from table view

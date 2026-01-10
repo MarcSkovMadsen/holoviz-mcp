@@ -1,4 +1,4 @@
-# Tutorial: Creating you first Visualization with the holoviz_display tool
+# Tutorial: Creating your first Visualization with the holoviz_display tool
 
 In this tutorial, we will create visualizations using the `holoviz_display` tool through an AI assistant. By the end, you will have created several interactive visualizations and learned how to view them.
 
@@ -10,7 +10,7 @@ In this tutorial, we will create visualizations using the `holoviz_display` tool
     - Learn to troubleshoot common issues
 
 !!! warning
-    The `holoviz_display` tool is currently in alpha. Changes between versions may make existing snippets inaccessible. Use for exploration and testing only - **do not rely on the the `holoviz_display` tool for persistent storage of important work!**
+    The `holoviz_display` tool is currently in alpha. Changes between versions may make existing snippets inaccessible. Use for exploration and testing only - **do not rely on the `holoviz_display` tool for persistent storage of important work!**
 
 ## Prerequisites
 

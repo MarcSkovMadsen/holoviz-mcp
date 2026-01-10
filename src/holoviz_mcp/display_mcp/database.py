@@ -12,6 +12,7 @@ import sqlite3
 import uuid
 from contextlib import contextmanager
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import Generator
 from typing import Literal
@@ -295,7 +296,7 @@ class SnippetDatabase:
             return False
 
         updates.append("updated_at = ?")
-        params.append(datetime.utcnow().isoformat())
+        params.append(datetime.now(timezone.utc).isoformat())
 
         params.append(snippet_id)
 

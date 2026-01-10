@@ -44,7 +44,7 @@ def add_page():
         name="Name",
         placeholder="Enter name",
         sizing_mode="stretch_width",
-        description="The name of the the visualization.",
+        description="The name of the visualization.",
     )
 
     description_input = pn.widgets.TextAreaInput(

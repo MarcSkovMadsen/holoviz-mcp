@@ -74,11 +74,6 @@ class SnippetEndpoint(RequestHandler):
                     "code_snippet": code if "code" in locals() else "",
                 }
             )
-        except json.JSONDecodeError as e:
-            # Handle JSON parsing errors
-            self.set_status(400)
-            self.set_header("Content-Type", "application/json")
-            self.write({"error": "JSONDecodeError", "message": str(e)})
         except Exception as e:
             # Handle all other errors
             logger.exception("Error in /api/snippet endpoint")

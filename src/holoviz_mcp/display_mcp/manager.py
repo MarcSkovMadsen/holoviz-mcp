@@ -114,13 +114,10 @@ class PanelServerManager:
         base_url = f"http://{self.host}:{self.port}"
 
         while time.time() - start_time < timeout:
-            try:
-                # Try to connect to health endpoint
-                response = requests.get(f"{base_url}/api/health", timeout=2)
-                if response.status_code == 200:
-                    return True
-            except requests.RequestException:
-                pass
+            # Try to connect to health endpoint
+            response = requests.get(f"{base_url}/api/health", timeout=2)
+            if response.status_code == 200:
+                return True
 
             # Check if process died
             if self.process and self.process.poll() is not None:
@@ -220,10 +217,7 @@ if __name__ == "__main__":
         logger.error("Failed to start Panel server for display tool")
 
     # wait for keypress to exit
-    try:
-        logger.info("Press Enter to stop the Panel server...")
-        input()
-    except KeyboardInterrupt:
-        pass
+    logger.info("Press Enter to stop the Panel server...")
+    input()
 
     display_manager.stop()
