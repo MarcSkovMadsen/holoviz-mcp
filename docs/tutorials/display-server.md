@@ -33,7 +33,11 @@ The Display Server is included with the `holoviz-mcp` package. Please [make sure
 Now that you have the server installed, let's start it:
 
 ```bash
+# If holoviz-mcp installed as package
 display-server
+
+# If holoviz-mcp installed as uv tool
+uvx --from holoviz-mcp display-server
 ```
 
 You should see output like this:
@@ -42,10 +46,10 @@ You should see output like this:
 Starting Display Server...
 Display Server running at:
 
-  - Add: http://localhost:5005/add
-  - Feed: http://localhost:5005/feed
-  - Admin: http://localhost:5005/admin
-  - API: http://localhost:5005/api
+  - Add: [http://localhost:5005/add](http://localhost:5005/add)
+  - Feed: [http://localhost:5005/feed](http://localhost:5005/feed)
+  - Admin: [http://localhost:5005/admin](http://localhost:5005/admin)
+  - API: [http://localhost:5005/api](http://localhost:5005/api)
 ```
 
 Great! Your server is now running. Keep this terminal window open while you work through the tutorial.
@@ -196,6 +200,11 @@ python script.py
 ```
 
 You should see output showing the status code (200 for success) and the response containing the URL of your new visualization. Visit that URL to see your programmatically-created visualization!
+
+```bash
+Status Code: 200
+Response: {'id': '6541b6b3-2b16-4ef5-ac4f-c8fe6d59ff1c', 'created_at': '2026-01-10T10:23:55.270232+00:00', 'url': 'http://localhost:5005/view?id=6541b6b3-2b16-4ef5-ac4f-c8fe6d59ff1c'}
+```
 
 !!! success "Well Done!"
     You can now create visualizations both interactively through the web interface and programmatically through the REST API.
