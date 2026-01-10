@@ -9,6 +9,7 @@ import logging
 import panel as pn
 
 from holoviz_mcp.display_mcp.database import get_db
+from holoviz_mcp.display_mcp.ui import banner
 from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 logger = logging.getLogger(__name__)
@@ -169,4 +170,5 @@ Please check the server logs for more details.
             "## Code",
             code_editor,
         ],
+        header=[banner()],
     )

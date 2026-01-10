@@ -9,6 +9,7 @@ import panel as pn
 from bokeh.models.widgets.tables import HTMLTemplateFormatter
 
 from holoviz_mcp.display_mcp.database import get_db
+from holoviz_mcp.display_mcp.ui import banner
 from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 
@@ -72,7 +73,4 @@ def admin_page():
     # Bind delete callback
     tabulator.on_click(on_delete)
 
-    return pn.template.FastListTemplate(
-        title="Snippet Manager",
-        main=[tabulator],
-    )
+    return pn.template.FastListTemplate(title="Snippet Manager", main=[tabulator], header=[banner()])

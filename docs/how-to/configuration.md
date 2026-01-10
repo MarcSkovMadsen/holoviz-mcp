@@ -135,8 +135,9 @@ display:
 ```
 
 The Display Server has its own environment variables (see `display-server --help`):
-- `DISPLAY_SERVER_PORT`: Server port (default: 5005)
-- `DISPLAY_SERVER_HOST`: Server host (default: 127.0.0.1)
+
+- `PORT`: Server port (default: 5005)
+- `ADDRESS`: Server host (default: 127.0.0.1)
 - `DISPLAY_DB_PATH`: Database path
 
 **Example: Remote Display Server on Another Machine**

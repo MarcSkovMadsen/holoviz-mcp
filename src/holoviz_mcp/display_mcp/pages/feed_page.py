@@ -7,6 +7,7 @@ in a feed-style layout with live updates.
 import panel as pn
 
 from holoviz_mcp.display_mcp.database import get_db
+from holoviz_mcp.display_mcp.ui import banner
 from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 
@@ -95,6 +96,7 @@ def feed_page():
         title="Visualization Feed",
         sidebar=[limit],
         main=[pn.Column(chat_feed, sizing_mode="stretch_both")],
+        header=[banner()],
     )
 
 
