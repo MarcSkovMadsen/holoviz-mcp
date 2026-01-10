@@ -17,6 +17,8 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 
 **Documentation Access**: Search through comprehensive HoloViz documentation, including tutorials, reference guides, how-to guides, and API references.
 
+**Display Server**: Create and share Python visualizations with instant URLs. The `holoviz_display` tool executes code in an isolated server and provides web-accessible visualizations that you can view, share, and manage.
+
 **Agents Skills**: Agents and Skills for LLMs.
 
 **Component Intelligence**: Discover and understand 100+ Panel components with detailed parameter information and usage examples. Similar features are available for hvPlot.

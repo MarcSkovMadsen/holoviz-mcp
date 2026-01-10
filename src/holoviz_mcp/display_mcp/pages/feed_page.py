@@ -7,7 +7,7 @@ in a feed-style layout with live updates.
 import panel as pn
 
 from holoviz_mcp.display_mcp.database import get_db
-from holoviz_mcp.display_mcp.utils import get_url
+from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 
 def feed_page():
@@ -27,7 +27,7 @@ def feed_page():
             return pn.state.cache["views"][req.id]
 
         # Create iframe URL
-        url = get_url(id=req.id)
+        url = get_relative_view_url(id=req.id)
 
         # Add message
         created_at = req.created_at.astimezone().strftime("%Y-%m-%d %H:%M:%S")
@@ -37,39 +37,38 @@ def feed_page():
         iframe = f"""<div style="resize: vertical; overflow: hidden; height: calc(75vh - 200px); width: 100%; max-width: 100%; border: 1px solid gray;">
 <iframe src="{url}" style="height: 100%; width: 100%; border: none;" frameborder="0"></iframe>
 </div>"""
+        # Create copy button with JavaScript callback
+        open_button = pn.widgets.Button(
+            name="🔗 Full Screen",
+            button_type="light",
+            description="Open visualization in new tab",
+        )
+        open_button.js_on_click(
+            code=f"""
+            window.open("{url}", "_blank");
+        """
+        )
+
+        copy_button = pn.widgets.Button(
+            name="📋 Copy Code",
+            button_type="light",
+            width=120,
+            description="Copy code to clipboard",
+        )
+
+        # JavaScript callback to copy code to clipboard
+        code_escaped = req.code.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+        copy_button.js_on_click(
+            args={"code": code_escaped},
+            code="""
+            navigator.clipboard.writeText(code)
+        """,
+        )
+
         with pn.config.set(sizing_mode="stretch_width"):
-            # Create copy button with JavaScript callback
-            open_button = pn.widgets.Button(
-                name="🔗 Full Screen",
-                button_type="light",
-                description="Open visualization in new tab",
+            message = pn.Column(
+                pn.pane.Markdown(title), pn.pane.Markdown(iframe), pn.Row(pn.HSpacer(), open_button, copy_button, margin=(0, 10, 0, 10), align="end")
             )
-            open_button.js_on_click(
-                code=f"""
-                window.open("{url}", "_blank");
-            """
-            )
-
-            copy_button = pn.widgets.Button(
-                name="📋 Copy Code",
-                button_type="light",
-                width=120,
-                description="Copy code to clipboard",
-            )
-
-            # JavaScript callback to copy code to clipboard
-            code_escaped = req.code.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-            copy_button.js_on_click(
-                args={"code": code_escaped},
-                code="""
-                navigator.clipboard.writeText(code)
-            """,
-            )
-
-            with pn.config.set(sizing_mode="stretch_width"):
-                message = pn.Column(
-                    pn.pane.Markdown(title), pn.pane.Markdown(iframe), pn.Row(pn.HSpacer(), open_button, copy_button, margin=(0, 10, 0, 10), align="end")
-                )
 
         pn.state.cache["views"][req.id] = message
         return message

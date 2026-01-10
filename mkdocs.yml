@@ -94,6 +94,8 @@ nav:
     - Tutorials:
         - Getting Started: tutorials/getting-started.md
         - Use with Copilot: tutorials/copilot.md
+        - Use the Display Server: tutorials/display-server.md
+        - Use the Display MCP Tool: tutorials/display-mcp-tool.md
     - How-To Guides:
         - Install: how-to/installation.md
         - Configure your IDE: how-to/ide-configuration.md

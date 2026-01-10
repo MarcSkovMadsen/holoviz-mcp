@@ -7,6 +7,7 @@ visualization requests.
 import ast
 import json
 import os
+import re
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -16,11 +17,12 @@ from typing import Generator
 from typing import Literal
 from typing import Optional
 
-import re
-
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
+
+from holoviz_mcp.config import get_config
+from holoviz_mcp.config import logger
 
 
 class Snippet(BaseModel):
@@ -53,9 +55,7 @@ class Snippet(BaseModel):
             return v
         # Valid slug: lowercase letters, numbers, hyphens only
         if not re.match(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", v):
-            raise ValueError(
-                "Slug must be empty or contain only lowercase letters, numbers, and hyphens (no consecutive hyphens)"
-            )
+            raise ValueError("Slug must be empty or contain only lowercase letters, numbers, and hyphens (no consecutive hyphens)")
         return v
 
 
@@ -464,7 +464,6 @@ class SnippetDatabase:
         # Import here to avoid circular dependency
         from holoviz_mcp.display_mcp.utils import find_extensions
         from holoviz_mcp.display_mcp.utils import find_requirements
-        from holoviz_mcp.display_mcp.utils import get_url
 
         # Validate code is not empty
         if not code:
@@ -492,13 +491,9 @@ class SnippetDatabase:
 
         self.create_snippet(snippet_obj)
 
-        # Generate URL
-        url = get_url(id=snippet_obj.id)
-
         # Return result
         return {
             "id": snippet_obj.id,
-            "url": url,
             "created_at": snippet_obj.created_at.isoformat(),
         }
 
@@ -556,8 +551,9 @@ def get_db(db_path: Optional[Path] = None) -> SnippetDatabase:
                 db_path = Path(env_path)
             else:
                 # Fall back to default location
-                db_path = Path.home() / ".holoviz-mcp" / "snippets" / "snippets.db"
+                db_path = get_config().display.db_path
 
+        logger.info(f"Initializing database at: {db_path}")
         _db_instance = SnippetDatabase(db_path)
 
     return _db_instance

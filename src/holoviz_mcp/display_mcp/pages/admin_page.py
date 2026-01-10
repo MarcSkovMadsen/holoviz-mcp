@@ -9,7 +9,7 @@ import panel as pn
 from bokeh.models.widgets.tables import HTMLTemplateFormatter
 
 from holoviz_mcp.display_mcp.database import get_db
-from holoviz_mcp.display_mcp.utils import get_url
+from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 
 def admin_page():
@@ -25,7 +25,7 @@ def admin_page():
     # Convert to DataFrame
     data = []
     for req in requests:
-        view_url = get_url(id=req.id)
+        view_url = get_relative_view_url(id=req.id)
         data.append(
             {
                 "ID": req.id,

@@ -155,12 +155,20 @@ class DisplayConfig(BaseModel):
     """Configuration for the AI Visualizer display server."""
 
     enabled: bool = Field(default=True, description="Enable the display server")
-    port: int = Field(default=5005, description="Port for the display Panel server")
-    host: str = Field(default="127.0.0.1", description="Host address for the display Panel server")
-    max_restarts: int = Field(default=3, description="Maximum number of restart attempts for Panel server")
+    mode: Literal["subprocess", "remote"] = Field(
+        default="subprocess",
+        description="Display server mode: 'subprocess' to manage Panel server as subprocess, 'remote' to connect to existing server",
+    )
+    server_url: Optional[str] = Field(
+        default=None,
+        description="URL of remote display server (e.g., 'http://localhost:5005'). Only used in 'remote' mode.",
+    )
+    port: int = Field(default=7999, description="Port for the display Panel server (subprocess mode only)")
+    host: str = Field(default="127.0.0.1", description="Host address for the display Panel server (subprocess mode only)")
+    max_restarts: int = Field(default=3, description="Maximum number of restart attempts for Panel server (subprocess mode only)")
     health_check_interval: int = Field(default=60, description="Health check interval in seconds")
     db_path: Path = Field(
-        default_factory=lambda: _holoviz_mcp_user_dir() / "display" / "requests.db",
+        default_factory=lambda: _holoviz_mcp_user_dir() / "snippets" / "snippets.db",
         description="Path to SQLite database for display requests",
     )
 

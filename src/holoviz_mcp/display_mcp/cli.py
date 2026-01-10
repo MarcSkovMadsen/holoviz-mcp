@@ -7,16 +7,11 @@ import logging
 import os
 from typing import Optional
 
-import panel as pn
 import typer
 
-from holoviz_mcp.display_mcp.database import get_db
-from holoviz_mcp.display_mcp.endpoints import HealthEndpoint
-from holoviz_mcp.display_mcp.endpoints import SnippetEndpoint
-from holoviz_mcp.display_mcp.pages import add_page
-from holoviz_mcp.display_mcp.pages import admin_page
-from holoviz_mcp.display_mcp.pages import feed_page
-from holoviz_mcp.display_mcp.pages import view_page
+from holoviz_mcp.display_mcp.app import DEFAULT_ADDRESS
+from holoviz_mcp.display_mcp.app import DEFAULT_PORT
+from holoviz_mcp.display_mcp.app import main as display_app
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +22,6 @@ app = typer.Typer(
     add_completion=False,
 )
 
-# Default configuration
-DEFAULT_PORT = 5005
-DEFAULT_HOST = "127.0.0.1"
-
 
 @app.command()
 def serve(
@@ -39,14 +30,14 @@ def serve(
         "--port",
         "-p",
         help="Port number to run the server on",
-        envvar="DISPLAY_SERVER_PORT",
+        envvar="PORT",
     ),
-    host: str = typer.Option(
-        DEFAULT_HOST,
-        "--host",
-        "-h",
+    address: str = typer.Option(
+        DEFAULT_ADDRESS,
+        "--address",
+        "-a",
         help="Host address to bind to",
-        envvar="DISPLAY_SERVER_HOST",
+        envvar="ADDRESS",
     ),
     db_path: Optional[str] = typer.Option(
         None,
@@ -71,23 +62,6 @@ def serve(
     The server provides a web interface for executing Python code snippets
     and visualizing the results. It supports both Jupyter-style execution
     and Panel app execution methods.
-
-    Examples
-    --------
-        # Start on default port 5005
-        $ display-server
-
-        # Start on custom port
-        $ display-server --port 5004
-
-        # Start with custom database path
-        $ display-server --db-path ./my-snippets.db
-
-        # Start and open in browser
-        $ display-server --show
-
-        # Start with verbose logging
-        $ display-server --verbose
     """
     # Configure logging
     if verbose:
@@ -100,51 +74,7 @@ def serve(
     if db_path:
         os.environ["DISPLAY_DB_PATH"] = db_path
 
-    # Configure Panel defaults
-    pn.template.FastListTemplate.param.main_layout.default = None
-    pn.pane.Markdown.param.disable_anchors.default = True
-
-    # Initialize database
-    db = get_db()
-    logger.info(f"Database initialized at: {db.db_path}")
-
-    # Initialize views cache for feed page
-    pn.state.cache["views"] = {}
-
-    # Configure pages
-    pages = {
-        "/view": view_page,
-        "/feed": feed_page,
-        "/admin": admin_page,
-        "/add": add_page,
-    }
-
-    # Configure extra patterns for Tornado handlers (REST API endpoints)
-    extra_patterns = [
-        (r"/api/snippet", SnippetEndpoint),
-        (r"/api/health", HealthEndpoint),
-    ]
-
-    # Log startup information
-    logger.info(f"Starting HoloViz Display Server on {host}:{port}")
-    logger.info(f"Server URL: http://{host}:{port}")
-    logger.info("Available pages:")
-    logger.info(f"  - Feed: http://{host}:{port}/feed")
-    logger.info(f"  - Admin: http://{host}:{port}/admin")
-    logger.info(f"  - Add: http://{host}:{port}/add")
-    logger.info("API endpoints:")
-    logger.info(f"  - Create snippet: POST http://{host}:{port}/api/snippet")
-    logger.info(f"  - Health check: GET http://{host}:{port}/api/health")
-
-    # Start server
-    pn.serve(
-        pages,
-        port=port,
-        address=host,
-        show=show,
-        title="HoloViz Display Server",
-        extra_patterns=extra_patterns,
-    )
+    display_app(address=address, port=port, show=show)
 
 
 def main() -> None:
