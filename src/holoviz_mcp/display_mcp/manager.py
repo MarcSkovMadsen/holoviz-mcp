@@ -115,9 +115,12 @@ class PanelServerManager:
 
         while time.time() - start_time < timeout:
             # Try to connect to health endpoint
-            response = requests.get(f"{base_url}/api/health", timeout=2)
-            if response.status_code == 200:
-                return True
+            try:
+                response = requests.get(f"{base_url}/api/health", timeout=2)
+                if response.status_code == 200:
+                    return True
+            except requests.RequestException:
+                pass  # The panel server has not started yet
 
             # Check if process died
             if self.process and self.process.poll() is not None:
