@@ -94,6 +94,8 @@ nav:
     - Tutorials:
         - Getting Started: tutorials/getting-started.md
         - Use with Copilot: tutorials/copilot.md
+        - Use the Display Server: tutorials/display-server.md
+        - Use the Display Tool: tutorials/display-tool.md
     - How-To Guides:
         - Install: how-to/installation.md
         - Configure your IDE: how-to/ide-configuration.md
@@ -106,6 +108,7 @@ nav:
         - Architecture: explanation/architecture.md
         - Available Tools: explanation/tools.md
         - Security Considerations: explanation/security.md
+        - Display Server: explanation/display-server.md
     - Reference:
         - API Documentation: reference/holoviz_mcp.md
     - Examples: examples.md

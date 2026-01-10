@@ -18,6 +18,7 @@ from fastmcp import FastMCP
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.holoviews_mcp.server import mcp as holoviews_mcp
+from holoviz_mcp.holoviz_mcp.server import app_lifespan
 from holoviz_mcp.holoviz_mcp.server import mcp as holoviz_mcp
 from holoviz_mcp.hvplot_mcp.server import mcp as hvplot_mcp
 from holoviz_mcp.panel_mcp.server import mcp as panel_mcp
@@ -43,6 +44,7 @@ mcp: FastMCP = FastMCP(
     - [Panel](https://panel.holoviz.org): for making data tools, dashboards and data apps using the Holoviz and wider PyData ecosystems.
     - [Param](https://param.holoviz.org): to create declarative user-configurable objects.
     """,
+    lifespan=app_lifespan,
 )
 
 
