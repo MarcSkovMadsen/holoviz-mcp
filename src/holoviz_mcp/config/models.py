@@ -164,7 +164,7 @@ class DisplayConfig(BaseModel):
         description="URL of remote display server (e.g., 'http://localhost:5005'). Only used in 'remote' mode.",
     )
     port: int = Field(default=5005, description="Port for the display Panel server (subprocess mode only)")
-    host: str = Field(default="127.0.0.1", description="Host address for the display Panel server (subprocess mode only)")
+    host: str = Field(default="localhost", description="Host address for the display Panel server (subprocess mode only)")
     max_restarts: int = Field(default=3, description="Maximum number of restart attempts for Panel server (subprocess mode only)")
     health_check_interval: int = Field(default=60, description="Health check interval in seconds")
     db_path: Path = Field(

@@ -24,8 +24,6 @@ Before starting, ensure you have:
 
 In your IDE or development environment make sure to [start the HoloViz MCP server](getting-started.md/#start-the-server).
 
-The open the *Display Server Feed* at http://localhost:5005/feed
-
 !!! note
     If the [Display Server](display-server.md) is already running separately, please stop it using CTRL+C. The MCP server will automatically start the Display Server.
 
@@ -45,12 +43,14 @@ Your AI assistant will use the `holoviz_display` tool and respond with something
 
 ```
 ✓ Visualization created successfully!
-View at: http://127.0.0.1:5005/view?id={snippet_id}
+View at: http://localhost:5005/view?id={snippet_id}
 ```
 
 Click the URL. You should see:
 
 - An interactive bar chart showing the count of each penguin species
+
+![Interactive Bar Chart](../assets/images/display-tool-view.png)
 
 !!! success "Checkpoint"
     If you see the species distribution in your browser, you've successfully created your first visualization! The chart should be interactive - try hovering over the bars.
@@ -69,6 +69,8 @@ The AI will create a new visualization. Click the new URL to see:
 - A scatter plot showing the relationship between flipper length and body mass
 - Interactive tooltips when hovering over points
 - The ability to zoom and pan through the data
+
+![Interactive Scatter Plot](../assets/images/display-tool-view2.png)
 
 !!! tip "What you're learning"
     Each visualization gets its own unique URL that you can bookmark or share. The `holoviz_display` tool handles different chart types automatically based on your natural language request.
@@ -95,7 +97,7 @@ This demonstrates how `holoviz_display` can handle multi-step analytical workflo
 Now let's see all your visualizations together. In your browser, navigate to:
 
 ```
-http://127.0.0.1:5005/feed
+http://localhost:5005/feed
 ```
 
 You should see:
@@ -103,6 +105,8 @@ You should see:
 - All your visualizations with names and descriptions
 - Creation timestamps
 - "Full Screen" and "Copy Code" buttons for each
+
+![Feed](../assets/images/display-tool-feed.png)
 
 The Feed page automatically updates when new visualizations are created!
 
@@ -135,6 +139,8 @@ The visualization will include:
 - Interactive widgets (dropdowns, sliders, etc.)
 - Plots that update automatically when you change widget values
 - A complete dashboard layout
+
+![Penguins Dashboard](../assets/images/display-tool-feed-dashboard.png)
 
 !!! success "Achievement unlocked"
     You've created an interactive dashboard! Behind the scenes, the tool uses Panel's execution methods to enable full applications with reactive components.

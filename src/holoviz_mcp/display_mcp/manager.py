@@ -24,7 +24,7 @@ class PanelServerManager:
         self,
         db_path: Path,
         port: int = 5005,
-        host: str = "127.0.0.1",
+        host: str = "localhost",
         max_restarts: int = 3,
     ):
         """Initialize the Panel server manager.

@@ -116,7 +116,7 @@ URLs follow the pattern: `http://host:port/view?id={snippet_id}`
 The server can be configured via environment variables or CLI flags:
 
 - `PORT`: Port number (default: 5005)
-- `ADDRESS`: Host address (default: 127.0.0.1)
+- `ADDRESS`: Host address (default: localhost)
 - `DISPLAY_DB_PATH`: Database file location
 
 ## Design Principles
