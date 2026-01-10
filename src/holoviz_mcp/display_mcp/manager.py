@@ -224,6 +224,6 @@ if __name__ == "__main__":
         logger.info("Press Enter to stop the Panel server...")
         input()
     except KeyboardInterrupt:
-        pass
+        logger.info("Keyboard interrupt received; stopping Panel server...")
 
     display_manager.stop()
