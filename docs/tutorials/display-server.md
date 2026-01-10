@@ -7,7 +7,7 @@ This foundation will enable you to effectively use the [`holoviz_display`](displ
 !!! warning
     The Display Server is currently in alpha. Changes between versions may make existing snippets inaccessible. Use for exploration and testing only - **do not rely on the Display Server for persistent storage of important work!**
 
-<iframe src="https://www.youtube.com/embed/kKVCb3oZSqU?si=RFKbNOhI3kZ8N6rp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
+<iframe src="https://www.youtube.com/embed/kKVCb3oZSqU?si=RFKbNOhI3kZ8N6rp" title="Tutorial: Building Visualizations with the Display Server" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
 
 ## What You'll Learn
 

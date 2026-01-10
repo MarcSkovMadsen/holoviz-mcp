@@ -2,7 +2,7 @@
 
 This tutorial will guide you through installing and using HoloViz MCP for the first time. By the end, you'll have HoloViz MCP running and be able to ask your AI assistant questions about Panel components!
 
-<iframe src="https://www.youtube.com/embed/nB6cI26GNzM?si=XGyPwCMvBWYOrHop" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
+<iframe src="https://www.youtube.com/embed/nB6cI26GNzM?si=XGyPwCMvBWYOrHop" title="Getting Started with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
 
 !!! tip "What you'll learn"
     - How to install HoloViz MCP
