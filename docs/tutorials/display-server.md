@@ -42,10 +42,10 @@ You should see output like this:
 Starting Display Server...
 Display Server running at:
 
-  - Add: http://127.0.0.1:5005/add
-  - Feed: http://127.0.0.1:5005/feed
-  - Admin: http://127.0.0.1:5005/admin
-  - API: http://127.0.0.1:5005/api
+  - Add: http://localhost:5005/add
+  - Feed: http://localhost:5005/feed
+  - Admin: http://localhost:5005/admin
+  - API: http://localhost:5005/api
 ```
 
 Great! Your server is now running. Keep this terminal window open while you work through the tutorial.
@@ -65,7 +65,7 @@ Great! Your server is now running. Keep this terminal window open while you work
 
 Let's create your first interactive visualization using the web interface.
 
-Open your web browser and navigate to [`http://127.0.0.1:5005/add`](http://127.0.0.1:5005/add). You'll see a form for creating visualizations.
+Open your web browser and navigate to [`http://localhost:5005/add`](http://localhost:5005/add). You'll see a form for creating visualizations.
 
 Now, let's create a simple bar chart. In the code editor, enter the following Python code:
 
@@ -98,7 +98,7 @@ Click the **Submit** button. You should see a success message with a link to vie
 
 ## Step 4: View Your Visualization
 
-After submitting your code, click the link provided on the Add page. This will take you to a unique URL like `http://127.0.0.1:5005/view?id=abc123` where your visualization is displayed.
+After submitting your code, click the link provided on the Add page. This will take you to a unique URL like `http://localhost:5005/view?id=abc123` where your visualization is displayed.
 
 ![View Page](../assets/images/display-manager-view.png)
 
@@ -111,7 +111,7 @@ You should now see your interactive bar chart! Try hovering over the bars - you'
 
 As you create more visualizations, you'll want an easy way to browse them. Let's check out the Feed page.
 
-Navigate to [`http://127.0.0.1:5005/feed`](http://127.0.0.1:5005/feed). Here you'll see a list view of your recent visualizations, including:
+Navigate to [`http://localhost:5005/feed`](http://localhost:5005/feed). Here you'll see a list view of your recent visualizations, including:
 
 - The visualization name and description
 - When it was created
@@ -125,7 +125,7 @@ The Feed page automatically updates to show your most recent work.
 
 Now let's explore the Admin page where you can manage all your visualizations.
 
-Visit [`http://127.0.0.1:5005/admin`](http://127.0.0.1:5005/admin). This page provides a table view of all your snippets where you can:
+Visit [`http://localhost:5005/admin`](http://localhost:5005/admin). This page provides a table view of all your snippets where you can:
 
 - See detailed information about each snippet
 - Delete visualizations you no longer need
@@ -176,7 +176,7 @@ import requests
 
 # Create a visualization
 response = requests.post(
-    "http://127.0.0.1:5005/api/snippet",
+    "http://localhost:5005/api/snippet",
     headers={"Content-Type": "application/json"},
     json={
         "code": "a='Hello, HoloViz MCP!'\na",

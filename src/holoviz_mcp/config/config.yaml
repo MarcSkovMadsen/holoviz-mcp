@@ -13,7 +13,7 @@ server:
 display:
   enabled: true
   port: 5005
-  host: "127.0.0.1"
+  host: "localhost"
   max_restarts: 3
   health_check_interval: 60
   auto_install_packages: true
