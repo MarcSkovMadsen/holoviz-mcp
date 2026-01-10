@@ -9,8 +9,21 @@ import logging
 import panel as pn
 
 from holoviz_mcp.display_mcp.database import get_db
+from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_SNIPPET = """\
+import pandas as pd
+import hvplot.pandas
+
+df = pd.DataFrame({
+    'Product': ['A', 'B', 'C', 'D'],
+    'Sales': [120, 95, 180, 150]
+})
+
+df.hvplot.bar(x='Product', y='Sales', title='Sales by Product')\
+"""
 
 
 def add_page():
@@ -20,17 +33,17 @@ def add_page():
     """
     # Create input widgets
     code_editor = pn.widgets.CodeEditor(
-        value='import pandas as pd\ndf = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})\ndf',
+        value=DEFAULT_SNIPPET,
         language="python",
         theme="monokai",
         sizing_mode="stretch_both",
-        height=300,
     )
 
     name_input = pn.widgets.TextInput(
         name="Name",
-        placeholder="Enter visualization name",
+        placeholder="Enter name",
         sizing_mode="stretch_width",
+        description="The name of the the visualization.",
     )
 
     description_input = pn.widgets.TextAreaInput(
@@ -38,19 +51,24 @@ def add_page():
         placeholder="Enter description",
         sizing_mode="stretch_width",
         max_length=500,
+        description="A brief description of the visualization.",
     )
 
-    method_select = pn.widgets.RadioButtonGroup(
-        name="Method",
+    method_select = pn.widgets.RadioBoxGroup(
+        name="Execution Method",
         options=["jupyter", "panel"],
         value="jupyter",
-        button_type="success",
+        sizing_mode="stretch_width",
+        inline=True,
     )
 
+    @pn.depends(name_input.param.value_input, description_input.param.value_input)
+    def cannot_submit(name, description):
+        """Determine if the form can be submitted."""
+        return not (name and description)
+
     submit_button = pn.widgets.Button(
-        name="Create Visualization",
-        button_type="primary",
-        sizing_mode="stretch_width",
+        name="Submit", button_type="primary", sizing_mode="stretch_width", description="Click to create the visualization.", disabled=cannot_submit
     )
 
     # Status indicator in sidebar
@@ -74,7 +92,7 @@ def add_page():
 
             # Show success message
             viz_id = result["id"]
-            url = result["url"]
+            url = get_relative_view_url(viz_id)
 
             status_pane.object = f"""
 ### ✅ Success! Visualization created.
@@ -141,13 +159,14 @@ Please check the server logs for more details.
             pn.pane.Markdown("### Configuration"),
             name_input,
             description_input,
+            pn.pane.Markdown("Display Method", margin=(-10, 10, -10, 10)),
             method_select,
             submit_button,
             pn.pane.Markdown("### Status"),
             status_pane,
         ],
         main=[
-            pn.pane.Markdown("### Python Code"),
+            "## Code",
             code_editor,
         ],
     )

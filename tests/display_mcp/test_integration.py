@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pytest
 
+from holoviz_mcp.display_mcp.client import DisplayClient
 from holoviz_mcp.display_mcp.manager import PanelServerManager
 
 
@@ -52,12 +53,22 @@ class TestPanelServerIntegration:
         else:
             pytest.skip("Failed to start Panel server")
 
-    def test_server_starts(self, manager):
+    @pytest.fixture
+    def client(self, manager):
+        """Create a DisplayClient for testing."""
+        # Use direct URL for testing (avoid proxy SSL issues)
+        base_url = f"http://{manager.host}:{manager.port}"
+        # Give server a moment to fully initialize endpoints
+        time.sleep(1)
+        with DisplayClient(base_url=base_url) as client:
+            yield client
+
+    def test_server_starts(self, client):
         """Test that the Panel server starts successfully."""
-        assert manager.is_healthy()
+        assert client.is_healthy()
 
     @pytest.mark.skip(reason="REST API needs refinement for Panel HTTP handling")
-    def test_create_simple_visualization(self, manager):
+    def test_create_simple_visualization(self, client):
         """Test creating a simple visualization."""
         code = """
 import pandas as pd
@@ -65,7 +76,7 @@ df = pd.DataFrame({'x': [1, 2, 3], 'y': [4, 5, 6]})
 df
 """
 
-        response = manager.create_snippet(
+        response = client.create_snippet(
             code=code,
             name="Test DataFrame",
             description="A simple test",
@@ -82,11 +93,11 @@ df
         assert "view?id=" in url
 
     @pytest.mark.skip(reason="REST API needs refinement")
-    def test_create_with_syntax_error(self, manager):
+    def test_create_with_syntax_error(self, client):
         """Test creating a visualization with syntax error."""
         code = "x = \n  invalid syntax"
 
-        response = manager.create_snippet(
+        response = client.create_snippet(
             code=code,
             name="Syntax Error Test",
             method="jupyter",
@@ -97,11 +108,11 @@ df
         assert response["error"] == "SyntaxError"
 
     @pytest.mark.skip(reason="REST API needs refinement")
-    def test_create_with_runtime_error(self, manager):
+    def test_create_with_runtime_error(self, client):
         """Test creating a visualization with runtime error."""
         code = "1 / 0"  # Division by zero
 
-        response = manager.create_snippet(
+        response = client.create_snippet(
             code=code,
             name="Runtime Error Test",
             method="jupyter",
@@ -111,7 +122,7 @@ df
         assert "error" in response
 
     @pytest.mark.skip(reason="REST API needs refinement")
-    def test_create_with_import(self, manager):
+    def test_create_with_import(self, client):
         """Test creating a visualization with imports."""
         code = """
 import numpy as np
@@ -119,7 +130,7 @@ arr = np.array([1, 2, 3, 4, 5])
 arr.mean()
 """
 
-        response = manager.create_snippet(
+        response = client.create_snippet(
             code=code,
             name="NumPy Test",
             method="jupyter",
@@ -131,7 +142,7 @@ arr.mean()
 
     @pytest.mark.skip(reason="REST API needs refinement")
     @pytest.mark.slow
-    def test_multiple_visualizations(self, manager):
+    def test_multiple_visualizations(self, client):
         """Test creating multiple visualizations."""
         codes = [
             "list(range(10))",
@@ -141,7 +152,7 @@ arr.mean()
 
         responses = []
         for i, code in enumerate(codes):
-            response = manager.create_snippet(
+            response = client.create_snippet(
                 code=code,
                 name=f"Test {i}",
                 method="jupyter",

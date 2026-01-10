@@ -6,6 +6,7 @@ HTTP endpoints for creating visualizations and checking server health.
 
 import json
 import logging
+import os
 import traceback
 from datetime import datetime
 from datetime import timezone
@@ -42,6 +43,15 @@ class SnippetEndpoint(RequestHandler):
                 description=description,
                 method=method,
             )
+            if jupyter_base := os.getenv("JUPYTER_SERVER_PROXY_URL"):
+                port = self.request.host.split(":")[-1]
+                base_url = f"{jupyter_base.rstrip('/')}/{port}"
+                url = f"{base_url}/view?id={result['id']}"
+            else:
+                full_url = self.request.full_url()
+                url = full_url.replace("/api/snippet", "/view?id=" + result["id"])
+
+            result["url"] = url
 
             # Return success response
             self.set_status(200)

@@ -17,6 +17,7 @@ from fastmcp.resources import FileResource
 
 from holoviz_mcp.config import logger
 from holoviz_mcp.config.loader import get_config
+from holoviz_mcp.display_mcp.client import DisplayClient
 from holoviz_mcp.display_mcp.manager import PanelServerManager
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
 from holoviz_mcp.holoviz_mcp.data import get_skill as _get_skill
@@ -26,8 +27,11 @@ from holoviz_mcp.holoviz_mcp.models import Document
 # Global indexer instance
 _indexer = None
 
-# Global display manager instance (lazy-loaded)
+# Global display manager instance (lazy-loaded, subprocess mode only)
 _display_manager: Optional["PanelServerManager"] = None
+
+# Global display client instance (lazy-loaded)
+_display_client: Optional["DisplayClient"] = None
 
 
 def get_indexer() -> DocumentationIndexer:
@@ -39,11 +43,11 @@ def get_indexer() -> DocumentationIndexer:
 
 
 def _get_display_manager() -> Optional["PanelServerManager"]:
-    """Get or create the Panel server manager for display tool."""
+    """Get or create the Panel server manager (subprocess mode only)."""
     global _display_manager
 
     config = get_config()
-    if not config.display.enabled:
+    if not config.display.enabled or config.display.mode != "subprocess":
         return None
 
     if _display_manager is None:
@@ -70,6 +74,36 @@ def _get_display_manager() -> Optional["PanelServerManager"]:
     return _display_manager
 
 
+def _get_display_client() -> Optional["DisplayClient"]:
+    """Get or create the Display Client."""
+    global _display_client
+
+    config = get_config()
+    if not config.display.enabled:
+        return None
+
+    if _display_client is None:
+        # Determine base URL based on mode
+        if config.display.mode == "remote":
+            if not config.display.server_url:
+                logger.error("Remote mode enabled but server_url not configured")
+                return None
+            base_url = config.display.server_url
+        else:  # subprocess mode
+            manager = _get_display_manager()
+            if not manager:
+                return None
+            base_url = manager.get_base_url()
+
+        # Create client
+        _display_client = DisplayClient(base_url=base_url)
+
+        # Register cleanup
+        atexit.register(_cleanup_display_client)
+
+    return _display_client
+
+
 def _cleanup_display_manager():
     """Cleanup Panel server on exit."""
     global _display_manager
@@ -79,14 +113,25 @@ def _cleanup_display_manager():
         _display_manager = None
 
 
+def _cleanup_display_client():
+    """Cleanup Display Client on exit."""
+    global _display_client
+    if _display_client:
+        logger.info("Cleaning up Display Client")
+        _display_client.close()
+        _display_client = None
+
+
 # Create the lifespan context manager
 @asynccontextmanager
 async def app_lifespan(server: FastMCP):
     """Lifespan context manager for HoloViz MCP server."""
     # Initialize resources on startup
     try:
-        # Make resources available during operation
-        _get_display_manager()  # Ensure display manager is started
+        config = get_config()
+        # Only start display manager if in subprocess mode
+        if config.display.enabled and config.display.mode == "subprocess":
+            _get_display_manager()  # Ensure display manager is started
         yield None
     except Exception as e:
         logger.error(f"Error during app lifespan: {e}")
@@ -354,24 +399,36 @@ async def display(
     if not config.display.enabled:
         return "Error: Display server is not enabled. Set display.enabled=true in config."
 
-    # Get manager
-    manager = _get_display_manager()
-    if not manager:
-        return "Error: Failed to start display server. Check logs for details."
+    # Get client
+    client = _get_display_client()
+    if not client:
+        return "Error: Failed to initialize display client. Check logs for details."
 
-    # Check health
-    if not manager.is_healthy():
-        # Try to restart
-        if ctx:
-            await ctx.info("Display server is not healthy, attempting restart...")
+    # Check health with mode-aware logic
+    if not client.is_healthy():
+        if config.display.mode == "subprocess":
+            # Try to restart in subprocess mode
+            if ctx:
+                await ctx.info("Display server is not healthy, attempting restart...")
 
-        if not manager.restart():
-            return "Error: Display server is not healthy and failed to restart."
+            manager = _get_display_manager()
+            if manager and manager.restart():
+                # Recreate client with new base URL
+                global _display_client
+                if _display_client:
+                    _display_client.close()
+                _display_client = DisplayClient(base_url=manager.get_base_url())
+                client = _display_client
+            else:
+                return "Error: Display server is not healthy and failed to restart."
+        else:
+            # Fail fast in remote mode
+            return "Error: Display server is not healthy. Check remote server status."
 
     # Send request to Panel server
     try:
-        response = manager.create_snippet(
-            app=code,
+        response = client.create_snippet(
+            code=code,
             name=name,
             description=description,
             method=method,

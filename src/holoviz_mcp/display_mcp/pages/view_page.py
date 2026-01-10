@@ -171,13 +171,12 @@ def view_page():
     # Get snippet ID or slug from query parameters using session_args
     snippet_id = ""
     slug = ""
-
     if hasattr(pn.state, "session_args"):
         # session_args is a dict with bytes keys and list of bytes values
-        snippet_id_bytes = pn.state.session_args.get(b"id", [b""])[0]  # type: ignore[call-overload]
+        snippet_id_bytes = pn.state.session_args.get("id", [b""])[0]  # type: ignore[call-overload]
         snippet_id = snippet_id_bytes.decode("utf-8") if snippet_id_bytes else ""
 
-        slug_bytes = pn.state.session_args.get(b"slug", [b""])[0]  # type: ignore[call-overload]
+        slug_bytes = pn.state.session_args.get("slug", [b""])[0]  # type: ignore[call-overload]
         slug = slug_bytes.decode("utf-8") if slug_bytes else ""
 
     # Prefer ID over slug

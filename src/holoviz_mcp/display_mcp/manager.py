@@ -14,6 +14,7 @@ from typing import Optional
 import requests  # type: ignore[import-untyped]
 
 from holoviz_mcp.config import logger
+from holoviz_mcp.config.loader import get_config
 
 
 class PanelServerManager:
@@ -67,6 +68,8 @@ class PanelServerManager:
             env["DISPLAY_DB_PATH"] = str(self.db_path)
             env["PANEL_SERVER_PORT"] = str(self.port)
             env["PANEL_SERVER_HOST"] = self.host
+
+            logger.info(f"Using database at: {env['DISPLAY_DB_PATH']}")
 
             # Start subprocess
             logger.info(f"Starting Panel server on {self.host}:{self.port}")
@@ -200,57 +203,27 @@ class PanelServerManager:
         str
             Base URL
         """
-        # Check env var first
-        if base := os.getenv("HOLOVIZ_DISPLAY_BASE_URL"):
-            return base.rstrip("/")
-
-        # Check Jupyter proxy
-        if jupyter_base := os.getenv("JUPYTER_SERVER_PROXY_URL"):
-            return f"{jupyter_base.rstrip('/')}/{self.port}"
-
-        # Default to localhost
         return f"http://{self.host}:{self.port}"
 
-    def create_snippet(self, app: str, name: str = "", description: str = "", method: str = "jupyter") -> dict:
-        """Send a create snippet request to the Panel server.
 
-        Parameters
-        ----------
-        app : str
-            Python code to execute
-        name : str
-            Name for the visualization
-        description : str
-            Description
-        method : str
-            Execution method
+if __name__ == "__main__":
+    config = get_config()
+    display_manager = PanelServerManager(
+        db_path=config.display.db_path,
+        port=config.display.port,
+        host=config.display.host,
+        max_restarts=config.display.max_restarts,
+    )
 
-        Returns
-        -------
-        dict
-            Response from server
-        """
-        if not self.is_healthy():
-            raise RuntimeError("Panel server is not running or not healthy")
+    # Start server
+    if not display_manager.start():
+        logger.error("Failed to start Panel server for display tool")
 
-        base_url = f"http://{self.host}:{self.port}"
+    # wait for keypress to exit
+    try:
+        logger.info("Press Enter to stop the Panel server...")
+        input()
+    except KeyboardInterrupt:
+        pass
 
-        try:
-            # Use POST with JSON body now that we have proper Tornado handler
-            response = requests.post(
-                f"{base_url}/api/snippet",
-                json={
-                    "code": app,  # REST API still uses "code" for backward compatibility
-                    "name": name,
-                    "description": description,
-                    "method": method,
-                },
-                timeout=30,
-            )
-
-            response.raise_for_status()
-            return response.json()
-
-        except requests.RequestException as e:
-            logger.exception(f"Error creating visualization: {e}")
-            raise RuntimeError(f"Failed to create visualization: {e}") from e
+    display_manager.stop()

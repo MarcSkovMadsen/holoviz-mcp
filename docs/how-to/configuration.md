@@ -94,6 +94,71 @@ Default: `false`
 ANONYMIZED_TELEMETRY=true uvx holoviz-mcp
 ```
 
+### Display Server Configuration
+
+The Display Server can run in two modes:
+
+#### Subprocess Mode (Default)
+
+In subprocess mode, the MCP server automatically manages the Display Server:
+
+```yaml
+display:
+  enabled: true
+  mode: subprocess  # Default
+  port: 5005
+  host: "127.0.0.1"
+  max_restarts: 3
+```
+
+The Display Server starts automatically when the MCP server starts. No manual setup required.
+
+#### Remote Mode
+
+In remote mode, connect to an independently running Display Server:
+
+```bash
+# Start Display Server manually in a separate terminal
+display-server
+
+# Or specify custom port
+display-server --port 5004
+```
+
+Configure the MCP server to connect to it in `~/.holoviz-mcp/config.yaml`:
+
+```yaml
+display:
+  enabled: true
+  mode: remote
+  server_url: "http://127.0.0.1:5005"  # Match your display-server URL
+```
+
+The Display Server has its own environment variables (see `display-server --help`):
+- `DISPLAY_SERVER_PORT`: Server port (default: 5005)
+- `DISPLAY_SERVER_HOST`: Server host (default: 127.0.0.1)
+- `DISPLAY_DB_PATH`: Database path
+
+**Example: Remote Display Server on Another Machine**
+
+If the Display Server is running on another machine:
+
+```yaml
+display:
+  enabled: true
+  mode: remote
+  server_url: "http://192.168.1.100:5005"
+```
+
+**Example: Disable Display Tool**
+
+To disable the display tool entirely:
+
+```yaml
+display:
+  enabled: false
+```
+
 ## Adding Custom Documentation
 
 You can add documentation from other libraries or your own projects.

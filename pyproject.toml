@@ -86,6 +86,13 @@ mypy = [
     "types-requests",
     "typing-extensions",
 ]
+pydata = [
+    "altair",
+    "duckdb",
+    "polars",
+    "scikit-learn",
+    "seaborn",
+]
 [tool.ruff]
 exclude = [
     ".git",
