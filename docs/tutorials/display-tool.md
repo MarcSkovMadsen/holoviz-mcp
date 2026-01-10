@@ -22,7 +22,7 @@ Before starting, ensure you have:
 - An AI assistant configured to use HoloViz MCP (Claude Desktop, VS Code with Copilot, etc.)
 - Python 3.11 or later
 
-## Step 0: Start the MCP Server and Open the Feed
+## Step 0: Start the MCP Server
 
 In your IDE or development environment make sure to [start the HoloViz MCP server](getting-started.md/#start-the-server).
 
