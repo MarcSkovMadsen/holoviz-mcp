@@ -12,6 +12,8 @@ In this tutorial, we will create visualizations using the `holoviz_display` tool
 !!! warning
     The `holoviz_display` tool is currently in alpha. Changes between versions may make existing snippets inaccessible. Use for exploration and testing only - **do not rely on the `holoviz_display` tool for persistent storage of important work!**
 
+<iframe src="https://www.youtube.com/embed/q_Z8Ae5gUEI?si=MRgZoPOB6mlbaGh4" title="Tutorial: Creating Visualizations with the HoloViz MCP Display tool" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
+
 ## Prerequisites
 
 Before starting, ensure you have:
@@ -20,7 +22,7 @@ Before starting, ensure you have:
 - An AI assistant configured to use HoloViz MCP (Claude Desktop, VS Code with Copilot, etc.)
 - Python 3.11 or later
 
-## Step 0: Start the MCP Server and Open the Feed
+## Step 0: Start the MCP Server
 
 In your IDE or development environment make sure to [start the HoloViz MCP server](getting-started.md/#start-the-server).
 
