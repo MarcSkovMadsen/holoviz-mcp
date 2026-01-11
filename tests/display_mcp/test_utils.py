@@ -91,3 +91,19 @@ class TestUtils:
 
         with pytest.raises(ValueError, match="Syntax error"):
             extract_last_expression(code)
+
+        def test_validate_code_valid(self):
+            """Test validate_code with valid Python code."""
+            from holoviz_mcp.display_mcp.utils import validate_code
+
+            code = "x = 1\ny = 2\nz = x + y"
+            result = validate_code(code)
+            assert result == ""
+
+        def test_validate_code_invalid(self):
+            """Test validate_code with invalid Python code."""
+            from holoviz_mcp.display_mcp.utils import validate_code
+
+            code = "x = 1\ny = 2\nz = x + undefined_var"
+            result = validate_code(code)
+            assert "NameError" in result

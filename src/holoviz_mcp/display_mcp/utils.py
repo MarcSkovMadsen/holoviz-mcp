@@ -2,6 +2,7 @@
 
 import ast
 import importlib.util
+import traceback
 from typing import Any
 
 # Check for pandas availability once at module level
@@ -144,3 +145,31 @@ def get_relative_view_url(id: str) -> str:
         Relative URL to view the visualization
     """
     return f"./view?id={id}"
+
+
+def validate_code(code: str) -> str:
+    """
+    Validate Python code by attempting to execute it.
+
+    Parameters
+    ----------
+    code : str
+        Python code to validate as a string.
+
+    Returns
+    -------
+    str
+        An empty string if the code is valid, otherwise the traceback of the error.
+    """
+    try:
+        exec(code, {}, {})
+    except Exception as e:
+        # Get the traceback but skip the outermost frame (the exec call itself)
+        if e.__traceback__ is not None:
+            tb = e.__traceback__.tb_next  # Skip the exec() frame
+        else:
+            tb = None
+        traceback_str = "".join(traceback.format_exception(type(e), e, tb))
+        traceback_str = traceback_str.strip()
+        return traceback_str
+    return ""

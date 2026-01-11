@@ -92,6 +92,7 @@ pydata = [
     "polars",
     "scikit-learn",
     "seaborn",
+    "yfinance",
 ]
 [tool.ruff]
 exclude = [
