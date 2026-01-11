@@ -112,7 +112,7 @@ Modify the report to show GOOGL and MSFT instead of AAPL and META
 
 You should see the same report structure, but now displaying Google and Microsoft stock data!
 
-![Google and Microsoft](../assets/images/stock-analysis-googl-mfsft.png)
+![Google and Microsoft](../assets/images/stock-analysis-googl-msft.png)
 
 ## Step 5: Add More Features
 
@@ -176,13 +176,13 @@ pip install yfinance
 
 Congratulations! In this tutorial, you have:
 
-✅ Used the HoloViz Planner agent to design a data report
-✅ Implemented a complete stock analysis application
-✅ Created interactive charts with hvPlot
-✅ Built a multi-component report with Panel
-✅ Explored interactive visualization features
-✅ Modified the report to analyze different stocks
-✅ Added new features through natural language requests
-✅ Saved your work as a standalone Python application
+- ✅ Used the HoloViz Planner agent to design a data report
+- ✅ Implemented a complete stock analysis application
+- ✅ Created interactive charts with hvPlot
+- ✅ Built a multi-component report with Panel
+- ✅ Explored interactive visualization features
+- ✅ Modified the report to analyze different stocks
+- ✅ Added new features through natural language requests
+- ✅ Saved your work as a standalone Python application
 
 ---
