@@ -24,6 +24,9 @@ from pydantic import field_validator
 
 from holoviz_mcp.config import get_config
 from holoviz_mcp.config import logger
+from holoviz_mcp.display_mcp.utils import find_extensions
+from holoviz_mcp.display_mcp.utils import find_requirements
+from holoviz_mcp.display_mcp.utils import validate_code
 
 
 class Snippet(BaseModel):
@@ -435,7 +438,7 @@ class SnippetDatabase:
         description: str = "",
         readme: str = "",
         method: Literal["jupyter", "panel"] = "jupyter",
-    ) -> dict[str, str]:
+    ) -> Snippet:
         """Create a visualization request.
 
         This is the core business logic for creating visualizations,
@@ -456,8 +459,8 @@ class SnippetDatabase:
 
         Returns
         -------
-        dict[str, str]
-            Dictionary with 'id', 'url', and 'created_at' keys
+        Snippet
+            The snippet created for the visualization request.
 
         Raises
         ------
@@ -468,10 +471,6 @@ class SnippetDatabase:
         Exception
             If database operation or other errors occur
         """
-        # Import here to avoid circular dependency
-        from holoviz_mcp.display_mcp.utils import find_extensions
-        from holoviz_mcp.display_mcp.utils import find_requirements
-
         # Validate app is not empty
         if not app:
             raise ValueError("App code is required")
@@ -480,6 +479,8 @@ class SnippetDatabase:
 
         # Validate syntax
         ast.parse(app)  # Raises SyntaxError if invalid
+
+        validation_result = validate_code(app)
 
         # Infer requirements and extensions
         requirements = find_requirements(app)
@@ -494,16 +495,14 @@ class SnippetDatabase:
             method=method,
             requirements=requirements,
             extensions=extensions,
-            status="pending",
+            status="success" if not validation_result else "error",
+            error_message=validation_result if validation_result else None,
         )
 
-        self.create_snippet(snippet_obj)
+        snippet_saved = self.create_snippet(snippet_obj)
 
         # Return result
-        return {
-            "id": snippet_obj.id,
-            "created_at": snippet_obj.created_at.isoformat(),
-        }
+        return snippet_saved
 
     @staticmethod
     def _row_to_snippet(row: dict) -> Snippet:

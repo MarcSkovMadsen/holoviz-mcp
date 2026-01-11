@@ -37,21 +37,27 @@ class SnippetEndpoint(RequestHandler):
             method = request_body.get("method", "jupyter")
 
             # Call shared business logic
-            result = db.create_visualization(
+            snippet = db.create_visualization(
                 app=code,
                 name=name,
                 description=description,
                 method=method,
             )
+
             if jupyter_base := os.getenv("JUPYTER_SERVER_PROXY_URL"):
                 port = self.request.host.split(":")[-1]
                 base_url = f"{jupyter_base.rstrip('/')}/{port}"
-                url = f"{base_url}/view?id={result['id']}"
+                url = f"{base_url}/view?id={snippet.id}"
             else:
                 full_url = self.request.full_url()
-                url = full_url.replace("/api/snippet", "/view?id=" + result["id"])
+                url = full_url.replace("/api/snippet", "/view?id=" + snippet.id)
 
-            result["url"] = url
+            result = {
+                "id": snippet.id,
+                "url": url,
+            }
+            if snippet.error_message:
+                result["error_message"] = snippet.error_message
 
             # Return success response
             self.set_status(200)

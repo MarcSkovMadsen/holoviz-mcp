@@ -433,30 +433,17 @@ async def display(
             description=description,
             method=method,
         )
-
-        # Check for errors in response
-        if "error" in response:
-            error_type = response.get("error", "Unknown")
-            message = response.get("message", "Unknown error")
-
-            if ctx:
-                await ctx.error(f"Code execution failed: {error_type}: {message}")
-
-            # Return detailed error
-            error_msg = f"Error: {error_type}\n\n{message}"
-
-            if "traceback" in response:
-                error_msg += f"\n\nTraceback:\n{response['traceback']}"
-
-            return error_msg
-
-        # Success - return URL
         url = response.get("url", "")
 
-        if ctx:
-            await ctx.info(f"Created visualization: {url}")
+        # Check for errors in response
+        if error_message := response.get("error_message", None):
+            return f"""
+Visualization created with errors. View [here]({url})
 
-        return f"Visualization created successfully!\n\nView at: {url}"
+{error_message}
+"""
+
+        return f"Visualization created successfully!\n\nView [here]({url})"
 
     except Exception as e:
         logger.exception(f"Error creating visualization: {e}")
