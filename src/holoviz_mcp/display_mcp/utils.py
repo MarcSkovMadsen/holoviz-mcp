@@ -151,7 +151,7 @@ def execute_in_module(
     try:
         exec(code, module.__dict__)
         return module.__dict__
-    except:
+    except Exception:
         if cleanup:
             sys.modules.pop(module_name, None)
         raise

@@ -232,14 +232,37 @@ class DocumentationIndexer:
         self.chroma_client = chromadb.PersistentClient(path=str(vector_db_path))
         self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
 
-        # Add async lock for database operations to prevent corruption from concurrent access
-        self._db_lock = asyncio.Lock()
+        # Lazy-initialized async lock for database operations to prevent corruption from concurrent access
+        self._db_lock: Optional[asyncio.Lock] = None
 
         # Initialize notebook converter
         self.nb_exporter = MarkdownExporter()
 
         # Load documentation config from the centralized config system
         self.config = get_config().docs
+
+        # Wrap index_documentation to ensure all calls use the async DB lock
+        # This prevents race conditions when indexing is called directly (e.g., from 
+        # update_index tool or run method) and concurrently with search operations
+        if not hasattr(self, "_index_documentation_wrapped"):
+            original_index_documentation = self.index_documentation
+
+            async def _locked_index_documentation(*args: Any, **kwargs: Any) -> Any:
+                async with self.db_lock:
+                    return await original_index_documentation(*args, **kwargs)
+
+            self.index_documentation = _locked_index_documentation  # type: ignore[method-assign]
+            self._index_documentation_wrapped = True
+
+    @property
+    def db_lock(self) -> asyncio.Lock:
+        """Lazy-initialize and return the database lock.
+        
+        This ensures the lock is created in the correct event loop context.
+        """
+        if self._db_lock is None:
+            self._db_lock = asyncio.Lock()
+        return self._db_lock
 
     def is_indexed(self) -> bool:
         """Check if documentation index exists and is valid."""
@@ -687,7 +710,7 @@ class DocumentationIndexer:
 
     async def search_get_reference_guide(self, component: str, project: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Document]:
         """Search for reference guides for a specific component."""
-        async with self._db_lock:
+        async with self.db_lock:
             await self.ensure_indexed()
 
             # Build search strategies
@@ -738,63 +761,60 @@ class DocumentationIndexer:
 
     async def search(self, query: str, project: Optional[str] = None, content: bool = True, max_results: int = 5, ctx: Context | None = None) -> list[Document]:
         """Search the documentation using semantic similarity."""
-        async with self._db_lock:
+        async with self.db_lock:
             await self.ensure_indexed(ctx=ctx)
 
             # Build where clause for filtering
             where_clause = {"project": str(project)} if project else None
 
-            try:
-                # Perform vector similarity search
-                results = self.collection.query(query_texts=[query], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
+            # Perform vector similarity search
+            results = self.collection.query(query_texts=[query], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
 
-                documents = []
-                if results["ids"] and results["ids"][0]:
-                    for i, _ in enumerate(results["ids"][0]):
-                        if results["metadatas"] and results["metadatas"][0]:
-                            metadata = results["metadatas"][0][i]
+            documents = []
+            if results["ids"] and results["ids"][0]:
+                for i, _ in enumerate(results["ids"][0]):
+                    if results["metadatas"] and results["metadatas"][0]:
+                        metadata = results["metadatas"][0][i]
 
-                            # Include content if requested
-                            content_text = results["documents"][0][i] if (content and results["documents"]) else None
+                        # Include content if requested
+                        content_text = results["documents"][0][i] if (content and results["documents"]) else None
 
-                            # Safe URL construction
-                            url_value = metadata.get("url", "https://example.com")
-                            if not url_value or url_value == "None" or not isinstance(url_value, str):
-                                url_value = "https://example.com"
+                        # Safe URL construction
+                        url_value = metadata.get("url", "https://example.com")
+                        if not url_value or url_value == "None" or not isinstance(url_value, str):
+                            url_value = "https://example.com"
 
-                            # Safe relevance score calculation
-                            relevance_score = None
-                            if (
-                                results.get("distances")
-                                and isinstance(results["distances"], list)
-                                and len(results["distances"]) > 0
-                                and isinstance(results["distances"][0], list)
-                                and len(results["distances"][0]) > i
-                            ):
-                                try:
-                                    relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
-                                except (ValueError, TypeError):
-                                    relevance_score = None
+                        # Safe relevance score calculation
+                        relevance_score = None
+                        if (
+                            results.get("distances")
+                            and isinstance(results["distances"], list)
+                            and len(results["distances"]) > 0
+                            and isinstance(results["distances"][0], list)
+                            and len(results["distances"][0]) > i
+                        ):
+                            try:
+                                relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
+                            except (ValueError, TypeError):
+                                relevance_score = None
 
-                            document = Document(
-                                title=str(metadata["title"]),
-                                url=HttpUrl(url_value),
-                                project=str(metadata["project"]),
-                                source_path=str(metadata["source_path"]),
-                                source_url=HttpUrl(str(metadata.get("source_url", ""))),
-                                description=str(metadata["description"]),
-                                is_reference=bool(metadata["is_reference"]),
-                                content=content_text,
-                                relevance_score=relevance_score,
-                            )
-                            documents.append(document)
-                return documents
-            except Exception as e:
-                raise e
+                        document = Document(
+                            title=str(metadata["title"]),
+                            url=HttpUrl(url_value),
+                            project=str(metadata["project"]),
+                            source_path=str(metadata["source_path"]),
+                            source_url=HttpUrl(str(metadata.get("source_url", ""))),
+                            description=str(metadata["description"]),
+                            is_reference=bool(metadata["is_reference"]),
+                            content=content_text,
+                            relevance_score=relevance_score,
+                        )
+                        documents.append(document)
+            return documents
 
     async def get_document(self, path: str, project: str, ctx: Context | None = None) -> Document:
         """Get a specific document."""
-        async with self._db_lock:
+        async with self.db_lock:
             await self.ensure_indexed(ctx=ctx)
 
             # Build where clause for filtering
@@ -859,7 +879,7 @@ class DocumentationIndexer:
         list[str]: A list of project names that have documentation available.
                    Names are returned in hyphenated format (e.g., "panel-material-ui").
         """
-        async with self._db_lock:
+        async with self.db_lock:
             await self.ensure_indexed()
 
             try:
