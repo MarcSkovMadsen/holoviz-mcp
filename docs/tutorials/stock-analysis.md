@@ -39,7 +39,7 @@ First, let's use the HoloViz Planner agent to design our application architectur
 3. Ask the agent:
 
 ```text
-Please plan how to show me AAPL and META's hourly bar data history for the last 5 days and display the data as charts:
+Please plan how to analyze and create a report showing AAPL and META's hourly bar data history for the last 5 days and display the data as charts:
 
 - Individual price charts for each stock
 - Summary statistics table
@@ -47,7 +47,7 @@ Please plan how to show me AAPL and META's hourly bar data history for the last 
 - Trading volume visualization
 - Professional styling and error handling
 
-Display using the #holoviz_display tool.
+Display using the #holoviz_display tool. KISS - Keep it simple stupid.
 ```
 
 ![HoloViz Planner](../assets/images/stock-analysis-holoviz-planner.png)

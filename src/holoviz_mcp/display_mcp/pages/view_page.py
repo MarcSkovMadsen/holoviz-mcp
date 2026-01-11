@@ -5,15 +5,16 @@ a single visualization by ID.
 """
 
 import logging
+import sys
 import traceback
 from datetime import datetime
 from datetime import timezone
-from typing import Any
 
 import panel as pn
 
 from holoviz_mcp.display_mcp.database import Snippet
 from holoviz_mcp.display_mcp.database import get_db
+from holoviz_mcp.display_mcp.utils import execute_in_module
 from holoviz_mcp.display_mcp.utils import extract_last_expression
 
 logger = logging.getLogger(__name__)
@@ -114,6 +115,8 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
     pn.viewable.Viewable
         Panel component with result
     """
+    module_name = f"holoviz_snippet_{snippet.id.replace('-', '_')}"
+
     if snippet.method == "jupyter":
         # Load extensions if specified
         if snippet.extensions:
@@ -128,19 +131,21 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
         except ValueError as e:
             raise ValueError(f"Failed to parse code: {e}") from e
 
-        # Execute code
-        namespace: dict[str, Any] = {}
+        # Execute statements, keep module registered for eval
+        namespace = execute_in_module(
+            statements,
+            module_name=module_name,
+            cleanup=False  # Keep for eval
+        )
 
-        if statements:
-            exec(statements, namespace)
-
-        if last_expr:
-            result = eval(last_expr, namespace)
-            namespace["_panel_result"] = result
-        else:
-            # No expression, just execute all
-            exec(snippet.app, namespace)
-            result = None
+        try:
+            if last_expr:
+                result = eval(last_expr, namespace)
+            else:
+                result = None
+        finally:
+            # Clean up the module after eval
+            sys.modules.pop(module_name, None)
 
         # Wrap in panel
         if result is not None:
@@ -151,8 +156,11 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
 
     else:  # panel method
         # Execute code that should call .servable()
-        panel_namespace: dict[str, Any] = {}
-        exec(snippet.app, panel_namespace)
+        execute_in_module(
+            snippet.app,
+            module_name=module_name,
+            cleanup=True  # Can cleanup immediately
+        )
 
         # Find servable objects
         servables = ".servable()" in snippet.app

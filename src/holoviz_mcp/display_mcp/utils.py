@@ -4,6 +4,8 @@ import ast
 import importlib.util
 import traceback
 from typing import Any
+import sys
+import types
 
 # Check for pandas availability once at module level
 _PANDAS_AVAILABLE = importlib.util.find_spec("pandas") is not None
@@ -93,6 +95,71 @@ def find_requirements(code: str) -> list[str]:
         return list(imports)
 
 
+def execute_in_module(
+    code: str,
+    module_name: str,
+    *,
+    cleanup: bool = True,
+) -> dict[str, Any]:
+    """Execute Python code in a proper module namespace.
+
+    Creates a types.ModuleType following Bokeh's pattern, registers it in
+    sys.modules, executes code, and optionally cleans up. This ensures
+    Panel decorators (@pn.cache, @pn.depends) and function references work
+    properly by using module.__dict__ as a single namespace for both globals
+    and locals.
+
+    Parameters
+    ----------
+    code : str
+        Python code to execute
+    module_name : str
+        Unique name for the module (should be a valid Python identifier)
+    cleanup : bool, default=True
+        Whether to remove module from sys.modules after execution.
+        Set to False if you need to keep the module registered (e.g., for
+        later eval calls), but remember to clean up manually.
+
+    Returns
+    -------
+    dict[str, Any]
+        The module's namespace (module.__dict__) after execution
+
+    Raises
+    ------
+    Exception
+        Any exception raised during code execution
+
+    Notes
+    -----
+    This pattern is critical for Panel decorators and code that uses function
+    introspection or cross-references. It follows Bokeh's CodeRunner pattern.
+
+    Examples
+    --------
+    >>> namespace = execute_in_module(
+    ...     "x = 1\ny = 2\nz = x + y",
+    ...     "my_module"
+    ... )
+    >>> namespace['z']
+    3
+    """
+    module = types.ModuleType(module_name)
+    module.__dict__['__file__'] = f"<{module_name}>"
+    sys.modules[module_name] = module
+
+    try:
+        exec(code, module.__dict__)
+        return module.__dict__
+    except:
+        if cleanup:
+            sys.modules.pop(module_name, None)
+        raise
+    finally:
+        if cleanup:
+            sys.modules.pop(module_name, None)
+
+
 def extract_last_expression(code: str) -> tuple[str, str]:
     """Extract the last expression from code for jupyter method.
 
@@ -162,7 +229,7 @@ def validate_code(code: str) -> str:
         An empty string if the code is valid, otherwise the traceback of the error.
     """
     try:
-        exec(code, {}, {})
+        execute_in_module(code, module_name="_code_validation", cleanup=True)
     except Exception as e:
         # Get the traceback but skip the outermost frame (the exec call itself)
         if e.__traceback__ is not None:
