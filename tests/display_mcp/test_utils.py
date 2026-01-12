@@ -3,7 +3,6 @@
 import sys
 
 import panel as pn
-import param
 import pytest
 
 from holoviz_mcp.display_mcp.database import Snippet
