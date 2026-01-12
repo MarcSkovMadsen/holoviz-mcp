@@ -242,7 +242,7 @@ class DocumentationIndexer:
         self.config = get_config().docs
 
         # Wrap index_documentation to ensure all calls use the async DB lock
-        # This prevents race conditions when indexing is called directly (e.g., from 
+        # This prevents race conditions when indexing is called directly (e.g., from
         # update_index tool or run method) and concurrently with search operations
         if not hasattr(self, "_index_documentation_wrapped"):
             original_index_documentation = self.index_documentation
@@ -257,7 +257,7 @@ class DocumentationIndexer:
     @property
     def db_lock(self) -> asyncio.Lock:
         """Lazy-initialize and return the database lock.
-        
+
         This ensures the lock is created in the correct event loop context.
         """
         if self._db_lock is None:

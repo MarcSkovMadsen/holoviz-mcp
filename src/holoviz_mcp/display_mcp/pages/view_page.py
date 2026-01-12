@@ -128,7 +128,7 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
         namespace = execute_in_module(
             statements,
             module_name=module_name,
-            cleanup=False  # Keep for eval
+            cleanup=False,  # Keep for eval
         )
 
         try:
@@ -152,7 +152,7 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
         execute_in_module(
             snippet.app,
             module_name=module_name,
-            cleanup=True  # Can cleanup immediately
+            cleanup=True,  # Can cleanup immediately
         )
 
         # Find servable objects
@@ -193,6 +193,7 @@ def view_page():
             return pn.pane.Markdown(f"# Error\n\nNo snippet found with slug '{slug}'.")
     else:
         return pn.pane.Markdown("# Error\n\nNo snippet ID or slug provided.")
+
 
 if pn.state.served:
     pn.state.cache["views"] = pn.state.cache.get("views", {})

@@ -2,10 +2,10 @@
 
 import ast
 import importlib.util
-import traceback
-from typing import Any
 import sys
+import traceback
 import types
+from typing import Any
 
 # Check for pandas availability once at module level
 _PANDAS_AVAILABLE = importlib.util.find_spec("pandas") is not None
@@ -58,12 +58,12 @@ def find_extensions(code: str, namespace: dict[str, Any] | None = None) -> list[
         extensions.append("vtk")
     if "vizzu" in code:
         extensions.append("vizzu")
-    
+
     return list(set(extensions))
+
 
 class ExtensionError(Exception):
     """Custom exception for missing Panel extensions."""
-    pass
 
 
 def _extract_extension_calls(code: str) -> set[str]:
@@ -102,7 +102,7 @@ def _extract_extension_calls(code: str) -> set[str]:
 
 
 def validate_extension_availability(code: str) -> None:
-    """Validate that required Panel Javascript extensions are loaded in the code
+    """Validate that required Panel Javascript extensions are loaded in the code.
 
     Parameters
     ----------
@@ -118,7 +118,7 @@ def validate_extension_availability(code: str) -> None:
     --------
 
     # This code will raise an ExtensionError because 'tabulator' extension is not available:
-    
+
     code = '''
     import pandas as pd
     import panel as pn
@@ -139,7 +139,7 @@ def validate_extension_availability(code: str) -> None:
     df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
     pn.widgets.Tabulator(df).servable()
     '''
-    
+
     validate_extension_availability(code)
 
     # Note
@@ -169,10 +169,7 @@ def validate_extension_availability(code: str) -> None:
         missing_sorted = sorted(missing)
         missing_args = ", ".join(f"'{ext}'" for ext in missing_sorted)
         missing_list = ", ".join(f"'{ext}'" for ext in missing_sorted)
-        raise ExtensionError(
-            f"Required Panel extension(s) not loaded: {missing_list}. "
-            f"Add pn.extension({missing_args}) to your code."
-        )
+        raise ExtensionError(f"Required Panel extension(s) not loaded: {missing_list}. " f"Add pn.extension({missing_args}) to your code.")
 
 
 def find_requirements(code: str) -> list[str]:
@@ -264,7 +261,7 @@ def execute_in_module(
     3
     """
     module = types.ModuleType(module_name)
-    module.__dict__['__file__'] = f"<{module_name}>"
+    module.__dict__["__file__"] = f"<{module_name}>"
     sys.modules[module_name] = module
 
     try:
