@@ -101,7 +101,7 @@ def execute_in_module(
     *,
     cleanup: bool = True,
 ) -> dict[str, Any]:
-    """Execute Python code in a proper module namespace.
+    r"""Execute Python code in a proper module namespace.
 
     Creates a types.ModuleType following Bokeh's pattern, registers it in
     sys.modules, executes code, and optionally cleans up. This ensures
