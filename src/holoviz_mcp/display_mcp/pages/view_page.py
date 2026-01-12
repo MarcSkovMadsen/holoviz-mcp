@@ -118,13 +118,6 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
     module_name = f"holoviz_snippet_{snippet.id.replace('-', '_')}"
 
     if snippet.method == "jupyter":
-        # Load extensions if specified
-        if snippet.extensions:
-            try:
-                pn.extension(*snippet.extensions)
-            except Exception as e:
-                logger.warning(f"Failed to load extensions {snippet.extensions}: {e}")
-
         # Extract last expression
         try:
             statements, last_expr = extract_last_expression(snippet.app)
@@ -200,3 +193,7 @@ def view_page():
             return pn.pane.Markdown(f"# Error\n\nNo snippet found with slug '{slug}'.")
     else:
         return pn.pane.Markdown("# Error\n\nNo snippet ID or slug provided.")
+
+if pn.state.served:
+    pn.state.cache["views"] = pn.state.cache.get("views", {})
+    view_page().servable()

@@ -1,6 +1,6 @@
 # Tutorial: Building an Interactive Stock Analysis Report
 
-In this tutorial, you will create a complete stock analysis report that visualizes price movements and trading patterns for multiple stocks. By the end, you'll have built an interactive web application that displays financial data with professional charts and statistics.
+In this tutorial, you will create a complete stock analysis report that visualizes price movements and trading patterns for multiple stocks. By the end, you'll have built an interactive report that displays financial data with professional charts and statistics.
 
 <iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Stock Analysis Report with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
 
@@ -18,17 +18,7 @@ In this tutorial, you will create a complete stock analysis report that visualiz
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
     - Configured the `HoloViz Planner` agent. ([HoloViz Agents](copilot.md/#using-holoviz-agents))
     - The HoloViz MCP server running ([How to start the server](getting-started.md/#start-the-server))
-    - Python 3.11 or later
-    - `yfinance` installed in your virtual environment: `pip install yfinance`
-
-!!! info "What you'll build"
-    You'll create a stock analysis report that compares AAPL (Apple) and META (Meta) stock prices over the last 5 days with:
-
-    - Individual price charts for each stock
-    - Summary statistics table
-    - Normalized comparison overlay
-    - Trading volume visualization
-    - Professional styling and error handling
+    - `yfinance` installed in the virtual environment where you run `holoviz-mcp`: `pip install yfinance`
 
 ## Step 1: Plan Your Report with the HoloViz Planner
 

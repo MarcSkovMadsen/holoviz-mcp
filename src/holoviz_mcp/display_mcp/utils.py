@@ -34,26 +34,145 @@ def find_extensions(code: str, namespace: dict[str, Any] | None = None) -> list[
     list[str]
         List of required Panel extension names
     """
+    code = code.lower()
     extensions = []
 
     # Check imports in code
     if "plotly" in code:
         extensions.append("plotly")
-    if "altair" in code:
+    if "altair" in code or "vega" in code:
         extensions.append("vega")
     if "pydeck" in code or "deck" in code:
         extensions.append("deckgl")
+    if "tabulator" in code:
+        extensions.append("tabulator")
+    if "echarts" in code:
+        extensions.append("echarts")
+    if "ipywidgets" in code:
+        extensions.append("ipywidgets")
+    if "perspective" in code:
+        extensions.append("perspective")
+    if "terminal" in code or "textual" in code:
+        extensions.append("terminal")
+    if "vtk" in code:
+        extensions.append("vtk")
+    if "vizzu" in code:
+        extensions.append("vizzu")
+    
+    return list(set(extensions))
 
-    # Check result type if namespace provided
-    if namespace is not None and _PANDAS_AVAILABLE:
-        result = namespace.get("_panel_result")
-        if result is not None:
-            import pandas as pd
+class ExtensionError(Exception):
+    """Custom exception for missing Panel extensions."""
+    pass
 
-            if isinstance(result, (pd.DataFrame, pd.Series)):
-                extensions.append("tabulator")
 
-    return list(set(extensions))  # deduplicate
+def _extract_extension_calls(code: str) -> set[str]:
+    """Extract extension names from pn.extension() or panel.extension() calls using AST.
+
+    Parameters
+    ----------
+    code : str
+        Python code to analyze
+
+    Returns
+    -------
+    set[str]
+        Set of declared extension names
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return set()
+
+    declared = set()
+
+    for node in ast.walk(tree):
+        # Look for: pn.extension(...) or panel.extension(...)
+        if isinstance(node, ast.Call):
+            # Check if it's a .extension() call
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "extension":
+                # Check if called on 'pn' or 'panel'
+                if isinstance(node.func.value, ast.Name) and node.func.value.id in ("pn", "panel"):
+                    # Extract string arguments
+                    for arg in node.args:
+                        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                            declared.add(arg.value)
+
+    return declared
+
+
+def validate_extension_availability(code: str) -> None:
+    """Validate that required Panel Javascript extensions are loaded in the code
+
+    Parameters
+    ----------
+    code : str
+        Python code to analyze
+
+    Raises
+    ------
+    ExtensionError
+        If a required extension is not loaded.
+
+    # Example
+    --------
+
+    # This code will raise an ExtensionError because 'tabulator' extension is not available:
+    
+    code = '''
+    import pandas as pd
+    import panel as pn
+    pn.extension()
+
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    pn.widgets.Tabulator(df).servable()
+    '''
+
+    validate_extension_availability(code)
+
+    # This code will pass as 'tabulator' extension is included:
+
+    code = '''
+    import pandas as pd
+    import panel as pn
+    pn.extension('tabulator')
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    pn.widgets.Tabulator(df).servable()
+    '''
+    
+    validate_extension_availability(code)
+
+    # Note
+    -----
+
+    pn.extension("tabulator", "plotly")
+
+    and
+
+    pn.extension("tabulator")
+    pn.extension("plotly")
+
+    will both work correctly.
+    """
+    extensions = find_extensions(code)
+
+    if not extensions:
+        return  # No extensions required
+
+    # Extract all declared extensions from pn.extension() calls
+    declared = _extract_extension_calls(code)
+
+    # Check if all required extensions are declared
+    missing = set(extensions) - declared
+
+    if missing:
+        missing_sorted = sorted(missing)
+        missing_args = ", ".join(f"'{ext}'" for ext in missing_sorted)
+        missing_list = ", ".join(f"'{ext}'" for ext in missing_sorted)
+        raise ExtensionError(
+            f"Required Panel extension(s) not loaded: {missing_list}. "
+            f"Add pn.extension({missing_args}) to your code."
+        )
 
 
 def find_requirements(code: str) -> list[str]:
@@ -228,6 +347,11 @@ def validate_code(code: str) -> str:
     str
         An empty string if the code is valid, otherwise the traceback of the error.
     """
+    try:
+        validate_extension_availability(code)
+    except ExtensionError as e:
+        return str(e)
+
     try:
         execute_in_module(code, module_name="_code_validation", cleanup=True)
     except Exception as e:

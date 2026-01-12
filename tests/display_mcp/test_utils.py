@@ -9,8 +9,10 @@ from holoviz_mcp.display_mcp.database import Snippet
 from holoviz_mcp.display_mcp.pages.view_page import _execute_code
 from holoviz_mcp.display_mcp.utils import execute_in_module
 from holoviz_mcp.display_mcp.utils import extract_last_expression
+from holoviz_mcp.display_mcp.utils import ExtensionError
 from holoviz_mcp.display_mcp.utils import find_extensions
 from holoviz_mcp.display_mcp.utils import find_requirements
+from holoviz_mcp.display_mcp.utils import validate_extension_availability
 
 
 class TestUtils:
@@ -479,3 +481,124 @@ result2 = increment()
         assert namespace['result1'] == 1
         assert namespace['result2'] == 2
         assert namespace['counter'] == 2
+
+
+class TestValidateExtensionAvailability:
+    """Tests for validate_extension_availability function."""
+
+    def test_no_extensions_required(self):
+        """Test code with no extension requirements passes."""
+        code = "import panel as pn\\npn.extension()\\nx = 42"
+        validate_extension_availability(code)  # Should not raise
+
+    def test_extension_properly_declared_single(self):
+        """Test code with properly declared extension passes."""
+        code = '''
+import panel as pn
+pn.extension('tabulator')
+pn.widgets.Tabulator(df)
+'''
+        validate_extension_availability(code)  # Should not raise
+
+    def test_extension_properly_declared_multiple(self):
+        """Test code with multiple extensions declared together."""
+        code = '''
+import panel as pn
+pn.extension('tabulator', 'plotly')
+import pandas as pd
+import plotly.express as px
+'''
+        validate_extension_availability(code)  # Should not raise
+
+    def test_extension_declared_multiple_calls(self):
+        """Test extensions declared in separate calls."""
+        code = '''
+import panel as pn
+pn.extension('tabulator')
+pn.extension('plotly')
+import pandas as pd
+import plotly.express as px
+'''
+        validate_extension_availability(code)  # Should not raise
+
+    def test_missing_extension_raises_error(self):
+        """Test missing extension raises ExtensionError."""
+        code = '''
+import panel as pn
+pn.extension()
+import pandas as pd
+df = pd.DataFrame()
+pn.widgets.Tabulator(df)
+'''
+        with pytest.raises(ExtensionError, match="tabulator"):
+            validate_extension_availability(code)
+
+    def test_missing_multiple_extensions(self):
+        """Test error when multiple extensions are missing."""
+        code = '''
+import panel as pn
+pn.extension()
+import pandas as pd
+import plotly.express as px
+pn.widgets.Tabulator(df)
+'''
+        with pytest.raises(ExtensionError) as exc_info:
+            validate_extension_availability(code)
+        
+        # Check that both extensions are mentioned
+        error_msg = str(exc_info.value)
+        assert "plotly" in error_msg and "tabulator" in error_msg
+
+    def test_partial_missing(self):
+        """Test error when one of multiple extensions is missing."""
+        code = '''
+import panel as pn
+pn.extension('plotly')
+import pandas as pd
+import plotly.express as px
+pn.widgets.Tabulator(df)
+'''
+        with pytest.raises(ExtensionError, match="tabulator"):
+            validate_extension_availability(code)
+
+    def test_double_quotes(self):
+        """Test extension declarations with double quotes."""
+        code = '''
+import panel as pn
+pn.extension("tabulator")
+pn.widgets.Tabulator(df)
+'''
+        validate_extension_availability(code)  # Should not raise
+
+    def test_mixed_quotes(self):
+        """Test mixed quote styles."""
+        code = '''
+import panel as pn
+pn.extension("tabulator", 'plotly')
+import pandas as pd
+import plotly.express as px
+'''
+        validate_extension_availability(code)  # Should not raise
+
+    def test_panel_alias(self):
+        """Test validation with panel.extension() calls."""
+        code = '''
+import panel
+panel.extension('tabulator')
+panel.widgets.Tabulator(df)
+'''
+        validate_extension_availability(code)  # Should not raise
+
+    def test_error_message_format(self):
+        """Test error message contains helpful suggestion."""
+        code = '''
+import panel as pn
+pn.extension()
+pn.widgets.Tabulator(df)
+'''
+        with pytest.raises(ExtensionError) as exc_info:
+            validate_extension_availability(code)
+        
+        error_msg = str(exc_info.value)
+        assert "pn.extension('tabulator')" in error_msg
+        assert "Required Panel extension(s) not loaded" in error_msg

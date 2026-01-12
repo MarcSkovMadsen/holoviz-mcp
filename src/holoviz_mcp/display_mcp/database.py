@@ -479,7 +479,7 @@ class SnippetDatabase:
 
         # Validate syntax
         ast.parse(app)  # Raises SyntaxError if invalid
-
+        
         validation_result = validate_code(app)
 
         # Infer requirements and extensions
