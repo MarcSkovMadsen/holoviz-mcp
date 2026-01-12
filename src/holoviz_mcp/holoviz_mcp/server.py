@@ -347,8 +347,7 @@ async def display(
     returning a URL where you can view the output. The code is validated
     before execution and any errors are reported immediately.
 
-    When composed into the main server with prefix "holoviz", this tool
-    becomes available as "holoviz_display".
+    Use this tool to when ever the user asks to show, display, visualize data, plots, dashboards, and other Python objects.
 
     Parameters
     ----------
@@ -361,8 +360,10 @@ async def display(
         A short description of the visualization
     method : {"jupyter", "panel"}, default "jupyter"
         Execution mode:
-        - "jupyter": Execute code, capture last line, display via pn.panel()
-        - "panel": Execute code that calls pn.extension() and .servable()
+        - "jupyter": Execute code and display the last expression's result
+            DO use this for standard data visualizations like plots, dataframes, etc. that do not import and use Panel directly.
+        - "panel": Execute code and and display Panel objects marked .servable()
+            DO use this for code that imports and uses Panel to create dashboards, apps, and complex layouts.
 
     Returns
     -------
@@ -438,12 +439,12 @@ async def display(
         # Check for errors in response
         if error_message := response.get("error_message", None):
             return f"""
-Visualization created with errors. View [here]({url})
+Visualization created with errors. View here {url}
 
 {error_message}
 """
 
-        return f"Visualization created successfully!\n\nView [here]({url})"
+        return f"Visualization created successfully!\n\nView here {url}"
 
     except Exception as e:
         logger.exception(f"Error creating visualization: {e}")
