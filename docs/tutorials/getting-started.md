@@ -141,37 +141,39 @@ In VS Code, you can monitor the MCP server:
 2. Type "MCP: List Servers" and press Enter
 3. Choose the "holoviz" server
 4. Select "Show Output"
-3. You should see log messages indicating the server is running
+5. You should see log messages indicating the server is running
 
 ### Test with Your AI Assistant
 
 Open a chat with your AI assistant and try these questions:
 
-1. **Component Discovery**:
-   ```
-   What Panel components are available for user input?
-   ```
+**Component Discovery**:
 
-  Note: In VS Code, you can prefix your prompt with `#holoviz` to explicitly request that the AI use the `holoviz-mcp` server tools for your query.
+    What Panel components are available for user input?
 
-2. **Component Details**:
-   ```
-   What parameters does the Panel Button component accept?
-   ```
+!!! tip "Force MCP Usage"
+
+    In VS Code, you can include `#holoviz` in your prompt to explicitly request that the AI use the `holoviz-mcp` server tools for your query.
+
+**Component Details**:
+
+    What parameters does the Panel Button component accept?
 
 If your AI assistant provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
 
 ## Step 6: Build Your First Dashboard
 
-Now that everything is set up, let's build a simple dashboard:
+Now that everything is set up, let's build a simple dashboard.
 
-1. Create a new file called `app.py`
-2. Ask your AI "Agent":
-   ```
-   Create a Panel dashboard in the file app.py that displays a slider and shows the square of the slider's value. Use 'panel' skills.
-   ```
+**Ask your AI "Agent":**
 
-3. Your AI "Agent" will provide code using HoloViz MCP's knowledge of Panel components!
+    Create a Panel dashboard in the file app.py that displays a slider and shows the square of the slider's  value. Use panel skills.
+
+Your AI "Agent" will provide code using HoloViz MCP's knowledge of Panel components!
+
+![Copilot Chat](../assets/images/getting-started-build-dashboard-copilot-chat.png)
+
+![Dashboard](../assets/images/getting-started-build-dashboard.png)
 
 ## What's Next?
 

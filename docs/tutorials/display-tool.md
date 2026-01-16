@@ -3,10 +3,9 @@
 In this tutorial, we will create visualizations using the `holoviz_display` tool through an AI assistant. By the end, you will have created several interactive visualizations and learned how to view them.
 
 !!! info "What you'll accomplish"
-    - Set up the `holoviz_display` tool
-    - Create your first bar chart through your AI assistant
-    - Build an interactive scatter plot
-    - View your visualizations
+    - Use the `holoviz_display` tool
+    - Create and display a bar chart through your AI assistant
+    - Build and display an interactive scatter plot
     - Learn to troubleshoot common issues
 
 !!! warning
@@ -39,11 +38,11 @@ Right-click [penguins.csv](../assets/data/penguins.csv) and save it to your work
 
 Now let's explore the penguins dataset. Open your AI assistant and ask:
 
-> "My dataset is penguins.csv. What is the distribution of the 'species' column? Use the #holoviz_display tool"
+> My dataset is penguins.csv. What is the distribution of the 'species' column? Use the #holoviz_display tool
 
 Your AI assistant will use the `holoviz_display` tool and respond with something like:
 
-```
+```bash
 ✓ Visualization created successfully!
 View at: http://localhost:5005/view?id={snippet_id}
 ```
@@ -64,7 +63,7 @@ Click the URL. You should see:
 
 Let's explore the relationship between penguin measurements. Ask your AI assistant:
 
-> "Show me a scatter plot of 'flipper_length_mm' vs 'body_mass_g'."
+> Show me a scatter plot of 'flipper_length_mm' vs 'body_mass_g'
 
 The AI will create a new visualization. Click the new URL to see:
 
@@ -81,7 +80,7 @@ The AI will create a new visualization. Click the new URL to see:
 
 You can ask the AI to perform several steps in one message. This helps you build complex analyses without multiple back-and-forths. Try:
 
-> "Filter the dataset for species 'Chinstrap' and calculate the median 'body_mass_g'. Then display and discuss the result."
+> Filter the dataset for species 'Chinstrap' and calculate the median 'body_mass_g'. Then display and discuss the result.
 
 The AI will:
 
@@ -98,7 +97,7 @@ This demonstrates how `holoviz_display` can handle multi-step analytical workflo
 
 Now let's see all your visualizations together. In your browser, navigate to:
 
-```
+```bash
 http://localhost:5005/feed
 ```
 
@@ -126,7 +125,7 @@ The AI will iterate on your existing work based on your feedback, creating new v
 
 You can create visualizations that combine multiple plots for comprehensive analysis. Ask your AI:
 
-> "Create a histogram of 'bill_length_mm' and a box plot of 'flipper_length_mm' side by side."
+> Create a histogram of 'bill_length_mm' and a box plot of 'flipper_length_mm' side by side.
 
 The AI will create a layout with both plots displayed together, making it easy to compare different aspects of the data at a glance. When you view it in the Feed page, you'll see a descriptive title and the combined visualization.
 
@@ -134,7 +133,7 @@ The AI will create a layout with both plots displayed together, making it easy t
 
 For more advanced use cases, you can create interactive dashboards with widgets. Ask your AI:
 
-> "Create an interactive dashboard for the penguins dataset with dropdown filters for species and island."
+> Create an interactive dashboard for the penguins dataset with dropdown filters for species and island.
 
 The visualization will include:
 
