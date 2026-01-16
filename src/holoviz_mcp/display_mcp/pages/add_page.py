@@ -92,7 +92,7 @@ def add_page():
             )
 
             # Show success message
-            viz_id = result["id"]
+            viz_id = result.id
             url = get_relative_view_url(viz_id)
 
             status_pane.object = f"""

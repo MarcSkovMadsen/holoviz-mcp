@@ -553,6 +553,62 @@ def create_plot(self) -> go.Figure:
     return fig
 ```
 
+### ECharts
+
+**CRITICAL**: ECharts configurations must be JSON-serializable. Panel uses Bokeh's serialization mechanism which cannot serialize Python functions.
+
+❌ **NEVER use Python functions or lambdas** in ECharts configuration:
+```python
+# ❌ WRONG: Lambda functions cause SerializationError
+option = {
+    "tooltip": {
+        "formatter": lambda params: f"Value: {params['value']}"  # DON'T!
+    },
+    "xAxis": {
+        "axisLabel": {
+            "formatter": lambda value: f"{value}%"  # DON'T!
+        }
+    },
+    "series": [{
+        "animationDelay": lambda idx: idx * 100  # DON'T!
+    }]
+}
+```
+
+✅ **DO use ECharts native string formatters or static values**:
+```python
+# ✅ CORRECT: Use ECharts template strings
+option = {
+    "tooltip": {
+        "formatter": "{b}: {c}"  # Template string
+    },
+    "xAxis": {
+        "axisLabel": {
+            "formatter": "{value}%"  # Template string with formatting
+        }
+    },
+    "yAxis": {
+        "axisLabel": {
+            "formatter": "${value}"  # Dollar sign prefix
+        }
+    },
+    "series": [{
+        "animationDelay": 100  # Static numeric value
+    }]
+}
+```
+
+**ECharts Formatter Template Syntax**:
+
+- `{a}` - series name
+- `{b}` - data name (category)
+- `{c}` - data value
+- `{d}` - percentage (for pie charts)
+- `{value}` - axis value
+- Supports prefix/suffix: `'{value}%'`, `'${value}'`, `'{value} units'`
+
+If you need complex formatting logic, pre-process your data in Python before passing to ECharts rather than using formatters.
+
 ### Date time widgets
 
 When comparing to date or time values to Pandas series convert to `Timestamp`:

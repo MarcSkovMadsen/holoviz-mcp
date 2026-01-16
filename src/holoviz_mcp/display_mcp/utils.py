@@ -2,7 +2,9 @@
 
 import ast
 import importlib.util
+import sys
 import traceback
+import types
 from typing import Any
 
 # Check for pandas availability once at module level
@@ -32,26 +34,142 @@ def find_extensions(code: str, namespace: dict[str, Any] | None = None) -> list[
     list[str]
         List of required Panel extension names
     """
+    code = code.lower()
     extensions = []
 
     # Check imports in code
     if "plotly" in code:
         extensions.append("plotly")
-    if "altair" in code:
+    if "altair" in code or "vega" in code:
         extensions.append("vega")
     if "pydeck" in code or "deck" in code:
         extensions.append("deckgl")
+    if "tabulator" in code:
+        extensions.append("tabulator")
+    if "echarts" in code:
+        extensions.append("echarts")
+    if "ipywidgets" in code:
+        extensions.append("ipywidgets")
+    if "perspective" in code:
+        extensions.append("perspective")
+    if "terminal" in code or "textual" in code:
+        extensions.append("terminal")
+    if "vtk" in code:
+        extensions.append("vtk")
+    if "vizzu" in code:
+        extensions.append("vizzu")
 
-    # Check result type if namespace provided
-    if namespace is not None and _PANDAS_AVAILABLE:
-        result = namespace.get("_panel_result")
-        if result is not None:
-            import pandas as pd
+    return list(set(extensions))
 
-            if isinstance(result, (pd.DataFrame, pd.Series)):
-                extensions.append("tabulator")
 
-    return list(set(extensions))  # deduplicate
+class ExtensionError(Exception):
+    """Custom exception for missing Panel extensions."""
+
+
+def _extract_extension_calls(code: str) -> set[str]:
+    """Extract extension names from pn.extension() or panel.extension() calls using AST.
+
+    Parameters
+    ----------
+    code : str
+        Python code to analyze
+
+    Returns
+    -------
+    set[str]
+        Set of declared extension names
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return set()
+
+    declared = set()
+
+    for node in ast.walk(tree):
+        # Look for: pn.extension(...) or panel.extension(...)
+        if isinstance(node, ast.Call):
+            # Check if it's a .extension() call
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "extension":
+                # Check if called on 'pn' or 'panel'
+                if isinstance(node.func.value, ast.Name) and node.func.value.id in ("pn", "panel"):
+                    # Extract string arguments
+                    for arg in node.args:
+                        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                            declared.add(arg.value)
+
+    return declared
+
+
+def validate_extension_availability(code: str) -> None:
+    """Validate that required Panel Javascript extensions are loaded in the code.
+
+    Parameters
+    ----------
+    code : str
+        Python code to analyze
+
+    Raises
+    ------
+    ExtensionError
+        If a required extension is not loaded.
+
+    # Example
+    --------
+
+    # This code will raise an ExtensionError because 'tabulator' extension is not available:
+
+    code = '''
+    import pandas as pd
+    import panel as pn
+    pn.extension()
+
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    pn.widgets.Tabulator(df).servable()
+    '''
+
+    validate_extension_availability(code)
+
+    # This code will pass as 'tabulator' extension is included:
+
+    code = '''
+    import pandas as pd
+    import panel as pn
+    pn.extension('tabulator')
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    pn.widgets.Tabulator(df).servable()
+    '''
+
+    validate_extension_availability(code)
+
+    # Note
+    -----
+
+    pn.extension("tabulator", "plotly")
+
+    and
+
+    pn.extension("tabulator")
+    pn.extension("plotly")
+
+    will both work correctly.
+    """
+    extensions = find_extensions(code)
+
+    if not extensions:
+        return  # No extensions required
+
+    # Extract all declared extensions from pn.extension() calls
+    declared = _extract_extension_calls(code)
+
+    # Check if all required extensions are declared
+    missing = set(extensions) - declared
+
+    if missing:
+        missing_sorted = sorted(missing)
+        missing_args = ", ".join(f"'{ext}'" for ext in missing_sorted)
+        missing_list = ", ".join(f"'{ext}'" for ext in missing_sorted)
+        raise ExtensionError(f"Required Panel extension(s) not loaded: {missing_list}. " f"Add pn.extension({missing_args}) to your code.")
 
 
 def find_requirements(code: str) -> list[str]:
@@ -91,6 +209,71 @@ def find_requirements(code: str) -> list[str]:
                     imports.add(node.module.split(".")[0])
 
         return list(imports)
+
+
+def execute_in_module(
+    code: str,
+    module_name: str,
+    *,
+    cleanup: bool = True,
+) -> dict[str, Any]:
+    r"""Execute Python code in a proper module namespace.
+
+    Creates a types.ModuleType following Bokeh's pattern, registers it in
+    sys.modules, executes code, and optionally cleans up. This ensures
+    Panel decorators (@pn.cache, @pn.depends) and function references work
+    properly by using module.__dict__ as a single namespace for both globals
+    and locals.
+
+    Parameters
+    ----------
+    code : str
+        Python code to execute
+    module_name : str
+        Unique name for the module (should be a valid Python identifier)
+    cleanup : bool, default=True
+        Whether to remove module from sys.modules after execution.
+        Set to False if you need to keep the module registered (e.g., for
+        later eval calls), but remember to clean up manually.
+
+    Returns
+    -------
+    dict[str, Any]
+        The module's namespace (module.__dict__) after execution
+
+    Raises
+    ------
+    Exception
+        Any exception raised during code execution
+
+    Notes
+    -----
+    This pattern is critical for Panel decorators and code that uses function
+    introspection or cross-references. It follows Bokeh's CodeRunner pattern.
+
+    Examples
+    --------
+    >>> namespace = execute_in_module(
+    ...     "x = 1\ny = 2\nz = x + y",
+    ...     "my_module"
+    ... )
+    >>> namespace['z']
+    3
+    """
+    module = types.ModuleType(module_name)
+    module.__dict__["__file__"] = f"<{module_name}>"
+    sys.modules[module_name] = module
+
+    try:
+        exec(code, module.__dict__)
+        return module.__dict__
+    except Exception:
+        if cleanup:
+            sys.modules.pop(module_name, None)
+        raise
+    finally:
+        if cleanup:
+            sys.modules.pop(module_name, None)
 
 
 def extract_last_expression(code: str) -> tuple[str, str]:
@@ -162,7 +345,12 @@ def validate_code(code: str) -> str:
         An empty string if the code is valid, otherwise the traceback of the error.
     """
     try:
-        exec(code, {}, {})
+        validate_extension_availability(code)
+    except ExtensionError as e:
+        return str(e)
+
+    try:
+        execute_in_module(code, module_name="_code_validation", cleanup=True)
     except Exception as e:
         # Get the traceback but skip the outermost frame (the exec call itself)
         if e.__traceback__ is not None:

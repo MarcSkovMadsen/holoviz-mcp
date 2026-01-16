@@ -44,14 +44,14 @@ uvx --from holoviz-mcp display-server
 
 You should see output like this:
 
-```
+```bash
 Starting Display Server...
 Display Server running at:
 
-  - Add: [http://localhost:5005/add](http://localhost:5005/add)
-  - Feed: [http://localhost:5005/feed](http://localhost:5005/feed)
-  - Admin: [http://localhost:5005/admin](http://localhost:5005/admin)
-  - API: [http://localhost:5005/api](http://localhost:5005/api)
+  - Add: http://localhost:5005/add
+  - Feed: http://localhost:5005/feed
+  - Admin: http://localhost:5005/admin
+  - API: http://localhost:5005/api
 ```
 
 Great! Your server is now running. Keep this terminal window open while you work through the tutorial.
