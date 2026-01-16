@@ -73,7 +73,7 @@ def main(address: str = DEFAULT_ADDRESS, port: int = DEFAULT_PORT, show: bool = 
     import panel as pn
 
     # Initialize the database
-    get_db()
+    _ = get_db()
 
     # Configure Panel defaults
     pn.template.FastListTemplate.param.main_layout.default = None
