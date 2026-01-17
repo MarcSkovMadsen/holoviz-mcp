@@ -170,6 +170,10 @@ filterwarnings = [
     "ignore::UserWarning",
 ]
 testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (e.g., tests that clone repos or build large indexes)",
+    "integration: marks tests as integration tests",
+]
 
 [tool.mypy]
 python_version = '3.11'
