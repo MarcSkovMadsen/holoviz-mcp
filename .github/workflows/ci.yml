@@ -113,7 +113,7 @@ jobs:
       - name: Install repository
         run: pixi run -e ${{ matrix.environment }} postinstall
       - name: Run pytest
-        run: pixi run -e ${{ matrix.environment }} test-coverage --color=yes -m "not slow" --ignore=tests/ui
+        run: pixi run -e ${{ matrix.environment }} test-coverage --color=yes --ignore=tests/ui
 
   pytest_ui:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
