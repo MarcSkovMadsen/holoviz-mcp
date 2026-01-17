@@ -537,6 +537,33 @@ def kpi_value(self):
 
 DO follow the hvplot and holoviews best practice guides!
 
+### Matplotlib
+
+**CRITICAL**: On windows set non-interactive backend before importing matplotlib.pyplot:
+
+**Why**: The `'agg'` backend is required for server-side rendering without display. Panel needs to render plots as images, not interactive GUI windows.
+
+**Extension**: DON'T include `'matplotlib'` in `pn.extension()` - it doesn't require JavaScript loading like Plotly or Bokeh extensions.
+
+```python
+# ✅ CORRECT
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import panel as pn
+
+pn.extension()  # No 'matplotlib' needed
+
+# ❌ WRONG
+pn.extension('matplotlib')  # Not a Panel extension
+```
+
+**Best Practices**:
+
+- DO use matplotlib for publication-quality static plots
+- DO close figures after rendering to prevent memory leaks: `plt.close(fig)`
+- DO consider hvPlot or Plotly for interactive plots instead
+
 ### Plotly
 
 Do set the template (theme) depending on the `theme` of the app.
