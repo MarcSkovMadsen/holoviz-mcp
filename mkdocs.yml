@@ -97,6 +97,7 @@ nav:
         - Use the Display Server: tutorials/display-server.md
         - Use the Display Tool: tutorials/display-tool.md
         - Stock Analysis: tutorials/stock-analysis.md
+        - Weather Dashboard: tutorials/weather-dashboard.md
     - How-To Guides:
         - Install: how-to/installation.md
         - Configure your IDE: how-to/ide-configuration.md

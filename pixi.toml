@@ -91,7 +91,7 @@ mkdocstrings-python = "*"
 mkdocs-pycafe = "*"
 
 [feature.docs.tasks]
-serve = "mkdocs serve"
+serve = "mkdocs serve --livereload"
 build = "mkdocs build"
 
 [environments]

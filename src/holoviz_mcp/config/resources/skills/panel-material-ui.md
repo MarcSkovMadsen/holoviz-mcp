@@ -163,6 +163,7 @@ def test_characters_reactivity():
 - DO use `sizing_mode` parameter over `sx` css styling parameter
 - DO use Material UI `sx` parameter for all css styling over `styles` and `stylesheets`
 - DO use panel-material-ui components instead of panel components for projects already using panel-material-ui and for new projects
+- DON'T configure the `design`, i.e. DO NOT `pn.extension(design='material')`.
 
 ## Component Instructions
 
@@ -226,6 +227,7 @@ DO synchronize component themes with Page theme:
 ### Grid
 
 - DO set `spacing=2` or higher to separate sub components in the grid.
+- DO not use `ncols` keyword argument. It is not supported.
 
 ### Column/ Row
 
@@ -244,6 +246,14 @@ DON'T provide them as separate arguments:
 
 ```python
 pmui.Row([child1, child2, child3,]) # DON'T
+```
+
+### Paper
+
+DO change the default margin to 10px:
+
+```python
+pmui.Paper.param.margin.default=10
 ```
 
 ### Switch
@@ -284,12 +294,15 @@ pmui.IconButton(icon=icon, disabled=True, ...)
 ```
 
 ### Static Components Pattern (Material UI)
+
 ```python
 import panel as pn
 import panel_material_ui as pmui
 import param
 
 pn.extension()
+
+pmui.Paper.param.margin.default=10
 
 class HelloWorld(pn.viewable.Viewer):
     characters = param.Integer(default=10, bounds=(1, 100), doc="Number of characters to display")
