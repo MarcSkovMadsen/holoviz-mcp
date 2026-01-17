@@ -227,6 +227,7 @@ DO synchronize component themes with Page theme:
 ### Grid
 
 - DO set `spacing=2` or higher to separate sub components in the grid.
+- DO not use `ncols` keyword argument. It is not supported.
 
 ### Column/ Row
 

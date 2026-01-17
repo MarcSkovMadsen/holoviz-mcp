@@ -4,12 +4,12 @@ In this tutorial, you will create a professional weather analysis dashboard that
 
 By the end, you'll have built a complete interactive application with multi-year filtering, animated charts, and a modern Material UI design that works beautifully in both light and dark modes.
 
-<iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Weather Dashboard with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
+<!-- <iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Weather Dashboard with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe> -->
 
 !!! note "Prerequisites"
     Before starting, ensure you have:
 
-    - An understanding of Python, Panel, and data visualization concepts
+    - An understanding of Python, [Panel](https://panel.holoviz.org/index.html), and data visualization concepts
     - HoloViz MCP installed and configured ([Getting Started Guide](getting-started.md))
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
     - Configured the `HoloViz Planner` agent ([HoloViz Agents](copilot.md/#using-holoviz-agents))
@@ -22,7 +22,7 @@ Before we start building, let's examine an existing project to understand the ke
 - In VS Code, open the Copilot Chat interface
 - Click the **Pick Model** dropdown and select a **powerful model**
 - Click the **Set Agent** dropdown and select **Agent**
-- Ask the agent to fetch the reference:
+- Ask the agent to read and summarize the context:
 
 ```text
 For context please read and summarize https://altair-viz.github.io/case_studies/exploring-weather.html using the #fetch tool.
@@ -32,7 +32,7 @@ For context please read and summarize https://altair-viz.github.io/case_studies/
 
 ## Step 2: Plan Your Dashboard
 
-Now that we have a clear goal, let's use the HoloViz Planner agent to design our application architecture. This agent knows best practices for Panel dashboards and will create a comprehensive plan.
+Now that we have the context, let's use the *HoloViz Planner* agent to design our application architecture. This agent knows best practices for Panel dashboards and will create a comprehensive plan.
 
 - Select the **HoloViz Planner** agent
 - Then **ask**:
@@ -40,7 +40,7 @@ Now that we have a clear goal, let's use the HoloViz Planner agent to design our
 ```text
 Plan the most awesome dashboard for exploring the Seattle Weather dataset:
 
-- Enable the user to filter multiple years. Default is all.
+- Enable the user to filter multiple years. Default is 2015.
 - Include plots for temperature and wind grouped by year
 - Include a plot by weather type
 - Include a table with the raw data
@@ -90,9 +90,9 @@ You should see output like:
 ✓ Server starting on port 5006
 ```
 
-![Dashboard Running](../assets/images/weather-dashboard-running.png)
-
 - Click the server URL to view your dashboard!
+
+![Dashboard Served](../assets/images/weather-dashboard-served.gif)
 
 !!! success "Checkpoint"
     If you see an interactive dashboard with charts, filters, and a data table - congratulations! You've built a complete data application. Try:
@@ -107,13 +107,13 @@ You should see output like:
 
 ## Step 5: Fine-tune the Dashboard
 
-Once the dashboard is running, you can further fine-tune it by:
+Once the dashboard is running, you can further fine-tune it:
 
 - **Add more visualizations**: Include humidity, pressure, or other weather metrics
-- **Documentation**: Add documentation
-- **Download**: Add more or more buttons to enable the user to download the data
-- **Enhance interactivity**: Add cross-filtering between charts
 - **Style**: Improve the styling of the app.
+- **Download Data**: Add more or more buttons to enable the user to download the data
+- **Enhance interactivity**: Add cross-filtering between charts
+- **Documentation**: Add documentation
 
 ## What You've Accomplished
 
@@ -137,6 +137,5 @@ You now have a production-ready weather dashboard and the skills to build your o
 - [Panel Material UI Components](https://github.com/awesome-panel/panel-material-ui)
 - [ECharts Documentation](https://echarts.apache.org/en/index.html)
 - [HoloViz Discourse](https://discourse.holoviz.org) - Share your creation!
-- [Seattle Weather Dashboard Code](https://github.com/MarcSkovMadsen/holoviz-mcp/tree/main/examples/seattle_weather)
 
 ---
