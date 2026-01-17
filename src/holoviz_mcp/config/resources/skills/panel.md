@@ -609,6 +609,37 @@ option = {
 
 If you need complex formatting logic, pre-process your data in Python before passing to ECharts rather than using formatters.
 
+**Reactive Updates with replaceMerge**:
+
+When updating ECharts dynamically (e.g., filtering data that changes the number of series), ECharts uses a **merge strategy** by default. This can cause old series to persist when series are removed.
+
+✅ **DO use `replaceMerge` option** when series count can change:
+```python
+# ✅ CORRECT: Use replaceMerge to fully replace series on updates
+chart_pane = pn.pane.ECharts(
+    self._chart_config,  # Reactive method or parameter
+    options={"replaceMerge": ["series"]},  # Replace series array instead of merging
+    sizing_mode="stretch_width",
+    height=400,
+)
+```
+
+❌ **WITHOUT replaceMerge** - old series persist:
+```python
+# ❌ WRONG: Old series remain when filtering reduces series count
+chart_pane = pn.pane.ECharts(
+    self._chart_config,
+    sizing_mode="stretch_width",
+)
+# If config changes from 4 series to 2, ECharts merges and keeps all 4!
+```
+
+Use `replaceMerge` for any chart where:
+
+- Users can filter data (year selectors, category filters)
+- The number of series changes dynamically
+- Data is grouped by categories that may be added/removed
+
 ### Date time widgets
 
 When comparing to date or time values to Pandas series convert to `Timestamp`:
