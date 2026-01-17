@@ -4,7 +4,7 @@ In this tutorial, you will create a professional weather analysis dashboard that
 
 By the end, you'll have built a complete interactive application with multi-year filtering, animated charts, and a modern Material UI design that works beautifully in both light and dark modes.
 
-<!-- <iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Weather Dashboard with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe> -->
+<iframe src="https://www.youtube.com/embed/WOAiWbBmvHY?si=lTs93cDSblDWsb1G" title="Tutorial: Building a Weather Dashboard with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
 
 !!! note "Prerequisites"
     Before starting, ensure you have:
