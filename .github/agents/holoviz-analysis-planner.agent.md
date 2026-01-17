@@ -1,7 +1,7 @@
 ---
 name: HoloViz Analysis Planner
 description: Create a detailed implementation plan for an analysis or data visualization using the HoloViz ecosystem without modifying code
-tools: ['holoviz-dev/*', 'read/readFile', 'read/problems', 'agent/runSubagent', 'web/fetch', 'web/githubRepo', 'search/codebase', 'search/usages', 'search/searchResults', 'vscode/vscodeAPI']
+tools: ['holoviz/*', 'read/readFile', 'read/problems', 'agent/runSubagent', 'web/fetch', 'web/githubRepo', 'search/codebase', 'search/usages', 'search/searchResults', 'vscode/vscodeAPI']
 handoffs:
   - label: Implement Plan
     agent: agent
