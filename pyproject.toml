@@ -77,6 +77,7 @@ dev = [
     "pre-commit",
     "pytest-asyncio",
     "pytest-rerunfailures",
+    "pytest-timeout",
     "pytest-xdist",
     "pytest",
     "types-PyYAML",
@@ -164,6 +165,7 @@ asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
+timeout = 300
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning",
