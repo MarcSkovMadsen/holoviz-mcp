@@ -1,58 +1,55 @@
 # Tutorial: Building an Interactive Stock Analysis Report
 
-In this tutorial, you will create a complete stock analysis report that visualizes price movements and trading patterns for multiple stocks. By the end, you'll have built an interactive report that displays financial data with professional charts and statistics.
+In this tutorial, you will create a complete stock analysis report that visualizes price movements and trading patterns for multiple stocks.
 
-<iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Stock Analysis Report with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
+By the end, you'll have built an interactive report that displays financial data with professional charts and statistics.
+
+<!-- <iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Stock Analysis Report with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe> -->
 
 !!! tip "What you'll learn"
-    - How to use the HoloViz Planner agent to design data applications
-    - How to fetch and process financial data with Python
-    - How to create interactive charts using hvPlot
-    - How to build reports with Panel components
-    - How to use the `holoviz_display` tool to visualize your work
+    - How to use the *HoloViz Analysis Planner* agent to design data applications
+    - How to use the `holoviz_display` tool to quickly visualize and persist your work
 
 !!! note "Prerequisites"
     Before starting, ensure you have:
 
-    - HoloViz MCP installed and configured ([Getting Started Guide](getting-started.md))
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
-    - Configured the `HoloViz Planner` agent. ([HoloViz Agents](copilot.md/#using-holoviz-agents))
+    - HoloViz MCP installed and configured ([Getting Started Guide](getting-started.md))
+    - Configured the `HoloViz Analysis Planner` agent. ([HoloViz Agents](copilot.md/#using-holoviz-agents))
     - The HoloViz MCP server running ([How to start the server](getting-started.md/#start-the-server))
     - `yfinance` installed in the virtual environment where you run `holoviz-mcp`: `pip install yfinance`
 
-## Step 1: Plan Your Report with the HoloViz Planner
+## Step 1: Plan Your Report with the HoloViz Analysis Planner
 
-First, let's use the HoloViz Planner agent to design our application architecture. This agent understands best practices for organizing Panel reports and will help us create a solid plan before writing code.
+First, let's use the HoloViz Analysis Planner agent to design our application architecture. This agent understands best practices for organizing Panel reports and will help us create a solid plan before writing code.
 
 1. In VS Code, open the Copilot Chat interface
-2. Click the **Set Agent** dropdown and select **HoloViz Planner**
+2. Click the **Set Agent** dropdown and select **HoloViz Analysis Planner**
 3. Ask the agent:
 
-```text
-Please plan how to analyze and create a report showing AAPL and META's hourly bar data history for the last 5 days and display the data as charts:
+    ```text
+    Please plan how to analyze and create a report showing AAPL and META's hourly bar data history for the last 5 days and display the data as charts:
 
-- Individual price charts for each stock
-- Summary statistics table
-- Normalized comparison overlay
-- Trading volume visualization
-- Professional styling and error handling
+    - Individual price charts for each stock
+    - Summary statistics table
+    - Normalized comparison overlay
+    - Trading volume visualization
+    - Professional styling and error handling
 
-Display using the #holoviz_display tool. KISS - Keep it simple stupid.
-```
+    Display using the #holoviz_display tool. KISS - Keep it simple stupid.
+    ```
 
-![HoloViz Planner](../assets/images/stock-analysis-holoviz-planner.png)
+    ![HoloViz Analysis Planner](../assets/images/stock-analysis-holoviz-planner.png)
 
 4. Press Enter and wait for the agent to respond
 
-!!! success "What you'll see"
-    The planner will provide a detailed architecture plan including:
+    !!! success "What you'll see"
+        The planner will provide a detailed architecture plan including:
 
-    - Data sources and how to fetch stock data
-    - Chart types to use for price and volume visualization
-    - Panel components for layout and statistics
-    - Error handling strategies
-
-You should see a structured plan that breaks down the report into logical components. This planning step helps ensure we build a well-organized application.
+        - Data sources and how to fetch stock data
+        - Chart types to use for price and volume visualization
+        - Panel components for layout and statistics
+        - Error handling strategies
 
 ## Step 2: Implement the Report
 
@@ -166,7 +163,7 @@ pip install yfinance
 
 Congratulations! In this tutorial, you have:
 
-- ✅ Used the HoloViz Planner agent to design a data report
+- ✅ Used the HoloViz Analysis Planner agent to design a data report
 - ✅ Implemented a complete stock analysis application
 - ✅ Created interactive charts with hvPlot
 - ✅ Built a multi-component report with Panel

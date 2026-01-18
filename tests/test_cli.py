@@ -43,10 +43,10 @@ class TestCLI:
         assert result.returncode == 0
         assert "Update the documentation index" in result.stdout
 
-    def test_cli_update_copilot_help(self):
-        """Test that the update copilot help command works."""
+    def test_cli_install_copilot_help(self):
+        """Test that the install copilot help command works."""
         result = subprocess.run(
-            [sys.executable, "-m", "holoviz_mcp.cli", "update", "copilot", "--help"],
+            [sys.executable, "-m", "holoviz_mcp.cli", "install", "copilot", "--help"],
             capture_output=True,
             text=True,
             timeout=10,
@@ -99,7 +99,7 @@ class TestCLI:
         assert hasattr(cli, "cli_main")
         assert hasattr(cli, "main")
         assert hasattr(cli, "update_index")
-        assert hasattr(cli, "update_copilot")
+        assert hasattr(cli, "install_copilot")
         assert hasattr(cli, "serve")
 
 
@@ -139,10 +139,10 @@ class TestCLIEntryPoint:
         assert result.returncode == 0
         assert "Update the documentation index" in result.stdout
 
-    def test_entry_point_update_copilot(self):
-        """Test that holoviz-mcp update copilot --help works."""
+    def test_entry_point_install_copilot(self):
+        """Test that holoviz-mcp install copilot --help works."""
         result = subprocess.run(
-            ["holoviz-mcp", "update", "copilot", "--help"],
+            ["holoviz-mcp", "install", "copilot", "--help"],
             capture_output=True,
             text=True,
             timeout=10,

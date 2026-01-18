@@ -70,8 +70,8 @@ def update_index() -> None:
     update_main()
 
 
-@update_app.command(name="copilot")
-def update_copilot(agents: bool = True, skills: bool = False) -> None:
+@install_app.command(name="copilot")
+def install_copilot(agents: bool = True, skills: bool = False) -> None:
     """Copy HoloViz MCP resources to .github/ folders.
 
     Parameters
