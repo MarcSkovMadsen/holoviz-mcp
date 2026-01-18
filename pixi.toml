@@ -30,6 +30,7 @@ mypy = "*"
 pytest = ">=6"
 pytest-asyncio = "*"
 pytest-cov = "*"
+pytest-timeout = "*"
 types-PyYAML = "*"
 
 [feature.test.tasks]

@@ -1,0 +1,37 @@
+# Minimal configuration for testing documentation indexing
+# Only includes 1 repository to minimize test time
+
+server:
+  name: holoviz-mcp-test
+  version: "1.0.0"
+  description: "Test configuration with minimal repositories"
+  log_level: INFO
+  transport: stdio
+  anonymized_telemetry: false
+  jupyter_server_proxy_url: ""
+
+docs:
+  repositories:
+    panel:
+      url: https://github.com/holoviz/panel.git
+      branch: main
+      folders:
+        doc:
+          url_path: ""
+      base_url: https://panel.holoviz.org
+      reference_patterns:
+        - "doc/getting_started/**/*.md"  # Only index getting started docs for faster testing
+
+  index_patterns:
+    - "**/*.md"
+
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/build/**"
+    - "**/__pycache__/**"
+    - "**/.pytest_cache/**"
+    - "**/examples/**"  # Exclude examples for faster testing
+
+  max_file_size: 1048576  # 1MB
+  update_interval: 86400  # 24 hours

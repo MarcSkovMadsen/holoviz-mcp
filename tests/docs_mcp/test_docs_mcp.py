@@ -2,12 +2,22 @@
 Simple tests for the documentation MCP server.
 
 Tests just the docs server functionality without the composed server.
+
+Uses a minimal test configuration with only 1 repository to keep tests fast.
+Set HOLOVIZ_MCP_DEFAULT_DIR environment variable to override.
 """
+
+import os
+from pathlib import Path
 
 import pytest
 from fastmcp import Client
 
 from holoviz_mcp.holoviz_mcp.server import mcp
+
+# Set minimal test config directory before importing config
+TEST_CONFIG_DIR = Path(__file__).parent
+os.environ["HOLOVIZ_MCP_DEFAULT_DIR"] = str(TEST_CONFIG_DIR)
 
 
 @pytest.mark.asyncio
@@ -19,10 +29,9 @@ async def test_skills_resource():
         assert result.data
 
 
-@pytest.mark.skip(reason="this test is very slow")
 @pytest.mark.asyncio
 async def test_update_index():
-    """Test the update_index tool."""
+    """Test the update_index tool with minimal configuration."""
     client = Client(mcp)
     async with client:
         result = await client.call_tool("update_index")
@@ -31,7 +40,7 @@ async def test_update_index():
 
 @pytest.mark.asyncio
 async def test_list_projects():
-    """Test that all projects are listed correctly."""
+    """Test that all projects are listed correctly with minimal configuration."""
     client = Client(mcp)
     async with client:
         result = await client.call_tool("list_projects")
@@ -65,17 +74,17 @@ async def test_semantic_search():
 
 @pytest.mark.asyncio
 async def test_search_by_project():
-    """Test the search tool with project filtering."""
+    """Test the search tool with project filtering - only panel available in test config."""
     client = Client(mcp)
     async with client:
-        # Test search with specific project filter
-        result = await client.call_tool("search", {"query": "interactive plotting with widgets", "project": "hvplot"})
+        # Test search with specific project filter (panel is the only project in test config)
+        result = await client.call_tool("search", {"query": "dashboard components", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
-        # All results should be from hvplot project
+        # All results should be from panel project
         for document in result.data:
-            assert document["project"] == "hvplot"
+            assert document["project"] == "panel"
 
 
 @pytest.mark.asyncio
@@ -117,21 +126,6 @@ async def test_search_without_content():
 
 
 @pytest.mark.asyncio
-async def test_search_material_ui_specific():
-    """Test the search tool with Material UI specific query."""
-    client = Client(mcp)
-    async with client:
-        # Test search for Material UI styling
-        result = await client.call_tool("search", {"query": "How to style Material UI components?", "project": "panel-material-ui"})
-        assert result.data
-        assert isinstance(result.data, list)
-
-        # Results should be from panel-material-ui project
-        for document in result.data:
-            assert document["project"] == "panel-material-ui"
-
-
-@pytest.mark.asyncio
 async def test_search_empty_query():
     """Test the search tool with edge cases."""
     client = Client(mcp)
@@ -155,11 +149,12 @@ async def test_search_invalid_project():
 
 
 @pytest.mark.asyncio
-async def test_search_with_project_filter():
-    """Test the search tool with project filtering."""
+async def test_get_document():
+    """Test getting a specific document."""
     client = Client(mcp)
     async with client:
-        # Test search with specific project filter
-        result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "hvplot"})
+        # Test getting a document from panel (only project in test config)
+        result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "panel"})
         assert result.data
-        assert result.data.title == "hvPlot"
+        # Verify it's a panel document
+        assert result.data.project == "panel"
