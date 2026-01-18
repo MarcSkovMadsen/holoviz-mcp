@@ -25,7 +25,14 @@ For other installation methods, see the [uv installation guide](https://docs.ast
 Install HoloViz MCP as a uv tool:
 
 ```bash
+# Basic installation
 uv tool install holoviz-mcp
+
+# Alternative installation with a broad range of PyData packages
+uv tool install holoviz-mcp[pydata]
+
+# Alternative installation with extra packages
+uv tool install holoviz-mcp --with altair --with polars
 ```
 
 ### Install Chromium

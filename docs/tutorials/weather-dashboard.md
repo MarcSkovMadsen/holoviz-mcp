@@ -12,7 +12,7 @@ By the end, you'll have built a complete interactive application with multi-year
     - An understanding of Python, [Panel](https://panel.holoviz.org/index.html), and data visualization concepts
     - HoloViz MCP installed and configured ([Getting Started Guide](getting-started.md))
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
-    - Configured the `HoloViz Planner` agent ([HoloViz Agents](copilot.md/#using-holoviz-agents))
+    - Configured the `HoloViz App Planner` agent ([HoloViz Agents](copilot.md/#using-holoviz-agents))
     - The HoloViz MCP server running ([How to start the server](getting-started.md/#start-the-server))
 
 ## Step 1: Provide Context
@@ -32,9 +32,9 @@ For context please read and summarize https://altair-viz.github.io/case_studies/
 
 ## Step 2: Plan Your Dashboard
 
-Now that we have the context, let's use the *HoloViz Planner* agent to design our application architecture. This agent knows best practices for Panel dashboards and will create a comprehensive plan.
+Now that we have the context, let's use the *HoloViz App Planner* agent to design our application architecture. This agent knows best practices for Panel dashboards and will create a comprehensive plan.
 
-- Select the **HoloViz Planner** agent
+- Select the **HoloViz App Planner** agent
 - Then **ask**:
 
 ```text
@@ -52,9 +52,9 @@ Keep it simple:
 - clean, well-organized and well tested code
 ```
 
-- Press Enter and wait for the HoloViz Planner to respond
+- Press Enter and wait for the HoloViz App Planner to respond
 
-![HoloViz Planner](../assets/images/weather-dashboard-planner.png)
+![HoloViz App Planner](../assets/images/weather-dashboard-planner.png)
 
 !!! success "What you'll see"
     The planner will provide a detailed architecture including:
@@ -119,7 +119,7 @@ Once the dashboard is running, you can further fine-tune it:
 
 Congratulations! In this tutorial, you have:
 
-- ✅ Used the HoloViz Planner agent to design a complex dashboard architecture
+- ✅ Used the HoloViz App Planner agent to design a complex dashboard architecture
 - ✅ Implemented a multi-file Python application with proper separation of concerns
 - ✅ Created animated, interactive charts with ECharts
 - ✅ Built a Material UI dashboard with professional styling
