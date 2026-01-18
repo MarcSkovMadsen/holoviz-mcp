@@ -58,6 +58,7 @@ repos:
     rev: v9.13.0
     hooks:
       - id: eslint
+        files: ^holoviz_mcp/.*\.(js|ts)$
         args: ['-c', 'holoviz_mcp/.eslintrc.js', 'holoviz_mcp/*.ts', 'holoviz_mcp/models/**/*.ts', '--fix']
         additional_dependencies:
           - 'eslint@8.57.0'

@@ -387,3 +387,9 @@ $RECYCLE.BIN/
 .github/skills/hvplot.md
 .github/skills/holoviews.md
 .github/skills/panel-material-ui.md
+*node_modules/
+
+# param-lsp example extension
+examples/param-lsp/vscode-client/node_modules/
+examples/param-lsp/vscode-client/package-lock.json
+examples/param-lsp/vscode-client/*.vsix

@@ -1,0 +1,21 @@
+{
+  "name": "param-lsp-client",
+  "displayName": "Param LSP",
+  "description": "Language support for param.Parameterized classes",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./extension.js",
+  "contributes": {},
+  "dependencies": {
+    "@vscode/vsce": "^3.7.1",
+    "vscode-languageclient": "^9.0.1"
+  }
+}
