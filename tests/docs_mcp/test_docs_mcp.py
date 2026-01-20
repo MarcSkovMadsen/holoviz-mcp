@@ -29,18 +29,28 @@ async def test_skills_resource():
         assert result.data
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_update_index():
-    """Test the update_index tool with minimal configuration."""
+    """Test the update_index tool with minimal configuration.
+    
+    This test requires cloning repositories and building the index, which is slow.
+    Run with: pytest -m slow
+    """
     client = Client(mcp)
     async with client:
         result = await client.call_tool("update_index")
         assert result.data
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_list_projects():
-    """Test that all projects are listed correctly with minimal configuration."""
+    """Test that all projects are listed correctly with minimal configuration.
+    
+    This test requires indexing to be completed, which is slow.
+    Run with: pytest -m slow
+    """
     client = Client(mcp)
     async with client:
         result = await client.call_tool("list_projects")
@@ -49,6 +59,7 @@ async def test_list_projects():
     assert "panel" in result.data
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_semantic_search():
     """Test the search tool."""
@@ -72,6 +83,7 @@ async def test_semantic_search():
             assert "content" in document
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_search_by_project():
     """Test the search tool with project filtering - only panel available in test config."""
@@ -87,6 +99,7 @@ async def test_search_by_project():
             assert document["project"] == "panel"
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_search_with_custom_max_results():
     """Test the search tool with custom max_results parameter."""
@@ -104,6 +117,7 @@ async def test_search_with_custom_max_results():
             assert document["project"] == "panel"
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_search_without_content():
     """Test the search tool with content=False for metadata only."""
@@ -125,6 +139,7 @@ async def test_search_without_content():
             assert document.get("content") is None
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_search_empty_query():
     """Test the search tool with edge cases."""
@@ -136,6 +151,7 @@ async def test_search_empty_query():
         assert isinstance(result.data, list)
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_search_invalid_project():
     """Test the search tool with invalid project name."""
@@ -148,6 +164,7 @@ async def test_search_invalid_project():
         assert len(result.data) == 0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_document():
     """Test getting a specific document."""
