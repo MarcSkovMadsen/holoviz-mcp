@@ -208,7 +208,7 @@ Set environment variables in `mcp.json`:
       "type": "stdio",
       "command": "holoviz-mcp",
       "env": {
-        "HOLOVIZ_MCP_LOG_LEVEL": "DEBUG",
+        "HOLOVIZ_MCP_LOG_LEVEL": "DEBUG"
       }
     }
   }
