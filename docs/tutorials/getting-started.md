@@ -34,7 +34,7 @@ This command installs HoloViz MCP globally, making it available for your AI assi
 !!! tip "What's happening?"
     The uv tool manager creates an isolated environment for HoloViz MCP and installs all necessary dependencies.
 
-    The extra `pydata` dependencies are added to install a wide range of python data related packages. We will assume these are installed through out this guide. You can replace them with your favorite dependencies for your own work.
+    The extra `pydata` dependencies are added to install a wide range of python data related packages. We will assume these are installed throughout this guide. You can replace them with your favorite dependencies for your own work.
 
 ## Step 2: Install Chromium
 
