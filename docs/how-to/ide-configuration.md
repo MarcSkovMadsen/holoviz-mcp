@@ -52,7 +52,7 @@ This guide covers configuring HoloViz MCP with different IDEs and AI assistants.
 {
   "mcpServers": {
     "holoviz": {
-      "command": "holoviz-mcp",
+      "command": "holoviz-mcp"
     }
   }
 }
