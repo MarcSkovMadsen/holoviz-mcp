@@ -22,6 +22,16 @@ def feed_page():
     # Create chat feed
     chat_feed = pn.Column(sizing_mode="stretch_both")
 
+    def on_delete(snippet_id):
+        """Handle deletion of a visualization."""
+        # Delete from database
+        get_db().delete_snippet(snippet_id)
+        # Remove from cache
+        if snippet_id in pn.state.cache["views"]:
+            del pn.state.cache["views"][snippet_id]
+        # Refresh feed
+        update_chat()
+
     def get_view(req):
         """Create view for a single visualization in the feed."""
         if req.id in pn.state.cache["views"]:
@@ -35,7 +45,7 @@ def feed_page():
         title = f"""\
 **{req.name or req.id}** ({created_at})\n\n{req.description}\n
 """
-        iframe = f"""<div style="resize: vertical; overflow: hidden; height: calc(75vh - 200px); width: 100%; max-width: 100%; border: 1px solid gray;">
+        iframe = f"""<div style="resize: vertical; overflow: hidden; height: calc(75vh - 300px); width: 100%; max-width: 100%; border: 1px solid gray;">
 <iframe src="{url}" style="height: 100%; width: 100%; border: none;" frameborder="0"></iframe>
 </div>"""
         # Create copy button with JavaScript callback
@@ -66,9 +76,31 @@ def feed_page():
         """,
         )
 
+        delete_button = pn.widgets.Button(
+            name="🗑️ Delete",
+            button_type="danger",
+            width=120,
+            description="Delete this visualization",
+        )
+        delete_button.on_click(lambda event: on_delete(req.id))
+
         with pn.config.set(sizing_mode="stretch_width"):
             message = pn.Column(
-                pn.pane.Markdown(title), pn.pane.Markdown(iframe), pn.Row(pn.HSpacer(), open_button, copy_button, margin=(0, 10, 0, 10), align="end")
+                pn.pane.Markdown(
+                    title,
+                    margin=(10, 10, 0, 10),
+                ),
+                pn.Tabs(
+                    pn.pane.Markdown(iframe, name="View"),
+                    pn.widgets.CodeEditor(
+                        value=req.app,
+                        name="Code",
+                        language="python",
+                        theme="github_dark",
+                    ),
+                    margin=(0, 10, 10, 10),
+                ),
+                pn.Row(pn.HSpacer(), open_button, copy_button, delete_button, margin=(0, 10, 0, 10), align="end"),
             )
 
         pn.state.cache["views"][req.id] = message
