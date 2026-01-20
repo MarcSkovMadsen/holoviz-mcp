@@ -69,7 +69,7 @@ You can also install HoloViz MCP using pip:
 pip install holoviz-mcp
 ```
 
-The install chromeium and create the index as previously described.
+Then install Chromium and create the index as previously described.
 
 ## Install with conda/mamba
 
@@ -85,7 +85,7 @@ Or with mamba:
 mamba install -c conda-forge holoviz-mcp
 ```
 
-The install chromeium and create the index as previously described.
+Then install Chhromium and create the index as previously described.
 
 ## Install from Source
 
