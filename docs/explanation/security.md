@@ -26,12 +26,12 @@ HoloViz MCP is designed with security in mind, but like any tool that provides A
 
 **Localhost Only** (Secure):
 ```bash
-HOLOVIZ_MCP_HOST=127.0.0.1 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+HOLOVIZ_MCP_HOST=127.0.0.1 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
 **All Interfaces** (Requires firewall):
 ```bash
-HOLOVIZ_MCP_HOST=0.0.0.0 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+HOLOVIZ_MCP_HOST=0.0.0.0 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
 ### Docker Deployments
@@ -48,7 +48,7 @@ Docker images default to `0.0.0.0` for accessibility. Secure with:
 ### Documentation Indexing
 
 - **Data Flow**: GitHub → Local Machine → ChromaDB
-- **Storage**: `~/.holoviz-mcp/chroma/`
+- **Storage**: `~/.holoviz-mcp/vector_db/`
 - **External Services**: None (except GitHub for cloning)
 - **Privacy**: All processing is local
 
@@ -64,7 +64,7 @@ Docker images default to `0.0.0.0` for accessibility. Secure with:
 By default, ChromaDB telemetry is disabled. If you enable it:
 
 ```bash
-ANONYMIZED_TELEMETRY=true uvx holoviz-mcp
+ANONYMIZED_TELEMETRY=true holoviz-mcp
 ```
 
 Only anonymized usage statistics are sent to ChromaDB.
@@ -83,7 +83,7 @@ HoloViz MCP can read:
 
 HoloViz MCP writes to:
 - Configuration directory (`~/.holoviz-mcp/`)
-- Documentation index (`~/.holoviz-mcp/chroma/`)
+- Documentation index (`~/.holoviz-mcp/vector_db/`)
 - Log files (if configured)
 - Server processes (if code execution enabled)
 
@@ -217,7 +217,7 @@ Logs may contain:
 Set appropriately for your environment:
 
 ```bash
-HOLOVIZ_MCP_LOG_LEVEL=WARNING uvx holoviz-mcp
+HOLOVIZ_MCP_LOG_LEVEL=WARNING holoviz-mcp
 ```
 
 ## Security Checklist

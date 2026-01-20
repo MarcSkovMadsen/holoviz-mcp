@@ -35,11 +35,7 @@ The Display Server is included with the `holoviz-mcp` package. Please [make sure
 Now that you have the server installed, let's start it:
 
 ```bash
-# If holoviz-mcp installed as package
 display-server
-
-# If holoviz-mcp installed as uv tool
-uvx --from holoviz-mcp display-server
 ```
 
 You should see output like this:

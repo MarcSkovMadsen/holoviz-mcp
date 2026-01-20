@@ -26,20 +26,22 @@ This tutorial will guide you through installing and using HoloViz MCP for the fi
 Open your terminal and install HoloViz MCP as a uv tool:
 
 ```bash
-uv tool install holoviz-mcp
+uv tool install holoviz-mcp[pydata]
 ```
 
-This command installs HoloViz MCP, making it available for your AI assistant to reference.
+This command installs HoloViz MCP globally, making it available for your AI assistant to reference.
 
 !!! tip "What's happening?"
     The uv tool manager creates an isolated environment for HoloViz MCP and installs all necessary dependencies.
+
+    The extra `pydata` dependencies are added to install a wide range of python data related packages. We will assume these are installed throughout this guide. You can replace them with your favorite dependencies for your own work.
 
 ## Step 2: Install Chromium
 
 Install [Chromium](https://playwright.dev/docs/browsers) to enable the holoviz-mcp server to take screenshots:
 
 ```bash
-uvx holoviz-mcp install chromium
+holoviz-mcp install chromium
 ```
 
 **📦 This downloads 300MB** as it downloads the Chromium and FFMPEG engines.
@@ -49,12 +51,20 @@ uvx holoviz-mcp install chromium
 HoloViz MCP needs to index the HoloViz documentation to provide intelligent answers. Run:
 
 ```bash
-uvx holoviz-mcp update index
+holoviz-mcp update index
 ```
 
-**⏱️ This takes 5-10 minutes** as it downloads and indexes documentation from Panel, hvPlot, and other HoloViz libraries.
+**⏱️ This will take 5-10 minutes** as it downloads and indexes documentation from Panel, hvPlot, and other HoloViz libraries.
 
-## Step 4: Configure Your AI Assistant
+## Step 4: Install the agents
+
+If using copilot install the *agents*:
+
+```bash
+holoviz-mcp install copilot
+```
+
+## Step 5: Configure Your AI Assistant
 
 Choose your AI assistant and follow the appropriate configuration:
 
@@ -63,19 +73,18 @@ Choose your AI assistant and follow the appropriate configuration:
 1. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 2. Type "MCP: Add Server..." and press Enter
 3. Choose "Command (stdio)"
-4. Choose "uvx holoviz-mcp" as the "Command to run"
+4. Choose "holoviz-mcp" as the "Command to run"
 5. Enter "holoviz" as the "Server ID"
 6. Choose "Global"
 
-This will add the below configuration to you global `mcp.json` file.
+This will add the below configuration to your *user* `mcp.json` file.
 
 ```json
 {
   "servers": {
     "holoviz": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"]
+      "command": "holoviz-mcp"
     }
   },
   "inputs": []
@@ -97,8 +106,7 @@ Please refer to the [VS Code | MCP Servers](https://code.visualstudio.com/docs/c
 {
   "mcpServers": {
     "holoviz": {
-      "command": "uvx",
-      "args": ["holoviz-mcp"]
+      "command": "holoviz-mcp"
     }
   }
 }
@@ -115,14 +123,13 @@ Please refer to the [VS Code | MCP Servers](https://code.visualstudio.com/docs/c
 ```json
 {
   "name": "holoviz",
-  "command": "uvx",
-  "args": ["holoviz-mcp"]
+  "command": "holoviz-mcp"
 }
 ```
 
 4. Save and restart Cursor
 
-## Step 5: Verify Installation
+## Step 6: Verify Installation
 
 Let's verify that HoloViz MCP is working correctly!
 
@@ -161,7 +168,7 @@ Open a chat with your AI assistant and try these questions:
 
 If your AI assistant provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
 
-## Step 6: Build Your First Dashboard
+## Step 7: Build Your First Dashboard
 
 Now that everything is set up, let's build a simple dashboard.
 
@@ -215,7 +222,7 @@ Now that you have HoloViz MCP running, explore more:
 
 1. Verify Python 3.11+ is installed: `python --version`
 2. Check uv installation: `uv --version`
-3. Try running the server directly: `uvx holoviz-mcp`
+3. Try running the server directly: `holoviz-mcp`
 4. Check the server logs in VS Code's Output panel
 
 For more help, see the [Troubleshooting Guide](../how-to/troubleshooting.md) or join the [HoloViz Discord](https://discord.gg/AXRHnJU6sP).

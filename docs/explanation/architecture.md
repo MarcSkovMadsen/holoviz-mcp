@@ -112,9 +112,10 @@ MCP Server → MCP Client → AI Assistant (with app URL)
 
 ### Documentation Index
 
-Location: `~/.holoviz-mcp/chroma/`
+Location: `~/.holoviz-mcp/vector_db/`
 
 The documentation index uses ChromaDB to store:
+
 - Document embeddings (vector representations)
 - Document metadata (source, project, path)
 - Original document text

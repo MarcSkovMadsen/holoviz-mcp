@@ -4,31 +4,22 @@ This guide covers configuring HoloViz MCP with different IDEs and AI assistants.
 
 ## VS Code + GitHub Copilot
 
-### Quick Install
-
-Click to install automatically:
-
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522holoviz%2522%252C%2522command%2522%253A%2522uvx%2522%252C%2522args%2522%253A%255B%2522holoviz-mcp%255Bpanel-extensions%255D%2522%255D%257D)
-
-### Manual Configuration
-
 1. Open VS Code
 2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
 3. Type "MCP: Edit Settings" and press Enter
 4. Add this configuration to your `mcp.json`:
 
-```json
-{
-  "servers": {
-    "holoviz": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"]
-    }
-  },
-  "inputs": []
-}
-```
+  ```json
+  {
+    "servers": {
+      "holoviz": {
+        "type": "stdio",
+        "command": "holoviz-mcp"
+      }
+    },
+    "inputs": []
+  }
+  ```
 
 5. Save and restart VS Code
 
@@ -61,8 +52,7 @@ Click to install automatically:
 {
   "mcpServers": {
     "holoviz": {
-      "command": "uvx",
-      "args": ["holoviz-mcp"]
+      "command": "holoviz-mcp"
     }
   }
 }
@@ -90,8 +80,7 @@ After restarting Claude Desktop, look for the MCP indicator (🔌) in the interf
 ```json
 {
   "name": "holoviz",
-  "command": "uvx",
-  "args": ["holoviz-mcp"]
+  "command": "holoviz-mcp"
 }
 ```
 
@@ -105,8 +94,7 @@ Add to your Windsurf MCP configuration:
 {
   "mcpServers": {
     "holoviz": {
-      "command": "uvx",
-      "args": ["holoviz-mcp"]
+      "command": "holoviz-mcp"
     }
   }
 }
@@ -119,8 +107,7 @@ For other MCP-compatible clients, use the standard configuration:
 ```json
 {
   "name": "holoviz",
-  "command": "uvx",
-  "args": ["holoviz-mcp"]
+  "command": "holoviz-mcp"
 }
 ```
 
@@ -135,8 +122,7 @@ You can customize server behavior using environment variables:
   "servers": {
     "holoviz": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
+      "command": "holoviz-mcp",
       "env": {
         "HOLOVIZ_MCP_LOG_LEVEL": "DEBUG"
       }
@@ -154,8 +140,7 @@ Use a custom directory for configuration and data:
   "servers": {
     "holoviz": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
+      "command": "holoviz-mcp",
       "env": {
         "HOLOVIZ_MCP_USER_DIR": "/path/to/custom/dir"
       }
@@ -169,16 +154,19 @@ Use a custom directory for configuration and data:
 After configuration, test with your AI assistant:
 
 1. **Simple Query**:
+
    ```
    List available Panel input components
    ```
 
 2. **Detailed Query**:
+
    ```
    What parameters does the Panel TextInput component have?
    ```
 
 3. **Code Generation**:
+
    ```
    Create a simple Panel dashboard with a slider
    ```
@@ -190,17 +178,20 @@ If you get detailed, accurate responses, your configuration is working! 🎉
 ### Server Not Starting
 
 **Check the command**:
+
 ```bash
 # Test the server directly
-uvx holoviz-mcp
+holoviz-mcp
 ```
 
 **Verify uv installation**:
+
 ```bash
 uv --version
 ```
 
 **Check Python version**:
+
 ```bash
 python --version  # Should be 3.11 or higher
 ```
@@ -208,13 +199,15 @@ python --version  # Should be 3.11 or higher
 ### AI Assistant Not Recognizing Components
 
 1. **Verify documentation index exists**:
+
    ```bash
    ls ~/.holoviz-mcp
    ```
 
 2. **Recreate the index**:
+
    ```bash
-   uvx holoviz-mcp update index
+   holoviz-mcp update index
    ```
 
 3. **Restart your IDE**
@@ -228,6 +221,7 @@ python --version  # Should be 3.11 or higher
 ### Permission Errors
 
 **Linux/macOS**: Ensure the configuration file is readable:
+
 ```bash
 chmod 644 ~/.config/Code/User/globalStorage/github.copilot/mcp.json
 ```

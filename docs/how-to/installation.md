@@ -20,7 +20,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 For other installation methods, see the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-### Install HoloViz MCP
+### Install as a Tool
 
 Install HoloViz MCP as a uv tool:
 
@@ -38,7 +38,7 @@ uv tool install holoviz-mcp --with altair --with polars
 ### Install Chromium
 
 ```bash
-uvx holoviz-mcp install chromium
+holoviz-mcp install chromium
 ```
 
 ### Create Documentation Index
@@ -46,7 +46,7 @@ uvx holoviz-mcp install chromium
 After installation, create the documentation index:
 
 ```bash
-uvx holoviz-mcp update index
+holoviz-mcp update index
 ```
 
 **Note**: This process takes 5-10 minutes on first run.
@@ -56,7 +56,7 @@ uvx holoviz-mcp update index
 Test that the server starts correctly:
 
 ```bash
-uvx holoviz-mcp
+holoviz-mcp
 ```
 
 Press `Ctrl+C` to stop the server.
@@ -69,11 +69,7 @@ You can also install HoloViz MCP using pip:
 pip install holoviz-mcp
 ```
 
-Then create the documentation index:
-
-```bash
-holoviz-mcp update index
-```
+Then install Chromium and create the index as previously described.
 
 ## Install with conda/mamba
 
@@ -89,11 +85,7 @@ Or with mamba:
 mamba install -c conda-forge holoviz-mcp
 ```
 
-Then create the documentation index:
-
-```bash
-holoviz-mcp update index
-```
+Then install Chhromium and create the index as previously described.
 
 ## Install from Source
 
@@ -133,14 +125,6 @@ After updating the package, refresh the documentation:
 
 ```bash
 holoviz-mcp update index
-```
-
-### Convenience Aliases
-
-Add to your `.bashrc` or `.zshrc`:
-
-```bash
-alias holoviz-mcp="uvx holoviz-mcp"
 ```
 
 ## Uninstalling

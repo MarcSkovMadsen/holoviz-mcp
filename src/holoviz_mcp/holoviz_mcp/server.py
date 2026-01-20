@@ -271,17 +271,18 @@ async def search(
     max_results: int = 5,
     ctx: Context | None = None,
 ) -> list[Document]:
-    """Search HoloViz documentation using semantic similarity.
+    """Search the documentation using semantic similarity.
 
     Optimized for finding relevant documentation based on natural language queries.
 
-    DO use this tool to find answers to questions about HoloViz libraries, such as Panel and hvPlot.
+    DO use this tool to search the holoviz projects documentation and any additional user-defined
+    projects.
 
     Args:
         query (str): Search query using natural language.
             For example "How to style Material UI components?" or "interactive plotting with widgets"
         project (str, optional): Optional project filter. Defaults to None.
-            Options: "panel", "panel-material-ui", "hvplot", "param", "holoviews"
+            Examples: "panel", "panel-material-ui", "hvplot", "param", "holoviews"
         content (bool, optional): Whether to include full content. Defaults to True.
             Set to False to only return metadata for faster responses.
         max_results (int, optional): Maximum number of results to return. Defaults to 5.
@@ -360,7 +361,7 @@ async def display(
         A short description of the visualization
     method : {"jupyter", "panel"}, default "jupyter"
         Execution mode:
-        - "jupyter": Execute code and display the last expression's result
+        - "jupyter": Execute code and display the last expression's result. The last expression must be dedented fully.
             DO use this for standard data visualizations like plots, dataframes, etc. that do not import and use Panel directly.
         - "panel": Execute code and and display Panel objects marked .servable()
             DO use this for code that imports and uses Panel to create dashboards, apps, and complex layouts.
