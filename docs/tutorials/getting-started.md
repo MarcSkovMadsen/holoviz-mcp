@@ -54,7 +54,7 @@ HoloViz MCP needs to index the HoloViz documentation to provide intelligent answ
 holoviz-mcp update index
 ```
 
-**⏱️ This takes 5-10 minutes** as it downloads and indexes documentation from Panel, hvPlot, and other HoloViz libraries.
+**⏱️ This will take 5-10 minutes** as it downloads and indexes documentation from Panel, hvPlot, and other HoloViz libraries.
 
 ## Step 4: Install the agents
 
