@@ -48,18 +48,21 @@ Install a newer Python version if needed.
 **Solution**:
 
 1. Test the server directly:
+
    ```bash
-   uvx holoviz-mcp
+   holoviz-mcp
    ```
 
 2. Check for error messages in the output
 
 3. Verify Python version:
+
    ```bash
    python --version  # Should be 3.11+
    ```
 
 4. Reinstall HoloViz MCP:
+
    ```bash
    uv tool uninstall holoviz-mcp
    uv tool install holoviz-mcp
@@ -74,8 +77,9 @@ Install a newer Python version if needed.
 1. Check logs (VS Code: Output → MCP: holoviz)
 
 2. Try running with debug logging:
+
    ```bash
-   HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp
+   HOLOVIZ_MCP_LOG_LEVEL=DEBUG holoviz-mcp
    ```
 
 3. Report the issue on [GitHub](https://github.com/MarcSkovMadsen/holoviz-mcp/issues) with logs
@@ -93,7 +97,7 @@ lsof -i :8000
 
 Use a different port:
 ```bash
-HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
 ## Documentation Issues
@@ -105,13 +109,15 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 **Solution**:
 
 1. Verify documentation index exists:
+
    ```bash
    ls ~/.holoviz-mcp
    ```
 
 2. Create or recreate the index:
+
    ```bash
-   uvx holoviz-mcp update index
+   holoviz-mcp update index
    ```
 
 3. Wait for indexing to complete (5-10 minutes)
@@ -119,6 +125,7 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 4. Restart your IDE
 
 5. Test with a specific query:
+
    ```
    What parameters does Panel's TextInput component have?
    ```
@@ -132,14 +139,16 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 1. Check internet connection
 
 2. Try again with debug logging:
+
    ```bash
-   HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp update index
+   HOLOVIZ_MCP_LOG_LEVEL=DEBUG holoviz-mcp update index
    ```
 
 3. Clear existing data and retry:
+
    ```bash
-   rm -rf ~/.holoviz-mcp/chroma
-   uvx holoviz-mcp update index
+   rm -rf ~/.holoviz-mcp/vector_db
+   holoviz-mcp update index
    ```
 
 4. Check GitHub API rate limits (wait an hour and retry)
@@ -151,7 +160,7 @@ HOLOVIZ_MCP_PORT=8001 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
 **Solution**: Update the documentation index:
 
 ```bash
-uvx holoviz-mcp update index
+holoviz-mcp update index
 ```
 
 ## IDE Integration Issues
@@ -166,13 +175,13 @@ uvx holoviz-mcp update index
    - Command Palette → "MCP: Edit Settings"
 
 2. Check configuration syntax:
+
    ```json
    {
      "servers": {
        "holoviz": {
          "type": "stdio",
-         "command": "uvx",
-         "args": ["holoviz-mcp"]
+         "command": "holoviz-mcp"
        }
      },
      "inputs": []
@@ -210,6 +219,7 @@ uvx holoviz-mcp update index
 2. Ensure uv and Python are installed in the remote environment
 
 3. Consider using HTTP transport:
+
    ```json
    {
      "servers": {
@@ -222,8 +232,9 @@ uvx holoviz-mcp update index
    ```
 
    Then start server in remote:
+
    ```bash
-   HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+   HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
    ```
 
 ## Docker Issues
@@ -235,16 +246,19 @@ uvx holoviz-mcp update index
 **Solution**:
 
 1. Check logs:
+
    ```bash
    docker logs holoviz-mcp
    ```
 
 2. Verify port availability:
+
    ```bash
    lsof -i :8000
    ```
 
 3. Try with debug logging:
+
    ```bash
    docker run -it --rm \
      -e HOLOVIZ_MCP_LOG_LEVEL=DEBUG \
@@ -263,6 +277,7 @@ docker run -v ~/.holoviz-mcp:/root/.holoviz-mcp ...
 ```
 
 Verify:
+
 ```bash
 docker inspect holoviz-mcp | grep -A 10 Mounts
 ```
@@ -279,6 +294,7 @@ sudo chown -R $USER:$USER ~/.holoviz-mcp
 ```
 
 Or run with specific user:
+
 ```bash
 docker run --user $(id -u):$(id -g) ...
 ```
@@ -298,9 +314,10 @@ docker run --user $(id -u):$(id -g) ...
 3. If consistently slow, check system resources
 
 4. Consider recreating documentation index:
+
    ```bash
-   rm -rf ~/.holoviz-mcp/chroma
-   uvx holoviz-mcp update index
+   rm -rf ~/.holoviz-mcp/vector_db
+   holoviz-mcp update index
    ```
 
 ### High Memory Usage
@@ -312,6 +329,7 @@ docker run --user $(id -u):$(id -g) ...
 1. This is expected with large documentation indices
 
 2. For Docker, set memory limits:
+
    ```bash
    docker run --memory=2g ...
    ```
@@ -325,11 +343,13 @@ docker run --user $(id -u):$(id -g) ...
 **VS Code**: View → Output → MCP: holoviz
 
 **Command Line**:
+
 ```bash
-HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp
+HOLOVIZ_MCP_LOG_LEVEL=DEBUG holoviz-mcp
 ```
 
 **Docker**:
+
 ```bash
 docker logs holoviz-mcp
 ```
@@ -340,12 +360,10 @@ If you can't resolve the issue:
 
 1. Gather information:
    - Python version: `python --version`
-   - HoloViz MCP version: `uvx holoviz-mcp --version`
+   - HoloViz MCP version: `holoviz-mcp --version`
    - Operating system
    - Error messages and logs
-
 2. Report on [GitHub Issues](https://github.com/MarcSkovMadsen/holoviz-mcp/issues)
-
 3. Include:
    - Clear description of the problem
    - Steps to reproduce

@@ -41,7 +41,7 @@ Repeat 1.+2. and verify that the `holoviz` mcp server is now running.
 - Run the following command:
 
     ```bash
-    uvx holoviz-mcp install copilot
+    holoviz-mcp install copilot
     ```
 
 - Wait for the command to complete successfully.

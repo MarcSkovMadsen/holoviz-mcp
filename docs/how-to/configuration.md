@@ -6,7 +6,7 @@ This guide explains how to customize HoloViz MCP behavior through configuration 
 
 HoloViz MCP uses a YAML configuration file located at:
 
-```
+```bash
 ~/.holoviz-mcp/config.yaml
 ```
 
@@ -40,7 +40,7 @@ Values: `stdio`, `http`
 Default: `stdio`
 
 ```bash
-HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
 **HOLOVIZ_MCP_HOST**
@@ -48,7 +48,7 @@ Host address to bind to (HTTP transport only).
 Default: `127.0.0.1`
 
 ```bash
-HOLOVIZ_MCP_HOST=0.0.0.0 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+HOLOVIZ_MCP_HOST=0.0.0.0 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
 **HOLOVIZ_MCP_PORT**
@@ -56,7 +56,7 @@ Port to bind to (HTTP transport only).
 Default: `8000`
 
 ```bash
-HOLOVIZ_MCP_PORT=9000 HOLOVIZ_MCP_TRANSPORT=http uvx holoviz-mcp
+HOLOVIZ_MCP_PORT=9000 HOLOVIZ_MCP_TRANSPORT=http holoviz-mcp
 ```
 
 **HOLOVIZ_MCP_LOG_LEVEL**
@@ -65,7 +65,7 @@ Values: `DEBUG`, `INFO`, `WARNING`, `ERROR`
 Default: `INFO`
 
 ```bash
-HOLOVIZ_MCP_LOG_LEVEL=DEBUG uvx holoviz-mcp
+HOLOVIZ_MCP_LOG_LEVEL=DEBUG holoviz-mcp
 ```
 
 **HOLOVIZ_MCP_SERVER_NAME**
@@ -78,7 +78,7 @@ Default: `holoviz-mcp`
 URL prefix for Panel apps when running remotely.
 
 ```bash
-JUPYTER_SERVER_PROXY_URL=/proxy/5007/ uvx holoviz-mcp
+JUPYTER_SERVER_PROXY_URL=/proxy/5007/ holoviz-mcp
 ```
 
 This is useful when running in JupyterHub or similar environments.
@@ -91,7 +91,7 @@ Values: `true`, `false`
 Default: `false`
 
 ```bash
-ANONYMIZED_TELEMETRY=true uvx holoviz-mcp
+ANONYMIZED_TELEMETRY=true holoviz-mcp
 ```
 
 ### Display Server Configuration
@@ -192,7 +192,7 @@ docs:
 After adding repositories, update the index:
 
 ```bash
-uvx holoviz-mcp update index
+holoviz-mcp update index
 ```
 
 ## IDE-Specific Configuration
@@ -206,8 +206,7 @@ Set environment variables in `mcp.json`:
   "servers": {
     "holoviz": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
+      "command": "holoviz-mcp",
       "env": {
         "HOLOVIZ_MCP_LOG_LEVEL": "DEBUG",
       }
@@ -222,8 +221,7 @@ Set environment variables in `mcp.json`:
 {
   "mcpServers": {
     "holoviz": {
-      "command": "uvx",
-      "args": ["holoviz-mcp"],
+      "command": "holoviz-mcp",
       "env": {
         "HOLOVIZ_MCP_LOG_LEVEL": "INFO"
       }
@@ -241,7 +239,7 @@ See the [Docker Guide](docker.md) for Docker-specific configuration options.
 HoloViz MCP includes a built-in configuration viewer. Run:
 
 ```bash
-uvx holoviz-mcp serve
+holoviz-mcp serve
 ```
 
 Navigate to the Configuration Viewer tool to see your current configuration.
