@@ -1,8 +1,9 @@
 """[HoloViz](https://holoviz.org/) Documentation MCP Server.
 
-This server provides tools, resources and prompts for accessing documentation related to the HoloViz ecosystems.
+This server provides tools, resources and prompts for accessing documentation related to the HoloViz ecosystems
+and any user-defined/internal documentation you have configured.
 
-Use this server to search and access documentation for HoloViz libraries, including Panel and hvPlot.
+Use this server to search and access documentation for HoloViz libraries (Panel, hvPlot, etc.) and your custom projects.
 """
 
 import atexit
@@ -147,9 +148,10 @@ mcp: FastMCP = FastMCP(
     instructions="""
     [HoloViz](https://holoviz.org/) Documentation MCP Server.
 
-    This server provides tools, resources and prompts for accessing documentation related to the HoloViz ecosystems.
+    This server provides tools, resources and prompts for accessing documentation related to the HoloViz ecosystems
+    and any user-defined/internal documentation you have configured.
 
-    Use this server to search and access documentation for HoloViz libraries, including Panel and hvPlot.
+    Use this server to search and access documentation for HoloViz libraries (Panel, hvPlot, etc.) and your custom projects.
     """,
 )
 
@@ -193,17 +195,22 @@ def list_skills() -> list[str]:
 
 
 @mcp.tool
-async def get_reference_guide(component: str, project: str | None = None, content: bool = True, ctx: Context | None = None) -> list[Document]:
-    """Find reference guides for specific HoloViz components.
+async def get_reference_guide(
+    component: str,
+    project: str | None = None,
+    content: bool = True,
+    ctx: Context | None = None,
+) -> list[Document]:
+    """Find reference guides for specific components in HoloViz or user-defined projects.
 
     Reference guides are a subset of all documents that focus on specific UI components
     or plot types, such as:
 
     - `panel`: "Button", "TextInput", ...
     - `hvplot`: "bar", "scatter", ...
-    - ...
+    - `my-custom-project`: custom components from your organization
 
-    DO use this tool to easily find reference guides for specific components in HoloViz libraries.
+    DO use this tool to easily find reference guides for specific components in HoloViz libraries and your custom projects.
 
     Args:
         component (str): Name of the component (e.g., "Button", "TextInput", "bar", "scatter")
@@ -214,7 +221,7 @@ async def get_reference_guide(component: str, project: str | None = None, conten
 
     Returns
     -------
-        list[Document]: A list of reference guides for the component.
+        list[Document]: A list of reference guides for the component with full content.
 
     Examples
     --------
@@ -231,15 +238,15 @@ async def get_reference_guide(component: str, project: str | None = None, conten
 
 @mcp.tool
 async def list_projects() -> list[str]:
-    """List all available projects with documentation.
+    """List all HoloViz and user-defined projects with indexed documentation.
 
-    This tool discovers all projects that have documentation available in the index,
-    including both core HoloViz libraries and any additional user-defined projects.
+    This includes both built-in HoloViz projects (panel, hvplot, etc.) and any custom/internal
+    documentation projects you have configured.
 
     Returns
     -------
         list[str]: A list of project names that have documentation available.
-                   Names are returned in hyphenated format (e.g., "panel-material-ui").
+                   Names are returned in hyphenated format (e.g., "panel-material-ui", "my-custom-project").
     """
     indexer = get_indexer()
     return await indexer.list_projects()
@@ -253,7 +260,7 @@ async def get_document(path: str, project: str, ctx: Context) -> Document:
 
     Args:
         path: The relative path to the source document (e.g., "index.md", "how_to/customize.md")
-        project: the name of the project (e.g., "panel", "panel-material-ui", "hvplot")
+        project: the name of the project (e.g., "panel", "panel-material-ui", "hvplot", "my-custom-project")
 
     Returns
     -------
@@ -268,24 +275,54 @@ async def search(
     query: str,
     project: str | None = None,
     content: bool = True,
-    max_results: int = 5,
+    max_results: int = 2,
+    max_content_chars: int | None = 10000,
     ctx: Context | None = None,
 ) -> list[Document]:
-    """Search the documentation using semantic similarity.
+    """Search the HoloViz and any user defined project documentation using semantic similarity.
 
-    Optimized for finding relevant documentation based on natural language queries.
+    IMPORTANT: This is a general purpose search tool. Not just for searching the HoloViz documentation.
 
-    DO use this tool to search the holoviz projects documentation and any additional user-defined
-    projects.
+    DO use this tool to search the HoloViz project documentation
+    DO use this tool to search any additional user-defined project documentation.
+    DO use the holoviz_list_projects tool to list the available projects.
+
+    BEST PRACTICES:
+    - For initial exploration, use content=False to get an overview of available documents
+    - Use get_document() to retrieve full content of specific documents
+    - Adjust max_content_chars if you need more or less content per result
+    - Set max_content_chars=None to get untruncated content (use with caution for large docs)
+
+    QUERY OPTIMIZATION:
+    The search uses context-aware truncation that centers returned content on query keywords.
+    To get the most relevant excerpts:
+
+    - Use SPECIFIC terms: "CheckboxEditor SelectEditor" > "editor dropdown"
+    - Use UNIQUE identifiers: "background_gradient text_gradient" > "styling colors"
+    - Avoid COMMON terms that appear everywhere: "pandas", "import", "data", "widget"
+    - Include CLASS/FUNCTION names: "add_filter RangeSlider" > "filtering with widgets"
+    - Use MULTIPLE specific terms: Helps the algorithm find the right section
+    - Target FEATURE-SPECIFIC vocabulary: Terms unique to the feature you're looking for
+
+    Example: Instead of "how to add pagination to a table", use "pagination page_size local remote"
+    This ensures the truncated content focuses on the pagination section, not generic table info.
 
     Args:
-        query (str): Search query using natural language.
-            For example "How to style Material UI components?" or "interactive plotting with widgets"
+        query (str): Search query using natural language or specific keywords.
+            Natural language works for finding documents, but specific terms work better
+            for content truncation. See QUERY OPTIMIZATION above.
+
+            Good examples: "Button onClick on_click callback event", "hvPlot bar chart kind options"
+            Okay examples: "how to style Material UI components", "interactive plotting with widgets"
         project (str, optional): Optional project filter. Defaults to None.
-            Examples: "panel", "panel-material-ui", "hvplot", "param", "holoviews"
-        content (bool, optional): Whether to include full content. Defaults to True.
+            Examples: "panel", "hvplot", "my-custom-project""
+        content (bool, optional): Whether to include content. Defaults to True.
             Set to False to only return metadata for faster responses.
-        max_results (int, optional): Maximum number of results to return. Defaults to 5.
+        max_results (int, optional): Maximum number of results to return. Defaults to 2.
+            Increase if you need more options, but be mindful of response size.
+        max_content_chars (int | None, optional): Maximum characters of content per result.
+            Defaults to 10000. Set to None for untruncated content (may cause token limit errors).
+            Content is truncated at word boundaries with an ellipsis indicator.
 
     Returns
     -------
@@ -293,14 +330,16 @@ async def search(
 
     Examples
     --------
-    >>> search("How to style Material UI components?", "panel-material-ui")  # Semantic search in specific project
-    >>> search("interactive plotting with widgets", "hvplot")  # Find hvplot interactive guides
-    >>> search("dashboard layout best practices")  # Search across all projects
-    >>> search("custom widgets", project="panel", max_results=3)  # Limit results
-    >>> search("parameter handling", content=False)  # Get metadata only for overview
+    >>> search("Button onClick on_click callback event", "panel-material-ui")  # Optimized: specific class and methods
+    >>> search("hvPlot bar chart kind colormap", "hvplot")  # Optimized: feature-specific terms
+    >>> search("FlexBox GridBox layout responsive sizing", "panel")  # Optimized: specific layout classes
+    >>> search("Tabulator pagination page_size local remote", "panel", max_results=3)  # Optimized with more results
+    >>> search("Param Parameter depends watch", content=False)  # Quick metadata search with specific terms
+    >>> search("stream follow rollover patch", max_content_chars=5000)  # Streaming-specific methods
+    >>> search("custom database connector SQL query", "my-custom-project")  # User project with specific terms
     """
     indexer = get_indexer()
-    return await indexer.search(query, project, content, max_results, ctx=ctx)
+    return await indexer.search(query, project, content, max_results, max_content_chars, ctx=ctx)
 
 
 @mcp.tool(enabled=False)

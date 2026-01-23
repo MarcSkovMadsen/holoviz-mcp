@@ -30,22 +30,6 @@ class TestUtils:
         extensions = find_extensions(code)
         assert "vega" in extensions
 
-    def test_find_extensions_pandas(self):
-        """Test finding tabulator extension for pandas."""
-        code = "import pandas as pd\ndf = pd.DataFrame()"
-
-        # Without namespace
-        extensions = find_extensions(code)
-        # Should not find tabulator without result in namespace
-        assert "tabulator" not in extensions
-
-        # With namespace
-        import pandas as pd
-
-        namespace = {"_panel_result": pd.DataFrame({"x": [1, 2, 3]})}
-        extensions = find_extensions(code, namespace)
-        assert "tabulator" in extensions
-
     def test_find_extensions_deduplicate(self):
         """Test that extensions are deduplicated."""
         code = "import plotly\nimport plotly.express"

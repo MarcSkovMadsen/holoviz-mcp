@@ -62,6 +62,268 @@ async def log_exception(message: str, ctx: Context | None = None):
         raise Exception(message)
 
 
+def extract_keywords(query: str) -> list[str]:
+    """Extract meaningful keywords from search query.
+
+    Removes common stopwords and splits into terms.
+
+    Args:
+        query: Search query string
+
+    Returns
+    -------
+        List of meaningful keywords (lowercase)
+    """
+    stopwords = {
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "from",
+        "by",
+        "about",
+        "how",
+        "what",
+        "where",
+        "when",
+        "why",
+        "which",
+        "who",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "should",
+        "could",
+        "can",
+        "may",
+        "might",
+        "must",
+        "shall",
+    }
+
+    # Split and clean
+    keywords = query.lower().split()
+    # Remove stopwords, keep meaningful terms (> 2 chars)
+    keywords = [k for k in keywords if k not in stopwords and len(k) > 2]
+
+    return keywords
+
+
+def find_keyword_matches(content: str, keywords: list[str]) -> list[tuple[int, int, str]]:
+    """Find all positions where keywords appear in content.
+
+    Args:
+        content: Document content to search
+        keywords: List of keywords to find
+
+    Returns
+    -------
+        List of (start_pos, end_pos, matched_keyword) tuples, sorted by position
+    """
+    matches = []
+    content_lower = content.lower()
+
+    for keyword in keywords:
+        start = 0
+        while True:
+            pos = content_lower.find(keyword, start)
+            if pos == -1:
+                break
+            matches.append((pos, pos + len(keyword), keyword))
+            start = pos + 1
+
+    # Sort by position
+    matches.sort(key=lambda x: x[0])
+    return matches
+
+
+def build_excerpts(content: str, matches: list[tuple[int, int, str]], max_chars: int, context_chars: int) -> str:
+    """Build excerpt string from matches with context windows.
+
+    Combines nearby matches, adds separators for distant sections.
+
+    Args:
+        content: Full document content
+        matches: List of (start_pos, end_pos, keyword) tuples
+        max_chars: Maximum total characters to return
+        context_chars: Characters to include before/after each match
+
+    Returns
+    -------
+        Excerpt(s) with [...] separators and truncation indicators
+    """
+    if not matches:
+        # Fallback to beginning truncation
+        truncated = content[:max_chars]
+        last_space = truncated.rfind(" ")
+        if last_space > max_chars * 0.8:
+            truncated = truncated[:last_space]
+        return truncated + "\n\n[... content truncated, use get_document() for full content ...]"
+
+    # Cluster nearby matches
+    clusters = []
+    current_cluster = [matches[0]]
+
+    for match in matches[1:]:
+        # If within 2x context window, add to current cluster
+        if match[0] - current_cluster[-1][1] < 2 * context_chars:
+            current_cluster.append(match)
+        else:
+            clusters.append(current_cluster)
+            current_cluster = [match]
+    clusters.append(current_cluster)
+
+    # Build excerpts from clusters
+    excerpts: list[str] = []
+    total_chars = 0
+
+    for cluster in clusters:
+        # Get range for this cluster
+        start_pos = max(0, cluster[0][0] - context_chars)
+        end_pos = min(len(content), cluster[-1][1] + context_chars)
+
+        # Extract excerpt, break at word boundaries
+        excerpt = content[start_pos:end_pos]
+
+        # Trim to word boundaries
+        if start_pos > 0:
+            # Find first space to start at word boundary
+            first_space = excerpt.find(" ")
+            if first_space != -1 and first_space < context_chars * 0.3:
+                excerpt = excerpt[first_space + 1 :]
+                start_pos += first_space + 1
+
+        if end_pos < len(content):
+            # Find last space to end at word boundary
+            last_space = excerpt.rfind(" ")
+            if last_space > len(excerpt) * 0.7:
+                excerpt = excerpt[:last_space]
+
+        # Check if we have room
+        separator = "\n\n[...]\n\n" if excerpts else ""
+        if total_chars + len(excerpt) + len(separator) > max_chars:
+            # Try to fit partial excerpt
+            remaining = max_chars - total_chars - len(separator)
+            if remaining > 200:  # Only add if we have reasonable space
+                excerpt = excerpt[:remaining]
+                last_space = excerpt.rfind(" ")
+                if last_space > remaining * 0.7:
+                    excerpt = excerpt[:last_space]
+                excerpts.append(excerpt)
+            break
+
+        excerpts.append(excerpt)
+        total_chars += len(excerpt) + len(separator)
+
+    if not excerpts:
+        # Fallback if nothing fits
+        return build_excerpts(content, [], max_chars, context_chars)
+
+    # Combine excerpts
+    result = "\n\n[...]\n\n".join(excerpts)
+
+    # Add indicators at start/end if content was truncated
+    first_match_pos = matches[0][0] if matches else 0
+    last_match_pos = matches[-1][1] if matches else len(content)
+
+    if first_match_pos > context_chars:
+        result = "[...]\n\n" + result
+    if last_match_pos < len(content) - context_chars:
+        result = result + "\n\n[...]"
+
+    return result
+
+
+def extract_relevant_excerpt(content: str, query: str, max_chars: int, context_chars: int = 500) -> str:
+    """Extract relevant excerpt from content based on query keywords.
+
+    Args:
+        content: Full document content
+        query: Search query string
+        max_chars: Maximum total characters to return
+        context_chars: Characters to include before/after each match (default: 500)
+
+    Returns
+    -------
+        Excerpt(s) centered around query matches, or beginning if no matches
+    """
+    # Extract keywords from query
+    keywords = extract_keywords(query)
+
+    if not keywords:
+        # No meaningful keywords, fall back to simple truncation
+        return build_excerpts(content, [], max_chars, context_chars)
+
+    # Find keyword matches in content
+    matches = find_keyword_matches(content, keywords)
+
+    if not matches:
+        # No matches found, fall back to simple truncation
+        return build_excerpts(content, [], max_chars, context_chars)
+
+    # Build excerpts from matches
+    return build_excerpts(content, matches, max_chars, context_chars)
+
+
+def truncate_content(content: str | None, max_chars: int | None, query: str | None = None) -> str | None:
+    """Truncate content, optionally centering on query matches.
+
+    Args:
+        content: The content to truncate
+        max_chars: Maximum characters allowed. If None, no truncation is performed.
+        query: Optional search query for context-aware truncation
+
+    Returns
+    -------
+        The original content if under limit, truncated content with ellipsis if over limit,
+        or None if content is None.
+    """
+    if content is None or max_chars is None:
+        return content
+
+    if len(content) <= max_chars:
+        return content
+
+    # If query provided, use smart excerpt extraction
+    if query:
+        # Adjust context_chars based on max_chars to ensure keywords fit
+        # Use at most 40% of max_chars for context on each side
+        context_chars = min(500, int(max_chars * 0.4))
+        return extract_relevant_excerpt(content, query, max_chars, context_chars)
+
+    # Otherwise, use simple truncation (existing logic)
+    truncated = content[:max_chars]
+    last_space = truncated.rfind(" ")
+
+    # Don't cut off too much - if last space is in the last 20% of max_chars, use it
+    if last_space > max_chars * 0.8:
+        truncated = truncated[:last_space]
+
+    # Add indicator
+    return truncated + "\n\n[... content truncated, use get_document() for full content ...]"
+
+
 def get_skill(name: str) -> str:
     """Get skill for using a project with LLMs.
 
@@ -102,7 +364,7 @@ def get_skill(name: str) -> str:
             available_files.extend([f.name for f in search_dir.glob("*.md")])
 
     available_str = ", ".join(set(available_files)) if available_files else "None"
-    raise FileNotFoundError(f"Skill file {name} not found. " f"Available skills: {available_str}. " f"Searched in: {[str(p) for p in search_paths]}")
+    raise FileNotFoundError(f"Skill file {name} not found. Available skills: {available_str}. Searched in: {[str(p) for p in search_paths]}")
 
 
 def list_skills() -> list[str]:
@@ -708,7 +970,13 @@ class DocumentationIndexer:
 
             raise ValueError(f"Document ID collision detected. {len(duplicates)} duplicate IDs found. Check logs for details.")
 
-    async def search_get_reference_guide(self, component: str, project: Optional[str] = None, content: bool = True, ctx: Context | None = None) -> list[Document]:
+    async def search_get_reference_guide(
+        self,
+        component: str,
+        project: str | None = None,
+        content: bool = True,
+        ctx: Context | None = None,
+    ) -> list[Document]:
         """Search for reference guides for a specific component."""
         async with self.db_lock:
             await self.ensure_indexed()
@@ -759,7 +1027,15 @@ class DocumentationIndexer:
                             all_results.append(document)
             return all_results
 
-    async def search(self, query: str, project: Optional[str] = None, content: bool = True, max_results: int = 5, ctx: Context | None = None) -> list[Document]:
+    async def search(
+        self,
+        query: str,
+        project: str | None = None,
+        content: bool = True,
+        max_results: int = 5,
+        max_content_chars: int | None = 10000,
+        ctx: Context | None = None,
+    ) -> list[Document]:
         """Search the documentation using semantic similarity."""
         async with self.db_lock:
             await self.ensure_indexed(ctx=ctx)
@@ -778,6 +1054,8 @@ class DocumentationIndexer:
 
                         # Include content if requested
                         content_text = results["documents"][0][i] if (content and results["documents"]) else None
+                        # Apply smart truncation with query context
+                        content_text = truncate_content(content_text, max_content_chars, query=query)
 
                         # Safe URL construction
                         url_value = metadata.get("url", "https://example.com")

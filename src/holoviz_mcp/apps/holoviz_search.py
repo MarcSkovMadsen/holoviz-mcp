@@ -41,6 +41,23 @@ This tool provides powerful semantic search capabilities across the extended Hol
 - **`project`**: Filter results by specific project (e.g., "panel", "hvplot", "datashader") or search across all projects
 - **`max_results`**: Control the number of results returned (1-50 documents)
 - **`content`**: Choose whether to include full document content or just metadata for faster responses
+- **`max_content_chars`**: Maximum characters of content per result (100-50,000). Smaller values provide faster responses. Content is truncated at word boundaries with query-relevant excerpts.
+
+### Query Optimization Tips
+
+For best results with content truncation, use **specific terms** rather than generic phrases:
+
+- ✅ **Good**: "Button onClick on_click callback event" - specific class and method names
+- ✅ **Good**: "Tabulator pagination page_size local remote" - feature-specific terms
+- ❌ **Avoid**: "how to add pagination to a table" - too generic, common words
+
+**Why This Matters**: The search uses context-aware truncation that centers content on your query keywords. Specific terms help the system extract the most relevant sections of documentation.
+
+**Best Practices**:
+- Use class/function names: "RangeSlider add_filter" > "filtering with widgets"
+- Use unique identifiers: "background_gradient text_gradient" > "styling colors"
+- Avoid common terms: "pandas", "import", "data" appear everywhere
+- Use multiple specific terms to help locate the right section
 
 ### What's Indexed
 
@@ -84,10 +101,16 @@ class SearchConfiguration(param.Parameterized):
         doc="Filter results to a specific project. Select 'all' for all projects.",
     )
 
-    max_results = param.Integer(default=5, bounds=(1, 50), doc="Maximum number of search results to return")
+    max_results = param.Integer(default=2, bounds=(1, 50), doc="Maximum number of search results to return")
 
     content = param.Boolean(
         default=True, label="Include Full Content", doc="Include full document content in results. Disable for faster and simpler responses with metadata only."
+    )
+
+    max_content_chars = param.Integer(
+        default=10000,
+        bounds=(100, 50000),
+        doc="Maximum characters of content per result. Use smaller values for faster responses. Set to None for full content (may cause token limit errors).",
     )
 
     search = param.Event(doc="Event to trigger search when parameters change")
@@ -99,7 +122,7 @@ class SearchConfiguration(param.Parameterized):
         super().__init__(**params)
 
         if pn.state.location:
-            pn.state.location.sync(self, parameters=["query", "project", "content", "max_results"])
+            pn.state.location.sync(self, parameters=["query", "project", "content", "max_results", "max_content_chars"])
 
         if self.query:
             self.param.trigger("search")
@@ -108,7 +131,9 @@ class SearchConfiguration(param.Parameterized):
     async def _update_results(self):
         indexer = _get_indexer()
         project = self.project if self.project != ALL else None
-        self.results = await indexer.search(self.query, project=project, content=self.content, max_results=self.max_results)
+        self.results = await indexer.search(
+            self.query, project=project, content=self.content, max_results=self.max_results, max_content_chars=self.max_content_chars
+        )
 
 
 async def _update_projects(self):
@@ -158,13 +183,13 @@ class DocumentsMenuList(pn.viewable.Viewer):
         """Convert a Document to a secondary text for the menu item."""
         return f"""{document.description}
 
-Relevance Score: {document.relevance_score or 'N/A':0.2f}
+Relevance Score: {document.relevance_score or "N/A":0.2f}
 """
 
     @param.depends("documents")
     def _items(self):
         return [
-            {"label": f"{index+1}. {document.project}: {document.title}", "icon": None, "secondary": self._to_secondary(document)}
+            {"label": f"{index + 1}. {document.project}: {document.title}", "icon": None, "secondary": self._to_secondary(document)}
             for index, document in enumerate(self.documents)
         ]
 
@@ -279,6 +304,7 @@ class SearchApp(pn.viewable.Viewer):
                 widgets={
                     "query": {"type": pmui.TextAreaInput, "rows": 3, "placeholder": "Enter search query ..."},
                     "search": {"type": pmui.Button, "label": "Search", "button_type": "primary"},
+                    "max_content_chars": {"type": pn.widgets.IntInput, "step": 1000, "start": 100, "end": 50000, "placeholder": "Characters per result"},
                 },
             )
 

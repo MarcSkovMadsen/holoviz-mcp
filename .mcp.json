@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "holoviz": {
+      "type": "stdio",
+      "command": ".pixi/envs/default/bin/holoviz-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
