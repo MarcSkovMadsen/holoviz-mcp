@@ -143,6 +143,7 @@ Now you have a standalone Python file that you can continue working on or run an
 **Why it happens**: The required package isn't installed in your Python environment
 
 **Solution**: Install the missing package:
+
 ```bash
 pip install yfinance
 ```
@@ -163,7 +164,7 @@ pip install yfinance
 
 Congratulations! In this tutorial, you have:
 
-- ✅ Used the HoloViz Analysis Planner agent to design a data report
+- ✅ Used the HoloViz DataViz Architect agent to design a data report
 - ✅ Implemented a complete stock analysis application
 - ✅ Created interactive charts with hvPlot
 - ✅ Built a multi-component report with Panel
