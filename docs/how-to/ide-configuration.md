@@ -6,8 +6,13 @@ This guide covers configuring HoloViz MCP with different IDEs and AI assistants.
 
 1. Open VS Code
 2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
-3. Type "MCP: Edit Settings" and press Enter
-4. Add this configuration to your `mcp.json`:
+3. Type "MCP: Add Server" and press Enter
+4. Select "Command (stdio)"
+5. Enter the command "holoviz-mcp"
+6. Enter *Server ID* "holoviz"
+7. Select the "Global" *Configuration Target*
+
+This will add the below configuration to user mcp.json file.
 
   ```json
   {
@@ -21,21 +26,32 @@ This guide covers configuring HoloViz MCP with different IDEs and AI assistants.
   }
   ```
 
-5. Save and restart VS Code
-
-### Configuration File Locations
-
-- **User Settings**: `~/.config/Code/User/globalStorage/github.copilot/mcp.json`
-- **Workspace Settings**: `.vscode/mcp.json` (in your project)
-- **Remote Settings**: In remote workspace `.vscode/mcp.json`
-
 **Tip**: For remote development (SSH, Dev Containers, Codespaces), use Workspace or Remote settings to ensure the MCP server runs on the remote machine.
 
-### Monitor Server Status
+Please refer to the [VS Code | MCP Servers](https://code.visualstudio.com/docs/copilot/customization/mcp-servers) guide for more details.
 
-1. Open Output panel: `View` → `Output`
-2. Select "MCP: holoviz" from the dropdown
-3. View server logs and status messages
+### Start the MCP Server
+
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+2. Type "MCP: List Servers"
+3. Select `holoviz` from the dropdown
+4. Select "Start Server"
+
+![VS Code Start HoloViz MCP](../assets/images/vscode-start-holoviz-mcp.png)
+
+## Claude Code
+
+To configure globally for your user:
+
+```bash
+claude mcp add holoviz --transport stdio --scope user -- holoviz-mcp
+```
+
+This will update your `~/.claude.json` file.
+
+In Claude Code, run the `/mcp` command to verify the status of the HoloViz MCP server.
+
+![Claude Code HoloViz MCP](../assets/images/claude-code-holoviz-mcp.png)
 
 ## Claude Desktop
 

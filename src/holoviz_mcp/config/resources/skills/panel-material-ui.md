@@ -40,6 +40,7 @@ import param
 # DO run pn.extension
 # DO remember to add any imports needed by panes, e.g. pn.extension("tabulator", "plotly", ...)
 # DON'T add "bokeh" as an extension. It is not needed.
+# DON'T add "panel_material_ui" as an extension. It is not needed.
 # Do use throttled=True when using slider unless you have a specific reason not to
 pn.extension(throttled=True)
 

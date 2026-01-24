@@ -513,6 +513,7 @@ def kpi_value(self):
 ### CheckButtonGroup
 
 - DO arrange vertically when displaying `CheckButtonGroup` in a sidebar `CheckButtonGroup(..., vertical=True)`.
+- DO set `button_type="primary"` and `button_style="outline"`.
 
 ### Tabulator
 
@@ -666,6 +667,8 @@ Use `replaceMerge` for any chart where:
 - Users can filter data (year selectors, category filters)
 - The number of series changes dynamically
 - Data is grouped by categories that may be added/removed
+
+DO make sure there the chart title does not overlap with the rest of the plot including legend.
 
 ### Date time widgets
 
