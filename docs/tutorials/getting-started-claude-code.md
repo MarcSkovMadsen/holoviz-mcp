@@ -15,6 +15,7 @@ This tutorial will guide you through installing and using HoloViz MCP with Claud
     - **Python 3.11 or newer** installed on your system
     - **[uv](https://docs.astral.sh/uv/)** package installer
     - **Claude Code CLI** installed ([Installation guide](https://claude.ai/download))
+    - **panel** installed and runnable in your terminal
 
 ## Step 1: Install HoloViz MCP
 
@@ -67,15 +68,17 @@ Let's verify that HoloViz MCP is working correctly!
 
 ### Check Server Status
 
-In Claude Code, run the `/mcp` command to verify the status of the HoloViz MCP server:
+Start Claude Code and run the `/mcp` command to verify the status of the HoloViz MCP server:
 
 ```bash
-claude /mcp
+/mcp
 ```
 
 You should see `holoviz` listed as an available MCP server.
 
 ![Claude Code HoloViz MCP](../assets/images/claude-code-holoviz-mcp.png)
+
+Press *Escape* to return to the prompt.
 
 ### Test with Claude
 
@@ -87,6 +90,10 @@ Open a chat with Claude Code and try these questions:
 What Panel components are available for user input?
 ```
 
+You should see it using the `panel_search_components` tool in action
+
+![Claude Code](../assets/images/claude-code-panel-search-components.png)
+
 **Component Details**:
 
 ```text
@@ -95,22 +102,19 @@ What parameters does the Panel Button component accept?
 
 If Claude provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
 
-## Step 6: Install Claude Agents (Optional)
+## Step 6: Install HoloViz Agents (Optional)
 
 HoloViz MCP includes specialized agents for Claude Code that help with planning and implementing HoloViz applications.
-
-### Install Project-Level Agents
 
 Navigate to your project directory and run:
 
 ```bash
-cd /path/to/your/project
 holoviz-mcp install claude
 ```
 
 This creates a `.claude/agents/` directory with:
 
-- `holoviz-dataviz-architect.md` - Agent for data analysis and visualization architecture
+- `holoviz-dataviz-analyst.md` - Agent for data analysis and visualization architecture
 - `holoviz-dataapp-architect.md` - Agent for architecting Panel applications and dashboards
 
 !!! tip "Install User-Level Agents"
@@ -138,12 +142,18 @@ Claude will provide code using HoloViz MCP's knowledge of Panel components!
 Save the code to `app.py` and run it:
 
 ```bash
-panel serve app.py --show
+run it
 ```
+
+!!! tip "Panel is not installed"
+    If the command errors with "Panel is not installed" you will have to create a virtual
+    environment and install panel
 
 Your dashboard will open in your default web browser!
 
-## Step 8: Using the Display Tool
+![Dashboard](../assets/images/getting-started-dashboard.png)
+
+## Step 8: Displaying Data Visualizations
 
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Claude:
 
@@ -152,6 +162,8 @@ Use the holoviz_display tool to show me a simple hvplot visualization of random 
 ```
 
 Claude will use the display tool to generate and display the visualization. See the [Display System tutorial](display-system.md) for more details.
+
+![DataViz Displayed](../assets/images/getting-started-display.png)
 
 ## What's Next?
 
@@ -214,13 +226,13 @@ For more help, see the [Troubleshooting Guide](../how-to/troubleshooting.md) or 
 
 In this tutorial, you:
 
-✅ Installed HoloViz MCP using uv
-✅ Created the documentation index
-✅ Installed Chromium
-✅ Configured Claude Code
-✅ Verified the installation
-✅ Built your first Panel dashboard
-✅ Learned about the display tool
-✅ Learned how to work on projects with Claude Code
+- ✅ Installed HoloViz MCP using uv
+- ✅ Created the documentation index
+- ✅ Installed Chromium
+- ✅ Configured Claude Code
+- ✅ Verified the installation
+- ✅ Built your first Panel dashboard
+- ✅ Learned about the display tool
+- ✅ Learned how to work on projects with Claude Code
 
 You're now ready to use HoloViz MCP with Claude Code to accelerate your Panel development from the command line! Happy coding! 🚀

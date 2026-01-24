@@ -5,6 +5,7 @@ This module provides a unified CLI using Typer for all HoloViz MCP commands.
 
 import shutil
 import subprocess
+import sys
 
 import typer
 from typing_extensions import Annotated
@@ -190,7 +191,7 @@ def install_chromium() -> None:
 
     This command installs the Chromium browser required for taking screenshots.
     """
-    subprocess.run(["playwright", "install", "chromium"], check=True)
+    subprocess.run([str(sys.executable), "-m", "playwright", "install", "chromium"], check=True)
 
 
 @app.command()
