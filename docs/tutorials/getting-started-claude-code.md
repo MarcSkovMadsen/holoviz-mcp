@@ -110,8 +110,8 @@ holoviz-mcp install claude
 
 This creates a `.claude/agents/` directory with:
 
-- `holoviz-app-planner.md` - Agent for planning Panel applications and dashboards
-- `holoviz-analysis-planner.md` - Agent for data analysis and visualization planning
+- `holoviz-dataviz-architect.md` - Agent for data analysis and visualization architecture
+- `holoviz-dataapp-architect.md` - Agent for architecting Panel applications and dashboards
 
 !!! tip "Install User-Level Agents"
 

@@ -7,7 +7,7 @@ By the end, you'll have built an interactive report that displays financial data
 <!-- <iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Stock Analysis Report with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe> -->
 
 !!! tip "What you'll learn"
-    - How to use the *HoloViz Analysis Planner* agent to design data applications
+    - How to use the *HoloViz DataViz Architect* agent to design data applications
     - How to use the `holoviz_display` tool to quickly visualize and persist your work
 
 !!! note "Prerequisites"
@@ -15,16 +15,16 @@ By the end, you'll have built an interactive report that displays financial data
 
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
     - HoloViz MCP installed and configured ([Getting Started Guide](getting-started-copilot-vscode.md))
-    - Configured the `HoloViz Analysis Planner` agent. ([HoloViz Agents](getting-started-copilot-vscode.md#step-9-using-holoviz-agents))
+    - Configured the `HoloViz DataViz Architect` agent. ([HoloViz Agents](getting-started-copilot-vscode.md#step-9-using-holoviz-agents))
     - The HoloViz MCP server running ([How to start the server](getting-started-copilot-vscode.md#start-the-server))
     - `yfinance` installed in the virtual environment where you run `holoviz-mcp`: `pip install yfinance`
 
-## Step 1: Plan Your Report with the HoloViz Analysis Planner
+## Step 1: Plan Your Report with the HoloViz DataViz Architect
 
-First, let's use the HoloViz Analysis Planner agent to design our application architecture. This agent understands best practices for organizing Panel reports and will help us create a solid plan before writing code.
+First, let's use the HoloViz DataViz Architect agent to design our application architecture. This agent understands best practices for organizing Panel reports and will help us create a solid plan before writing code.
 
 1. In VS Code, open the Copilot Chat interface
-2. Click the **Set Agent** dropdown and select **HoloViz Analysis Planner**
+2. Click the **Set Agent** dropdown and select **HoloViz DataViz Architect**
 3. Ask the agent:
 
     ```text
@@ -39,12 +39,12 @@ First, let's use the HoloViz Analysis Planner agent to design our application ar
     Display using the #holoviz_display tool. KISS - Keep it simple stupid.
     ```
 
-    ![HoloViz Analysis Planner](../assets/images/stock-analysis-holoviz-planner.png)
+    ![HoloViz DataViz Architect](../assets/images/stock-analysis-holoviz-architect.png)
 
 4. Press Enter and wait for the agent to respond
 
     !!! success "What you'll see"
-        The planner will provide a detailed architecture plan including:
+        The architect will provide a detailed architecture plan including:
 
         - Data sources and how to fetch stock data
         - Chart types to use for price and volume visualization
