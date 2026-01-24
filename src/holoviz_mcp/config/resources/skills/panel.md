@@ -668,7 +668,7 @@ Use `replaceMerge` for any chart where:
 - The number of series changes dynamically
 - Data is grouped by categories that may be added/removed
 
-DO make sure there the chart title does not overlap with the rest of the plot including legend.
+DO make sure the chart title does not overlap with the rest of the plot including legend.
 
 ### Date time widgets
 
