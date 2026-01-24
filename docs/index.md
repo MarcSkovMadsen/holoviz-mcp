@@ -20,7 +20,8 @@ HoloViz MCP is a [Model Context Protocol](https://modelcontextprotocol.io/introd
 
 - **📚 Documentation Access**: Search through comprehensive HoloViz documentation
 - **🧩 Component Intelligence**: Discover 100+ Panel, hvPlot and HoloViews components with detailed information
-- **🤖 Agent Skills**: Augment your LLM or Copilots with HoloViz skills
+- **🤖 Agents and Skills**: Augment your LLM or Copilots with HoloViz agents and skills
+- **📺 Display**: Easily display Python code snippets and full data apps for fast feedback cycles
 
 ### Why Use HoloViz MCP?
 

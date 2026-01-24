@@ -59,6 +59,30 @@ Test the configuration by asking Claude about Panel components:
 
 If Claude provides detailed, accurate responses with specific Panel component information, your configuration is working! 🎉
 
+## Install Claude Agents (Optional)
+
+HoloViz MCP provides specialized agents for Claude Code that can help with planning and implementation:
+
+**Project-level installation** (installs to `.claude/agents/`):
+
+```bash
+holoviz-mcp install claude
+```
+
+**User-level installation** (installs to `~/.claude/agents/`):
+
+```bash
+holoviz-mcp install claude --scope user
+```
+
+**With skills** (optional):
+
+```bash
+holoviz-mcp install claude --skills
+```
+
+See the [Getting Started guide](../tutorials/getting-started-claude-code.md#step-6-install-claude-agents-optional) for usage examples.
+
 ## Advanced Configuration
 
 ### Set Log Level

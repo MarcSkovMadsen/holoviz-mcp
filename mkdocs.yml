@@ -100,10 +100,10 @@ nav:
             - Windsurf: tutorials/getting-started-windsurf.md
         - Display System: tutorials/display-system.md
         - Projects:
-            - Stock Analysis (VS Code): tutorials/stock-analysis-copilot-vscode.md
-            - Stock Analysis (Claude Code): tutorials/stock-analysis-claude-code.md
-            - Weather Dashboard (VS Code): tutorials/weather-dashboard-copilot-vscode.md
-            - Weather Dashboard (Claude Code): tutorials/weather-dashboard-claude-code.md
+            - Stock Analysis (Copilot): tutorials/stock-analysis-copilot-vscode.md
+            - Stock Analysis (Claude): tutorials/stock-analysis-claude-code.md
+            - Weather Dashboard (Copilot): tutorials/weather-dashboard-copilot-vscode.md
+            - Weather Dashboard (Claude): tutorials/weather-dashboard-claude-code.md
     - How-To Guides:
         - Installation:
             - uv (recommended): how-to/install-uv.md

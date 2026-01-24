@@ -95,7 +95,35 @@ What parameters does the Panel Button component accept?
 
 If Claude provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
 
-## Step 6: Build Your First Dashboard
+## Step 6: Install Claude Agents (Optional)
+
+HoloViz MCP includes specialized agents for Claude Code that help with planning and implementing HoloViz applications.
+
+### Install Project-Level Agents
+
+Navigate to your project directory and run:
+
+```bash
+cd /path/to/your/project
+holoviz-mcp install claude
+```
+
+This creates a `.claude/agents/` directory with:
+
+- `holoviz-dataviz-architect.md` - Agent for data analysis and visualization architecture
+- `holoviz-dataapp-architect.md` - Agent for architecting Panel applications and dashboards
+
+!!! tip "Install User-Level Agents"
+
+    To make agents available across all your projects:
+
+    ```bash
+    holoviz-mcp install claude --scope user
+    ```
+
+    This installs agents to `~/.claude/agents/`.
+
+## Step 7: Build Your First Dashboard
 
 Now that everything is set up, let's build a simple dashboard.
 
@@ -115,7 +143,7 @@ panel serve app.py --show
 
 Your dashboard will open in your default web browser!
 
-## Step 7: Using the Display Tool
+## Step 8: Using the Display Tool
 
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Claude:
 

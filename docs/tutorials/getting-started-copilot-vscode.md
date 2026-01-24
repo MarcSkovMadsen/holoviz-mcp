@@ -180,14 +180,14 @@ Ask Copilot:
 
 ## Step 9: Using HoloViz Agents
 
-### Creating a Plan with the HoloViz App Planner Agent
+### Creating a Plan with the HoloViz DataApp Architect Agent
 
 Instead of diving straight into code, let's use the specialized agent to plan an application architecture.
 
 1. In the Copilot Chat interface, click the **Set Agent** dropdown
-2. Select **`HoloViz App Planner`** from the list
+2. Select **`HoloViz DataApp Architect`** from the list
 
-![HoloViz App Planner](../assets/images/copilot-holoviz-app-planner.png)
+![HoloViz DataApp Architect](../assets/images/copilot-holoviz-app-architect.png)
 
 Type the following prompt:
 
@@ -198,7 +198,7 @@ Press Enter and wait for the agent to respond.
 ![Copilot Dashboard Plan](../assets/images/copilot-dashboard-plan.png)
 
 !!! note "What's happening"
-    The HoloViz App Planner agent analyzes your requirements and creates an architecture plan following HoloViz best practices. This ensures your application is well-structured before you write any code.
+    The HoloViz DataApp Architect agent analyzes your requirements and creates an architecture plan following HoloViz best practices. This ensures your application is well-structured before you write any code.
 
 ### Implementing the Dashboard
 
