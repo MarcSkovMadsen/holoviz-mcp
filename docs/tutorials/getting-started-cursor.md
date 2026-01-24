@@ -137,9 +137,6 @@ Ask Cursor to help you with Panel-specific tasks, and it will use HoloViz MCP to
 Now that you have HoloViz MCP running with Cursor, explore more:
 
 - **[Display System](display-system.md)**: Learn about displaying visualizations
-- **[Configuration Guide](../how-to/configure-settings.md)**: Customize HoloViz MCP behavior
-- **[Available Tools](../explanation/tools.md)**: Learn about all the tools HoloViz MCP provides
-- **[Docker Setup](../how-to/docker-development.md)**: Run HoloViz MCP in a container
 
 ## Troubleshooting
 

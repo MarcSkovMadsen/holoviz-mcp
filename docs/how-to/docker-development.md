@@ -158,7 +158,7 @@ docker run -it --rm \
 
 ## Integration with MCP Clients
 
-### VS Code + GitHub Copilot (HTTP)
+### Copilot + VS Code (HTTP)
 
 1. Start the Docker container with HTTP transport:
 

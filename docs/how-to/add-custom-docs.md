@@ -16,8 +16,9 @@ You can extend HoloViz MCP to index and search documentation from:
 - Project-specific documentation
 
 The documentation must be:
+
 - Hosted in a Git repository
-- Written in Markdown format
+- Written in Markdown, ReST or Jupyter notebook format
 - Accessible (public or with credentials)
 
 ## Add Documentation Repository
@@ -36,6 +37,7 @@ docs:
 ```
 
 **Configuration fields:**
+
 - **url**: Git repository URL containing the documentation
 - **base_url**: Base URL for the live documentation site
 - **target_suffix**: Identifier used in internal paths (optional)
@@ -90,6 +92,7 @@ holoviz-mcp update index
 ```
 
 This will:
+
 1. Clone or pull the repositories
 2. Extract Markdown documentation
 3. Build the search index
@@ -103,19 +106,19 @@ Test that your AI assistant can access the new documentation:
 
 1. **List projects**:
 
-   ```
+   ```text
    List available HoloViz documentation projects
    ```
 
 2. **Search the documentation**:
 
-   ```
+   ```text
    Search for "scatter plot" in Plotly documentation
    ```
 
 3. **Use in code generation**:
 
-   ```
+   ```text
    Create a Plotly scatter plot with custom colors
    ```
 
@@ -176,6 +179,7 @@ ssh -T git@github.com
 ### Index Update Taking Too Long
 
 **Large repositories** can take time to index. The process is:
+
 1. Cloning/pulling repositories
 2. Parsing Markdown files
 3. Building embeddings

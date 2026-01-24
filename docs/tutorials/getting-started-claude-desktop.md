@@ -126,10 +126,9 @@ Claude will use the display tool to generate and display the visualization. See 
 
 Now that you have HoloViz MCP running with Claude Desktop, explore more:
 
-- **[Display System](display-system.md)**: Learn about displaying visualizations with Claude
-- **[Configuration Guide](../how-to/configure-settings.md)**: Customize HoloViz MCP behavior
-- **[Available Tools](../explanation/tools.md)**: Learn about all the tools HoloViz MCP provides
-- **[Docker Setup](../how-to/docker-development.md)**: Run HoloViz MCP in a container
+- **[Display System](display-system.md)**: Learn about the display server for visualizations
+- **[Stock Analysis](stock-analysis-claude-code.md)**: Create  a real-world stock analysis report
+- **[Weather Dashboard](weather-dashboard-claude-code.md)**: Create an interactive weather visualization
 
 ## Troubleshooting
 

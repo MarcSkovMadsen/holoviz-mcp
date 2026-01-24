@@ -43,7 +43,7 @@ You can use the Display System in two ways:
 
 ### Step 1: Install the Display Server
 
-The Display Server is included with the `holoviz-mcp` package. If you haven't installed it yet, see one of the [getting started guides](getting-started-vscode-copilot.md).
+The Display Server is included with the `holoviz-mcp` package. If you haven't installed it yet, see one of the [getting started guides](getting-started-copilot-vscode.md).
 
 ### Step 2: Start the Server
 
@@ -193,7 +193,7 @@ Now let's explore using the Display System through AI assistants. This enables y
 
 ### Prerequisites
 
-- An AI assistant configured to use HoloViz MCP (see [getting started guides](getting-started-vscode-copilot.md))
+- An AI assistant configured to use HoloViz MCP (see [getting started guides](getting-started-copilot-vscode.md))
 - The Palmer Penguins dataset: [Download penguins.csv](../assets/data/penguins.csv)
 
 ### Step 1: Start the MCP Server
@@ -387,6 +387,6 @@ Now that you understand the Display System, you can:
 
 - **[Learn about the Display System architecture](../explanation/display-system.md)** - Understand how it works under the hood
 - **[Configure for production](../how-to/configure-display-server.md)** - Set up for team use or production
-- **[Build advanced projects](stock-analysis-vscode-copilot.md)** - Apply your skills to real-world projects
+- **[Build advanced projects](stock-analysis-copilot-vscode.md)** - Apply your skills to real-world projects
 
 Happy visualizing! 🚀

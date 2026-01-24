@@ -83,14 +83,14 @@ Open a chat with Claude Code and try these questions:
 
 **Component Discovery**:
 
-```bash
-claude "What Panel components are available for user input?"
+```text
+What Panel components are available for user input?
 ```
 
 **Component Details**:
 
-```bash
-claude "What parameters does the Panel Button component accept?"
+```text
+What parameters does the Panel Button component accept?
 ```
 
 If Claude provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
@@ -101,8 +101,8 @@ Now that everything is set up, let's build a simple dashboard.
 
 **Ask Claude:**
 
-```bash
-claude "Create a Panel dashboard that displays a slider and shows the square of the slider's value. Save it to app.py"
+```text
+Create a Panel dashboard that displays a slider and shows the square of the slider's value. Save it to app.py
 ```
 
 Claude will provide code using HoloViz MCP's knowledge of Panel components!
@@ -120,30 +120,18 @@ Your dashboard will open in your default web browser!
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Claude:
 
 ```bash
-claude "Use the holoviz_display tool to show me a simple hvplot visualization of random data."
+Use the holoviz_display tool to show me a simple hvplot visualization of random data.
 ```
 
 Claude will use the display tool to generate and display the visualization. See the [Display System tutorial](display-system.md) for more details.
-
-## Working on Projects
-
-Claude Code is designed for working in project directories. Navigate to your project and use Claude with context about your files:
-
-```bash
-cd my-panel-project
-claude "Help me add a new chart to my dashboard"
-```
-
-Claude Code will analyze your project files and provide context-aware assistance using HoloViz MCP's knowledge.
 
 ## What's Next?
 
 Now that you have HoloViz MCP running with Claude Code, explore more:
 
-- **[Display System](display-system.md)**: Learn about displaying visualizations with Claude
-- **[Configuration Guide](../how-to/configure-settings.md)**: Customize HoloViz MCP behavior
-- **[Available Tools](../explanation/tools.md)**: Learn about all the tools HoloViz MCP provides
-- **[Docker Setup](../how-to/docker-development.md)**: Run HoloViz MCP in a container
+- **[Display System](display-system.md)**: Learn about the display server for visualizations
+- **[Stock Analysis](stock-analysis-claude-code.md)**: Create  a real-world stock analysis report
+- **[Weather Dashboard](weather-dashboard-claude-code.md)**: Create an interactive weather visualization
 
 ## Troubleshooting
 

@@ -98,7 +98,7 @@ rm -rf ~/.holoviz-mcp
 
 After installation, configure your IDE or AI assistant:
 
-- **[VS Code + Copilot](configure-vscode.md)**: Configure for VS Code
+- **[Copilot + VS Code](configure-vscode.md)**: Configure for VS Code
 - **[Claude Desktop](configure-claude-desktop.md)**: Configure for Claude Desktop
 - **[Claude Code](configure-claude-code.md)**: Configure for Claude Code
 - **[Cursor](configure-cursor.md)**: Configure for Cursor
@@ -106,4 +106,4 @@ After installation, configure your IDE or AI assistant:
 
 Or start with a complete tutorial:
 
-- **[Getting Started Tutorials](../tutorials/getting-started-vscode-copilot.md)**: Choose your tool
+- **[Getting Started Tutorials](../tutorials/getting-started-copilot-vscode.md)**: Choose your tool

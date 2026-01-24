@@ -14,9 +14,9 @@ By the end, you'll have built an interactive report that displays financial data
     Before starting, ensure you have:
 
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
-    - HoloViz MCP installed and configured ([Getting Started Guide](getting-started-vscode-copilot.md))
-    - Configured the `HoloViz Analysis Planner` agent. ([HoloViz Agents](getting-started-vscode-copilot.md#step-9-using-holoviz-agents))
-    - The HoloViz MCP server running ([How to start the server](getting-started-vscode-copilot.md#start-the-server))
+    - HoloViz MCP installed and configured ([Getting Started Guide](getting-started-copilot-vscode.md))
+    - Configured the `HoloViz Analysis Planner` agent. ([HoloViz Agents](getting-started-copilot-vscode.md#step-9-using-holoviz-agents))
+    - The HoloViz MCP server running ([How to start the server](getting-started-copilot-vscode.md#start-the-server))
     - `yfinance` installed in the virtual environment where you run `holoviz-mcp`: `pip install yfinance`
 
 ## Step 1: Plan Your Report with the HoloViz Analysis Planner

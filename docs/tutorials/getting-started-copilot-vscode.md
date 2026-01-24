@@ -1,12 +1,12 @@
-# Getting Started with HoloViz MCP for VS Code + GitHub Copilot
+# Getting Started with HoloViz MCP for Copilot + VS Code
 
-This tutorial will guide you through installing and using HoloViz MCP with VS Code and GitHub Copilot. By the end, you'll have HoloViz MCP running with specialized Copilot agents and be able to build advanced Panel dashboards!
+This tutorial will guide you through installing and using HoloViz MCP with GitHub Copilot and VS Code. By the end, you'll have HoloViz MCP running with specialized Copilot agents and be able to build advanced Panel dashboards!
 
 <iframe src="https://www.youtube.com/embed/nB6cI26GNzM?si=XGyPwCMvBWYOrHop" title="Getting Started with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe>
 
 !!! tip "What you'll learn"
     - How to install HoloViz MCP
-    - How to configure it with VS Code and GitHub Copilot
+    - How to configure it with Github Copilot and VS Code
     - How to install and use HoloViz Copilot agents
     - How to use HoloViz MCP resources in Copilot
     - How to verify everything is working correctly
@@ -212,14 +212,11 @@ Copilot will generate the code for your dashboard and test it.
 
 ## What's Next?
 
-Now that you have HoloViz MCP running with VS Code + Copilot, explore more:
+Now that you have HoloViz MCP running with Copilot + VS Code, explore more:
 
-- **[Stock Analysis Dashboard](stock-analysis-vscode-copilot.md)**: Build a real-world stock analysis dashboard
-- **[Weather Dashboard](weather-dashboard-vscode-copilot.md)**: Create an interactive weather visualization
 - **[Display System](display-system.md)**: Learn about the display server for visualizations
-- **[Configuration Guide](../how-to/configure-settings.md)**: Customize HoloViz MCP behavior
-- **[Available Tools](../explanation/tools.md)**: Learn about all the tools HoloViz MCP provides
-- **[Docker Setup](../how-to/docker-development.md)**: Run HoloViz MCP in a container
+- **[Stock Analysis](stock-analysis-copilot-vscode.md)**: Create  a real-world stock analysis report
+- **[Weather Dashboard](weather-dashboard-copilot-vscode.md)**: Create an interactive weather visualization
 
 ## Troubleshooting
 
@@ -266,10 +263,10 @@ In this tutorial, you:
 ✅ Created the documentation index
 ✅ Installed Chromium
 ✅ Installed HoloViz Copilot agents
-✅ Configured VS Code and GitHub Copilot
+✅ Configured Github Copilot and VS Code
 ✅ Verified the installation
 ✅ Built your first Panel dashboard
 ✅ Used HoloViz MCP resources
 ✅ Used specialized HoloViz agents
 
-You're now ready to use HoloViz MCP with VS Code + Copilot to accelerate your Panel development! Happy coding! 🚀
+You're now ready to use HoloViz MCP with Copilot + VS Code to accelerate your Panel development! Happy coding! 🚀

@@ -1,6 +1,6 @@
-# Configure HoloViz MCP for VS Code + GitHub Copilot
+# Configure HoloViz MCP for Copilot + VS Code
 
-This guide shows you how to configure HoloViz MCP with VS Code and GitHub Copilot.
+This guide shows you how to configure HoloViz MCP with Github Copilot and VS Code.
 
 ## Prerequisites
 
@@ -159,6 +159,6 @@ chmod 644 ~/.config/Code/User/globalStorage/github.copilot/mcp.json
 
 ## Next Steps
 
-- **[Getting Started Tutorial](../tutorials/getting-started-vscode-copilot.md)**: Complete walkthrough for VS Code + Copilot
+- **[Getting Started Tutorial](../tutorials/getting-started-copilot-vscode.md)**: Complete walkthrough for Copilot + VS Code
 - **[Configuration Options](configure-settings.md)**: Customize HoloViz MCP behavior
 - **[Troubleshooting Guide](troubleshooting.md)**: Fix common issues

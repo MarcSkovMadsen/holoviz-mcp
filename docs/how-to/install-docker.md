@@ -136,5 +136,5 @@ After installation, you have several options:
 
 ### Get Started
 
-- **[Getting Started Tutorials](../tutorials/getting-started-vscode-copilot.md)**: Choose your tool
+- **[Getting Started Tutorials](../tutorials/getting-started-copilot-vscode.md)**: Choose your tool
 - **[Display System](../tutorials/display-system.md)**: Learn about visualizations

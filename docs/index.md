@@ -6,13 +6,11 @@ Welcome to the HoloViz MCP documentation!
 
 Get started with HoloViz MCP for your preferred AI assistant:
 
-- **[VS Code + GitHub Copilot](tutorials/getting-started-vscode-copilot.md)** - Full-featured IDE with Copilot agents
-- **[Claude Desktop](tutorials/getting-started-claude-desktop.md)** - Standalone Claude application
 - **[Claude Code](tutorials/getting-started-claude-code.md)** - Command-line Claude interface
+- **[Claude Desktop](tutorials/getting-started-claude-desktop.md)** - Standalone Claude application
+- **[GitHub Copilot + VS Code](tutorials/getting-started-copilot-vscode.md)** - Full-featured IDE with Copilot agents
 - **[Cursor](tutorials/getting-started-cursor.md)** - AI-first code editor
 - **[Windsurf](tutorials/getting-started-windsurf.md)** - Modern development environment
-
-Not sure which to choose? All tools provide access to the same powerful HoloViz MCP features. Pick the one you're already using!
 
 ## What is HoloViz MCP?
 
@@ -40,40 +38,10 @@ New to HoloViz MCP? Choose your tool above to get started with a step-by-step tu
 
 This documentation follows the [Diataxis](https://diataxis.fr/) framework:
 
-### 📖 [Tutorials](tutorials/getting-started-vscode-copilot.md)
-Learning-oriented guides that take you through a series of steps to complete a project. Perfect for beginners!
-
-- [Getting Started (VS Code + Copilot)](tutorials/getting-started-vscode-copilot.md)
-- [Getting Started (Claude Desktop)](tutorials/getting-started-claude-desktop.md)
-- [Getting Started (Claude Code)](tutorials/getting-started-claude-code.md)
-- [Getting Started (Cursor)](tutorials/getting-started-cursor.md)
-- [Getting Started (Windsurf)](tutorials/getting-started-windsurf.md)
-
-### 🔧 [How-To Guides](how-to/install-uv.md)
-Problem-oriented guides that show you how to solve specific problems and accomplish common tasks.
-
-- [Installation (uv)](how-to/install-uv.md)
-- [Installation (pip)](how-to/install-pip.md)
-- [Installation (conda)](how-to/install-conda.md)
-- [Installation (Docker)](how-to/install-docker.md)
-- [IDE Setup](how-to/configure-vscode.md)
-- [Docker Development](how-to/docker-development.md)
-- [Configuration](how-to/configure-settings.md)
-- [Serve Apps](how-to/serve-apps.md)
-- [Updates & Maintenance](how-to/update-holoviz-mcp.md)
-- [Troubleshooting](how-to/troubleshooting.md)
-
-### 💡 [Explanation](explanation/architecture.md)
-Understanding-oriented articles that clarify and illuminate topics, providing background and context.
-
-- [Architecture](explanation/architecture.md)
-- [Available Tools](explanation/tools.md)
-- [Security Considerations](explanation/security.md)
-
-### 📚 [Reference](reference/holoviz_mcp.md)
-Information-oriented technical descriptions of the API and implementation details.
-
-- [API Documentation](reference/holoviz_mcp.md)
+- **Tutorials**: Learning-oriented guides that take you through a series of steps to complete a project. Perfect for beginners!
+- **How-to**: Problem-oriented guides that show you how to solve specific problems and accomplish common tasks.
+- **Explanation**: Understanding-oriented articles that clarify and illuminate topics, providing background and context.
+- **Reference**: Information-oriented technical descriptions of the API and implementation details.
 
 ## Quick Links
 

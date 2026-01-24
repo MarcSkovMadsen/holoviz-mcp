@@ -130,9 +130,6 @@ The AI will leverage HoloViz MCP to provide accurate, contextual assistance!
 Now that you have HoloViz MCP running with Windsurf, explore more:
 
 - **[Display System](display-system.md)**: Learn about displaying visualizations
-- **[Configuration Guide](../how-to/configure-settings.md)**: Customize HoloViz MCP behavior
-- **[Available Tools](../explanation/tools.md)**: Learn about all the tools HoloViz MCP provides
-- **[Docker Setup](../how-to/docker-development.md)**: Run HoloViz MCP in a container
 
 ## Troubleshooting
 

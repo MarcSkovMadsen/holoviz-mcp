@@ -41,20 +41,20 @@ Test the configuration by asking Claude about Panel components:
 
 1. **Simple Query**:
 
-   ```bash
-   claude "List available Panel input components"
+   ```text
+   List available Panel input components
    ```
 
 2. **Detailed Query**:
 
-   ```bash
-   claude "What parameters does the Panel TextInput component have?"
+   ```text
+   What parameters does the Panel TextInput component have?
    ```
 
 3. **Code Generation**:
 
-   ```bash
-   claude "Create a simple Panel dashboard with a slider and save it to app.py"
+   ```text
+   Create a simple Panel dashboard with a slider and save it to app.py
    ```
 
 If Claude provides detailed, accurate responses with specific Panel component information, your configuration is working! 🎉
