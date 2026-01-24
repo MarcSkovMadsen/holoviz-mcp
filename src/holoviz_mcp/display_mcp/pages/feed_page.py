@@ -46,7 +46,12 @@ def feed_page():
 **{req.name or req.id}** ({created_at})\n\n{req.description}\n
 """
         iframe = f"""<div style="resize: vertical; overflow: hidden; height: calc(75vh - 300px); width: 100%; max-width: 100%; border: 1px solid gray;">
-<iframe src="{url}" style="height: 100%; width: 100%; border: none;" frameborder="0"></iframe>
+<iframe
+    src="{url}"
+    style="height: 100%; width: 100%; border: none;zoom:0.80"
+    frameborder="0"
+    allow="fullscreen; clipboard-write; autoplay"
+></iframe>
 </div>"""
         # Create copy button with JavaScript callback
         open_button = pn.widgets.Button(
