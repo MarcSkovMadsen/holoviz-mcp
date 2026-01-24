@@ -1,6 +1,6 @@
 # Configure HoloViz MCP for Copilot + VS Code
 
-This guide shows you how to configure HoloViz MCP with Github Copilot and VS Code.
+This guide shows you how to configure HoloViz MCP with GitHub Copilot and VS Code.
 
 ## Prerequisites
 
