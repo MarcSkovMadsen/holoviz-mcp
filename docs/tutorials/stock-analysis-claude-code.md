@@ -7,7 +7,7 @@ By the end, you'll have built an interactive report that displays financial data
 !!! tip "What you'll learn"
     - How to use Claude Code to plan and build data applications
     - How to use the `holoviz_display` tool to quickly visualize and persist your work
-    - How to work with stock data using yfinance
+    - How to work with stock data using `yfinance`
     - How to iterate on visualizations using natural language
 
 !!! note "Prerequisites"
@@ -15,7 +15,8 @@ By the end, you'll have built an interactive report that displays financial data
 
     - Claude Code CLI installed and configured ([Getting Started Guide](getting-started-claude-code.md))
     - HoloViz MCP server configured with Claude Code
-    - `yfinance` installed: `pip install yfinance`
+    - HoloViz agents installed `holoviz-mcp install claude`
+    - `panel` and `yfinance` installed: `pip install panel yfinance`
 
 ## Step 1: Plan Your Report
 
