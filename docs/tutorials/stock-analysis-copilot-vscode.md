@@ -39,7 +39,7 @@ First, let's use the HoloViz DataViz Analyst agent to design our application arc
     Display using the #holoviz_display tool. KISS - Keep it simple stupid.
     ```
 
-    ![HoloViz DataViz Analyst](../assets/images/stock-analysis-holoviz-architect.png)
+    ![HoloViz DataViz Analyst](../assets/images/stock-analysis-holoviz-analyst.png)
 
 4. Press Enter and wait for the agent to respond
 
