@@ -316,6 +316,6 @@ Find relevant information:
 ## Related Documentation
 
 - [Architecture](architecture.md): How tools are implemented
-- [Configuration](../how-to/configuration.md): Configure tool behavior
+- [Configuration](../how-to/configure-settings.md): Configure tool behavior
 - [Security Considerations](security.md): Security implications
 - [Serve Apps](../how-to/serve-apps.md): Serve Panel apps locally

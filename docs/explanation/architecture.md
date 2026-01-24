@@ -249,4 +249,4 @@ Planned enhancements:
 
 - [Available Tools](tools.md): Details on each tool
 - [Security Considerations](security.md): Security details
-- [Configuration](../how-to/configuration.md): Configuration options
+- [Configuration](../how-to/configure-settings.md): Configuration options

@@ -178,4 +178,4 @@ holoviz-mcp
 ## Next Steps
 
 - [Troubleshooting](troubleshooting.md): Fix update issues
-- [Configuration](configuration.md): Customize after updates
+- [Configuration](configure-settings.md): Customize after updates

@@ -92,25 +92,45 @@ watch:
 nav:
     - Home: index.md
     - Tutorials:
-        - Getting Started: tutorials/getting-started.md
-        - Use with Copilot: tutorials/copilot.md
-        - Use the Display Server: tutorials/display-server.md
-        - Use the Display Tool: tutorials/display-tool.md
-        - Stock Analysis: tutorials/stock-analysis.md
-        - Weather Dashboard: tutorials/weather-dashboard.md
+        - Getting Started:
+            - VS Code + Copilot: tutorials/getting-started-vscode-copilot.md
+            - Claude Desktop: tutorials/getting-started-claude-desktop.md
+            - Claude Code: tutorials/getting-started-claude-code.md
+            - Cursor: tutorials/getting-started-cursor.md
+            - Windsurf: tutorials/getting-started-windsurf.md
+        - Display System: tutorials/display-system.md
+        - Projects:
+            - Stock Analysis (VS Code): tutorials/stock-analysis-vscode-copilot.md
+            - Stock Analysis (Claude Code): tutorials/stock-analysis-claude-code.md
+            - Weather Dashboard (VS Code): tutorials/weather-dashboard-vscode-copilot.md
+            - Weather Dashboard (Claude Code): tutorials/weather-dashboard-claude-code.md
     - How-To Guides:
-        - Install: how-to/installation.md
-        - Configure your IDE: how-to/ide-configuration.md
-        - Setup Docker: how-to/docker.md
-        - Configure holoviz-mcp: how-to/configuration.md
+        - Installation:
+            - uv: how-to/install-uv.md
+            - pip: how-to/install-pip.md
+            - conda: how-to/install-conda.md
+            - Docker: how-to/install-docker.md
+        - IDE Setup:
+            - VS Code: how-to/configure-vscode.md
+            - Claude Desktop: how-to/configure-claude-desktop.md
+            - Claude Code: how-to/configure-claude-code.md
+            - Cursor: how-to/configure-cursor.md
+            - Windsurf: how-to/configure-windsurf.md
+        - Configuration:
+            - Settings: how-to/configure-settings.md
+            - Display Server: how-to/configure-display-server.md
+            - Custom Docs: how-to/add-custom-docs.md
+        - Docker:
+            - Development: how-to/docker-development.md
+            - Production: how-to/docker-production.md
         - Serve Apps: how-to/serve-apps.md
-        - Maintain: how-to/updates.md
-        - Troubleshoot: how-to/troubleshooting.md
+        - Update: how-to/update-holoviz-mcp.md
+        - Troubleshooting: how-to/troubleshooting.md
     - Explanation:
         - Architecture: explanation/architecture.md
         - Available Tools: explanation/tools.md
         - Security Considerations: explanation/security.md
-        - Display Server: explanation/display-server.md
+        - Display System: explanation/display-system.md
     - Reference:
         - API Documentation: reference/holoviz_mcp.md
     - Examples: examples.md

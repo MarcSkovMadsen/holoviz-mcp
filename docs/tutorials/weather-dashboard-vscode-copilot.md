@@ -10,10 +10,10 @@ By the end, you'll have built a complete interactive application with multi-year
     Before starting, ensure you have:
 
     - An understanding of Python, [Panel](https://panel.holoviz.org/index.html), and data visualization concepts
-    - HoloViz MCP installed and configured ([Getting Started Guide](getting-started.md))
+    - HoloViz MCP installed and configured ([Getting Started Guide](getting-started-vscode-copilot.md))
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
-    - Configured the `HoloViz App Planner` agent ([HoloViz Agents](copilot.md/#using-holoviz-agents))
-    - The HoloViz MCP server running ([How to start the server](getting-started.md/#start-the-server))
+    - Configured the `HoloViz App Planner` agent ([HoloViz Agents](getting-started-vscode-copilot.md#step-9-using-holoviz-agents))
+    - The HoloViz MCP server running ([How to start the server](getting-started-vscode-copilot.md#start-the-server))
 
 ## Step 1: Provide Context
 

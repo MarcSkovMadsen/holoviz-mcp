@@ -269,5 +269,5 @@ Planned improvements:
 ## Related Documentation
 
 - [Architecture](architecture.md): System design
-- [Configuration](../how-to/configuration.md): Security settings
-- [Docker Guide](../how-to/docker.md): Container security
+- [Configuration](../how-to/configure-settings.md): Security settings
+- [Docker Production Guide](../how-to/docker-production.md): Container security

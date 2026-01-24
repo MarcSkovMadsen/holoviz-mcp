@@ -378,6 +378,6 @@ If you can't resolve the issue:
 
 ## Next Steps
 
-- [Configuration](configuration.md): Adjust settings
-- [Updates](updates.md): Keep software current
+- [Configuration](configure-settings.md): Adjust settings
+- [Updates](update-holoviz-mcp.md): Keep software current
 - [Security](../explanation/security.md): Understand security considerations
