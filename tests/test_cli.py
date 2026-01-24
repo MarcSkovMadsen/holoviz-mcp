@@ -54,6 +54,17 @@ class TestCLI:
         assert result.returncode == 0
         assert "Copy HoloViz MCP resources" in result.stdout
 
+    def test_cli_install_claude_help(self):
+        """Test that the install claude help command works."""
+        result = subprocess.run(
+            [sys.executable, "-m", "holoviz_mcp.cli", "install", "claude", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert result.returncode == 0
+        assert "Install HoloViz MCP resources for Claude Code" in result.stdout
+
     def test_cli_serve_help(self):
         """Test that the serve help command works."""
         result = subprocess.run(
@@ -100,6 +111,7 @@ class TestCLI:
         assert hasattr(cli, "main")
         assert hasattr(cli, "update_index")
         assert hasattr(cli, "install_copilot")
+        assert hasattr(cli, "install_claude")
         assert hasattr(cli, "serve")
 
 
@@ -149,6 +161,17 @@ class TestCLIEntryPoint:
         )
         assert result.returncode == 0
         assert "Copy HoloViz MCP resources" in result.stdout
+
+    def test_entry_point_install_claude(self):
+        """Test that holoviz-mcp install claude --help works."""
+        result = subprocess.run(
+            ["holoviz-mcp", "install", "claude", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert result.returncode == 0
+        assert "Install HoloViz MCP resources for Claude Code" in result.stdout
 
     def test_entry_point_serve(self):
         """Test that holoviz-mcp serve --help works."""

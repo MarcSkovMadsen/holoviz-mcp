@@ -211,13 +211,21 @@ class HoloVizMCPConfig(BaseModel):
         else:
             return self.default_dir / "resources"
 
-    def agents_dir(self, location: Literal["user", "default"] = "user") -> Path:
+    def agents_dir(self, location: Literal["user", "default"] = "user", tool: Literal["copilot", "claude"] | None = None) -> Path:
         """Get the path to the agents directory.
 
         Args:
             location: Whether to get user or default agents directory
+            tool: Optional tool-specific subdirectory (e.g., "copilot", "claude")
+
+        Returns
+        -------
+            Path to agents directory, optionally scoped to a specific tool
         """
-        return self.resources_dir(location) / "agents"
+        base_dir = self.resources_dir(location) / "agents"
+        if tool:
+            return base_dir / tool
+        return base_dir
 
     def skills_dir(self, location: Literal["user", "default"] = "user") -> Path:
         """Get the path to the skills directory.

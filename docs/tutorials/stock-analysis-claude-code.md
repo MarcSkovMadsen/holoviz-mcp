@@ -19,10 +19,10 @@ By the end, you'll have built an interactive report that displays financial data
 
 ## Step 1: Plan Your Report
 
-First, let's ask Claude to help us plan our stock analysis report. Open your terminal and run:
+First, let's ask Claude to help us plan our stock analysis report. Open claude and run:
 
-```bash
-claude "I want to create a stock analysis report showing AAPL and META's hourly data for the last 5 days. The report should include:
+```text
+I want to create a stock analysis report showing AAPL and META's hourly data for the last 5 days. The report should include:
 
 - Individual price charts for each stock
 - Summary statistics table
@@ -30,7 +30,7 @@ claude "I want to create a stock analysis report showing AAPL and META's hourly 
 - Trading volume visualization
 - Professional styling
 
-Please plan the architecture for this report. What components should I use from Panel and hvPlot?"
+Please plan the architecture for this report. What components should I use from Panel and hvPlot?
 ```
 
 Claude will provide a detailed architecture plan including:
@@ -47,8 +47,8 @@ Claude will provide a detailed architecture plan including:
 
 Now let's ask Claude to implement the report and use the display tool to show it:
 
-```bash
-claude "Based on the plan above, please implement the stock analysis report for AAPL and META. Use the holoviz_display tool to create and show the report. Keep it clean and simple."
+```text
+Implement it. Display it using the holoviz_display tool.
 ```
 
 Claude will:
@@ -59,7 +59,7 @@ Claude will:
 
 You should see output like:
 
-```
+```text
 ✓ Visualization created successfully!
 View at: http://localhost:5005/view?id={snippet_id}
 ```
@@ -82,8 +82,8 @@ Open the URL in your browser. You should see your stock analysis report with:
 
 Now that you understand how the report works, let's modify it to analyze different stocks:
 
-```bash
-claude "Modify the report to show GOOGL and MSFT instead of AAPL and META"
+```text
+Modify the report to show GOOGL and MSFT instead of AAPL and META
 ```
 
 Claude will generate updated code with the new stocks and provide a new URL to view the modified report.
@@ -94,8 +94,8 @@ Claude will generate updated code with the new stocks and provide a new URL to v
 
 Let's enhance the report by adding a moving average to the price charts:
 
-```bash
-claude "Add a 20-period moving average line to each stock's price chart"
+```text
+Add a 20-period moving average line to each stock's price chart
 ```
 
 Claude will update the code to include moving average trend lines and provide a new URL to view the enhanced report.
@@ -121,31 +121,7 @@ The reports you created are stored by the Display Server. To save one as a perma
 Now you have a standalone Python file! You can run it anytime:
 
 ```bash
-panel serve stock_report.py --show
-```
-
-## Step 7: Create a Project-Based Report
-
-For a more structured workflow, you can create the report as a project file:
-
-```bash
-# Navigate to your project directory
-cd my-stock-project
-
-# Ask Claude to create the report file
-claude "Create a stock_analysis.py file that analyzes AAPL and META with the visualizations we discussed. Include proper imports, error handling, and documentation."
-```
-
-Claude will create the file in your project. You can then review it:
-
-```bash
-cat stock_analysis.py
-```
-
-And run it:
-
-```bash
-panel serve stock_analysis.py --show
+panel serve stock_report.py --dev --show
 ```
 
 ## Common Issues and Solutions
@@ -157,6 +133,7 @@ panel serve stock_analysis.py --show
 **Why it happens**: The required package isn't installed in your Python environment
 
 **Solution**: Install the missing package:
+
 ```bash
 pip install yfinance
 ```
@@ -172,8 +149,9 @@ pip install yfinance
 1. Check that Claude Code MCP server is configured: `claude mcp list`
 2. Look at the error message in the report for specific issues
 3. Ask Claude to fix any code errors:
+
    ```bash
-   claude "The report shows an error: [paste error]. Please fix this."
+   The report shows an error: [paste error]. Please fix this.
    ```
 
 ### Connection Refused Error

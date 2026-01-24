@@ -88,7 +88,7 @@ def install_copilot(agents: bool = True, skills: bool = False) -> None:
     config = get_config()
 
     if agents:
-        source = config.agents_dir("default")
+        source = config.agents_dir("default", tool="copilot")
         target = Path.cwd() / ".github" / "agents"
         target.mkdir(parents=True, exist_ok=True)
 
@@ -106,6 +106,82 @@ def install_copilot(agents: bool = True, skills: bool = False) -> None:
             relative_path = (target / file.name / "SKILL.md").relative_to(Path.cwd())
             typer.echo(f"Updated: {relative_path}")
             shutil.copy(file, target / file.name)
+
+
+@install_app.command(name="claude")
+def install_claude(
+    agents: bool = True,
+    skills: bool = False,
+    scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/")] = "project",
+) -> None:
+    """Install HoloViz MCP resources for Claude Code.
+
+    Installs agent files to Claude Code's expected directory structure.
+
+    Parameters
+    ----------
+    agents : bool, default=True
+        Install agent files
+    skills : bool, default=False
+        Install skills files
+    scope : str, default="project"
+        Installation scope: 'project' installs to ./.claude/agents/,
+        'user' installs to ~/.claude/agents/
+    """
+    from pathlib import Path
+
+    from holoviz_mcp.config.loader import get_config
+
+    config = get_config()
+
+    if agents:
+        source = config.agents_dir("default", tool="claude")
+
+        # Determine target based on scope
+        if scope == "user":
+            target = Path.home() / ".claude" / "agents"
+        else:  # project
+            target = Path.cwd() / ".claude" / "agents"
+
+        target.mkdir(parents=True, exist_ok=True)
+
+        # Copy all .md files (Claude format)
+        for file in source.glob("*.md"):
+            if scope == "user":
+                # For user scope, show ~/ prefix to make it clear it's home directory
+                display_path = Path("~") / ".claude" / "agents" / file.name
+            else:
+                # For project scope, show relative to current directory
+                display_path = (target / file.name).relative_to(Path.cwd())
+
+            typer.echo(f"Installed: {display_path}")
+            shutil.copy(file, target / file.name)
+
+    if skills:
+        source = config.skills_dir("default")
+
+        # Determine target based on scope
+        if scope == "user":
+            target = Path.home() / ".claude" / "skills"
+        else:  # project
+            target = Path.cwd() / ".claude" / "skills"
+
+        target.mkdir(parents=True, exist_ok=True)
+
+        # Copy skills (shared between copilot and claude)
+        for file in source.glob("*.md"):
+            skill_dir = target / file.stem
+            skill_dir.mkdir(exist_ok=True)
+
+            if scope == "user":
+                # For user scope, show ~/ prefix
+                display_path = Path("~") / ".claude" / "skills" / file.stem / "SKILL.md"
+            else:
+                # For project scope, show relative to current directory
+                display_path = (skill_dir / "SKILL.md").relative_to(Path.cwd())
+
+            typer.echo(f"Installed: {display_path}")
+            shutil.copy(file, skill_dir / "SKILL.md")
 
 
 @install_app.command(name="chromium")
