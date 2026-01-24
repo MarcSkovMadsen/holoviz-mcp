@@ -87,26 +87,6 @@ mamba install -c conda-forge holoviz-mcp
 
 Then install Chhromium and create the index as previously described.
 
-## Install from Source
-
-For development or to use the latest changes:
-
-```bash
-git clone https://github.com/MarcSkovMadsen/holoviz-mcp
-cd holoviz-mcp
-pip install -e .[dev]
-```
-
-### Development Dependencies
-
-For development work:
-
-```bash
-uv tool install holoviz-mcp[dev]
-```
-
-This includes testing, linting, and documentation tools.
-
 ## Docker Installation
 
 For containerized deployment, see the [Docker Guide](docker.md).
