@@ -2,6 +2,16 @@
 
 Welcome to the HoloViz MCP documentation!
 
+## Choose Your Tool
+
+Get started with HoloViz MCP for your preferred AI assistant:
+
+- **[Claude Code](tutorials/getting-started-claude-code.md)** - Command-line Claude interface
+- **[Claude Desktop](tutorials/getting-started-claude-desktop.md)** - Standalone Claude application
+- **[GitHub Copilot + VS Code](tutorials/getting-started-copilot-vscode.md)** - Full-featured IDE with Copilot agents
+- **[Cursor](tutorials/getting-started-cursor.md)** - AI-first code editor
+- **[Windsurf](tutorials/getting-started-windsurf.md)** - Modern development environment
+
 ## What is HoloViz MCP?
 
 HoloViz MCP is a [Model Context Protocol](https://modelcontextprotocol.io/introduction) server that provides intelligent access to the [HoloViz](https://holoviz.org/) ecosystem. It enables AI assistants to help you build data visualizations, data tools, dashboards and data apps with [Panel](https://panel.holoviz.org/), [hvPlot](https://hvplot.holoviz.org), [Lumen](https://lumen.holoviz.org/), [Datashader](https://datashader.org/), the rest of the [HoloViz](https://holoviz.org/) ecosystem and your favorite Python libraries.
@@ -22,41 +32,16 @@ HoloViz MCP is a [Model Context Protocol](https://modelcontextprotocol.io/introd
 
 ## Getting Started
 
-New to HoloViz MCP? Start with our tutorial:
-
-**[Getting Started Tutorial →](tutorials/getting-started.md)**
+New to HoloViz MCP? Choose your tool above to get started with a step-by-step tutorial tailored to your environment.
 
 ## Documentation Structure
 
 This documentation follows the [Diataxis](https://diataxis.fr/) framework:
 
-### 📖 [Tutorials](tutorials/getting-started.md)
-Learning-oriented guides that take you through a series of steps to complete a project. Perfect for beginners!
-
-- [Getting Started](tutorials/getting-started.md)
-
-### 🔧 [How-To Guides](how-to/installation.md)
-Problem-oriented guides that show you how to solve specific problems and accomplish common tasks.
-
-- [Installation](how-to/installation.md)
-- [IDE Configuration](how-to/ide-configuration.md)
-- [Docker Setup](how-to/docker.md)
-- [Configuration](how-to/configuration.md)
-- [Serve Apps](how-to/serve-apps.md)
-- [Updates & Maintenance](how-to/updates.md)
-- [Troubleshooting](how-to/troubleshooting.md)
-
-### 💡 [Explanation](explanation/architecture.md)
-Understanding-oriented articles that clarify and illuminate topics, providing background and context.
-
-- [Architecture](explanation/architecture.md)
-- [Available Tools](explanation/tools.md)
-- [Security Considerations](explanation/security.md)
-
-### 📚 [Reference](reference/holoviz_mcp.md)
-Information-oriented technical descriptions of the API and implementation details.
-
-- [API Documentation](reference/holoviz_mcp.md)
+- **Tutorials**: Learning-oriented guides that take you through a series of steps to complete a project. Perfect for beginners!
+- **How-to**: Problem-oriented guides that show you how to solve specific problems and accomplish common tasks.
+- **Explanation**: Understanding-oriented articles that clarify and illuminate topics, providing background and context.
+- **Reference**: Information-oriented technical descriptions of the API and implementation details.
 
 ## Quick Links
 

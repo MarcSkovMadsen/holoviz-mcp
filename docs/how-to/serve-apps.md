@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- Install the project following the [Installation Guide](../how-to/installation.md).
+- Install the project following the [Installation Guide](install-uv.md).
 
 ### Steps
 

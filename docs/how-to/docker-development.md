@@ -1,18 +1,17 @@
-# Docker Guide
+# Docker for Development
 
-This guide provides comprehensive information about running HoloViz MCP Server using Docker.
+This guide shows you how to use Docker for local development with HoloViz MCP.
 
-## Overview
+## Prerequisites
 
-Docker provides a very easy way to run HoloViz MCP Server with all dependencies pre-installed and properly configured. The Docker image is automatically built and published to GitHub Container Registry for both AMD64 and ARM64 architectures (Apple Silicon, Raspberry Pi, etc.).
+- Docker installed ([Installation guide](install-docker.md))
 
-### Benefits of Using Docker
+## Benefits of Using Docker
 
 - **Zero Setup**: No need to install Python, UV, Pixi, or manage dependencies
 - **Consistent Environment**: Same configuration across all platforms
 - **Isolated**: Runs in a container without affecting your system
 - **Multi-Architecture**: Supports both x86_64 and ARM64 (Apple Silicon)
-- **Production Ready**: Optimized for both development and deployment
 
 ## Quick Start
 
@@ -46,7 +45,7 @@ The server will be accessible at `http://localhost:8000/mcp/`.
 
 ## Available Image Tags
 
-The Docker image is published with multiple tags for different use cases:
+The Docker image is published with multiple tags:
 
 | Tag | Description | Use Case |
 |-----|-------------|----------|
@@ -159,7 +158,7 @@ docker run -it --rm \
 
 ## Integration with MCP Clients
 
-### VS Code + GitHub Copilot (HTTP)
+### Copilot + VS Code (HTTP)
 
 1. Start the Docker container with HTTP transport:
 
@@ -196,7 +195,7 @@ While Docker primarily supports HTTP transport for MCP, you can use it with Clau
 
 ## Docker Compose
 
-For production deployments or easier management, use Docker Compose.
+For easier management during development, use Docker Compose.
 
 ### Basic Setup
 
@@ -220,79 +219,6 @@ Start the service:
 
 ```bash
 docker-compose up -d
-```
-
-### Production Setup
-
-For production use with logging and resource limits:
-
-```yaml
-services:
-  holoviz-mcp:
-    image: ghcr.io/marcskovmadsen/holoviz-mcp:v1.0.0
-    container_name: holoviz-mcp
-    ports:
-      - "8000:8000"
-    environment:
-      - HOLOVIZ_MCP_TRANSPORT=http
-      - HOLOVIZ_MCP_LOG_LEVEL=WARNING
-      - HOLOVIZ_MCP_HOST=0.0.0.0
-      - HOLOVIZ_MCP_PORT=8000
-    volumes:
-      - holoviz-data:/root/.holoviz-mcp
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-volumes:
-  holoviz-data:
-    driver: local
-```
-
-## Building Locally
-
-### Build the Image
-
-To build the Docker image locally:
-
-```bash
-docker build -t holoviz-mcp:local .
-```
-
-### Build with Specific Platform
-
-Build for a specific architecture:
-
-```bash
-# For AMD64 (Intel/AMD)
-docker build --platform linux/amd64 -t holoviz-mcp:local-amd64 .
-
-# For ARM64 (Apple Silicon, Raspberry Pi)
-docker build --platform linux/arm64 -t holoviz-mcp:local-arm64 .
-```
-
-### Multi-Platform Build
-
-Build for both architectures using buildx:
-
-```bash
-docker buildx create --use
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t holoviz-mcp:local \
-  --load \
-  .
 ```
 
 ## Advanced Usage
@@ -454,84 +380,8 @@ curl http://localhost:8000/mcp/
 docker run --memory=2g --memory-swap=2g ...
 ```
 
-## Security Considerations
-
-### Network Exposure
-
-When running with HTTP transport:
-
-- **Development**: Use `127.0.0.1` to restrict to localhost
-- **Production**: Use `0.0.0.0` with proper firewall rules
-
-```bash
-# Development (localhost only)
--e HOLOVIZ_MCP_HOST=127.0.0.1
-
-# Production (all interfaces)
--e HOLOVIZ_MCP_HOST=0.0.0.0
-```
-
-### Updates
-
-Regularly update to the latest image for security patches:
-
-```bash
-# Pull latest updates
-docker pull ghcr.io/marcskovmadsen/holoviz-mcp:latest
-
-# Restart container
-docker-compose down && docker-compose up -d
-```
-
-## Performance Optimization
-
-### Resource Limits
-
-Set appropriate resource limits for your use case:
-
-```bash
-docker run \
-  --cpus=2 \
-  --memory=2g \
-  --memory-swap=2g \
-  ...
-```
-
-### Volume Performance
-
-For better I/O performance on macOS:
-
-```yaml
-volumes:
-  - ~/.holoviz-mcp:/root/.holoviz-mcp:cached
-```
-
-### Cleanup
-
-Remove unused images and containers:
-
-```bash
-# Remove old images
-docker image prune -a
-
-# Remove unused volumes
-docker volume prune
-
-# Remove all unused resources
-docker system prune -a --volumes
-```
-
 ## Next Steps
 
-- **Configure MCP Client**: Set up your preferred AI assistant to use the Docker container
-- **Customize Configuration**: Create a `config.yaml` in your mounted volume
-- **Explore Features**: Try asking your AI assistant about Panel components
-- **Production Deployment**: Use Docker Compose for production setups
-
-## Additional Resources
-
-- [Main Documentation](../index.md)
-- [Examples](../examples.md)
-- [GitHub Repository](https://github.com/MarcSkovMadsen/holoviz-mcp)
-- [Docker Hub](https://github.com/MarcSkovMadsen/holoviz-mcp/pkgs/container/holoviz-mcp)
-- [HoloViz Community](https://discourse.holoviz.org/)
+- [Docker Production Guide](docker-production.md): Deploy to production
+- [Configure Settings](configure-settings.md): Customize behavior
+- [Troubleshooting](troubleshooting.md): Fix common issues
