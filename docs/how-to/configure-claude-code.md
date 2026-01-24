@@ -81,7 +81,7 @@ holoviz-mcp install claude --scope user
 holoviz-mcp install claude --skills
 ```
 
-See the [Getting Started guide](../tutorials/getting-started-claude-code.md#step-55-install-claude-agents-optional) for usage examples.
+See the [Getting Started guide](../tutorials/getting-started-claude-code.md#step-6-install-claude-agents-optional) for usage examples.
 
 ## Advanced Configuration
 
