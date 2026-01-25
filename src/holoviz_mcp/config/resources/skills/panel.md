@@ -583,6 +583,7 @@ def create_plot(self) -> go.Figure:
 
 ### ECharts
 
+DO prefer ECharts dict configuration over of pyecharts
 **CRITICAL**: ECharts configurations must be JSON-serializable. Panel uses Bokeh's serialization mechanism which cannot serialize Python functions.
 
 ❌ **NEVER use Python functions or lambdas** in ECharts configuration:

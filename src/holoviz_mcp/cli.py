@@ -113,7 +113,7 @@ def install_copilot(agents: bool = True, skills: bool = False) -> None:
 def install_claude(
     agents: bool = True,
     skills: bool = False,
-    scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/")] = "project",
+    scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/")] = "user",
 ) -> None:
     """Install HoloViz MCP resources for Claude Code.
 
