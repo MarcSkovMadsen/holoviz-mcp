@@ -62,7 +62,32 @@ claude mcp add holoviz --transport stdio --scope user -- holoviz-mcp
 
 This will update your `~/.claude.json` file with the HoloViz MCP server configuration.
 
-## Step 5: Verify Installation
+## Step 5: Install HoloViz Agents
+
+HoloViz MCP includes specialized agents for Claude Code that help with planning and implementing HoloViz applications.
+
+Navigate to your project directory and run:
+
+```bash
+holoviz-mcp install claude
+```
+
+This creates a `.claude/agents/` directory with:
+
+- `holoviz-data-explorer.md` - Agent for quick data exploration and data visualization
+- `holoviz-app-architect.md` - Agent for architecting production Panel data applications
+
+!!! tip "Install User-Level Agents"
+
+    To make agents available across all your projects:
+
+    ```bash
+    holoviz-mcp install claude --scope user
+    ```
+
+    This installs agents to `~/.claude/agents/`.
+
+## Step 6: Verify Installation
 
 Let's verify that HoloViz MCP is working correctly!
 
@@ -90,7 +115,7 @@ Open a chat with Claude Code and try these questions:
 What Panel components are available for user input?
 ```
 
-You should see it using the `panel_search_components` tool in action
+You should see it using the `panel_search_components` tool:
 
 ![Claude Code](../assets/images/claude-code-panel-search-components.png)
 
@@ -101,31 +126,6 @@ What parameters does the Panel Button component accept?
 ```
 
 If Claude provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
-
-## Step 6: Install HoloViz Agents (Optional)
-
-HoloViz MCP includes specialized agents for Claude Code that help with planning and implementing HoloViz applications.
-
-Navigate to your project directory and run:
-
-```bash
-holoviz-mcp install claude
-```
-
-This creates a `.claude/agents/` directory with:
-
-- `holoviz-dataviz-analyst.md` - Agent for data analysis and visualization architecture
-- `holoviz-dataapp-architect.md` - Agent for architecting Panel applications and dashboards
-
-!!! tip "Install User-Level Agents"
-
-    To make agents available across all your projects:
-
-    ```bash
-    holoviz-mcp install claude --scope user
-    ```
-
-    This installs agents to `~/.claude/agents/`.
 
 ## Step 7: Build Your First Dashboard
 

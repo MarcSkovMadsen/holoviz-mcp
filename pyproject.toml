@@ -50,6 +50,7 @@ dependencies = [
     "panel-full-calendar",
     "panel-graphic-walker",
     "panel-material-ui",
+    "panel-splitjs",
     "panel-neuroglancer",
     "panel-precision-slider",
     "panel-web-llm",

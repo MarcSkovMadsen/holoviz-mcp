@@ -7,24 +7,21 @@ By the end, you'll have built an interactive report that displays financial data
 <!-- <iframe src="https://www.youtube.com/embed/placeholder" title="Tutorial: Building a Stock Analysis Report with HoloViz MCP" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="display:block;height:300px;width:500px;margin-left:auto;margin-right:auto"></iframe> -->
 
 !!! tip "What you'll learn"
-    - How to use the *HoloViz DataViz Analyst* agent to design data applications
+    - How to use the *HoloViz Data Explorer* agent to design data visualizations
     - How to use the `holoviz_display` tool to quickly visualize and persist your work
 
 !!! note "Prerequisites"
     Before starting, ensure you have:
 
-    - VS Code with GitHub Copilot or another MCP-compatible AI assistant
     - HoloViz MCP installed and configured ([Getting Started Guide](getting-started-copilot-vscode.md))
-    - Configured the `HoloViz DataViz Analyst` agent. ([HoloViz Agents](getting-started-copilot-vscode.md#step-9-using-holoviz-agents))
     - The HoloViz MCP server running ([How to start the server](getting-started-copilot-vscode.md#start-the-server))
-    - `yfinance` installed in the virtual environment where you run `holoviz-mcp`: `pip install yfinance`
 
-## Step 1: Plan Your Report with the HoloViz DataViz Analyst
+## Step 1: Plan Your Report with the HoloViz Data Explorer
 
-First, let's use the HoloViz DataViz Analyst agent to design our application architecture. This agent understands best practices for organizing Panel reports and will help us create a solid plan before writing code.
+First, let's use the HoloViz Data Explorer agent to design our application architecture. This agent understands best practices for organizing Panel reports and will help us create a solid plan before writing code.
 
 1. In VS Code, open the Copilot Chat interface
-2. Click the **Set Agent** dropdown and select **HoloViz DataViz Analyst**
+2. Click the **Set Agent** dropdown and select **HoloViz Data Explorer**
 3. Ask the agent:
 
     ```text
@@ -39,7 +36,7 @@ First, let's use the HoloViz DataViz Analyst agent to design our application arc
     Display using the #holoviz_display tool. KISS - Keep it simple stupid.
     ```
 
-    ![HoloViz DataViz Analyst](../assets/images/stock-analysis-holoviz-analyst.png)
+    ![HoloViz Data Explorer](../assets/images/stock-analysis-holoviz-data-explorer.png)
 
 4. Press Enter and wait for the agent to respond
 
@@ -164,7 +161,7 @@ pip install yfinance
 
 Congratulations! In this tutorial, you have:
 
-- ✅ Used the HoloViz DataViz Analyst agent to design a data report
+- ✅ Used the HoloViz Data Explorer agent to design a data report
 - ✅ Implemented a complete stock analysis application
 - ✅ Created interactive charts with hvPlot
 - ✅ Built a multi-component report with Panel

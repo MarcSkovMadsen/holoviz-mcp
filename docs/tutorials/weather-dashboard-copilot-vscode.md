@@ -12,7 +12,7 @@ By the end, you'll have built a complete interactive application with multi-year
     - An understanding of Python, [Panel](https://panel.holoviz.org/index.html), and data visualization concepts
     - HoloViz MCP installed and configured ([Getting Started Guide](getting-started-copilot-vscode.md))
     - VS Code with GitHub Copilot or another MCP-compatible AI assistant
-    - Configured the `HoloViz DataApp Architect` agent ([HoloViz Agents](getting-started-copilot-vscode.md#step-9-using-holoviz-agents))
+    - Configured the `HoloViz App Architect` agent ([HoloViz Agents](getting-started-copilot-vscode.md#step-9-using-holoviz-agents))
     - The HoloViz MCP server running ([How to start the server](getting-started-copilot-vscode.md#start-the-server))
 
 ## Step 1: Provide Context
@@ -32,9 +32,9 @@ For context please read and summarize https://altair-viz.github.io/case_studies/
 
 ## Step 2: Plan Your Dashboard
 
-Now that we have the context, let's use the *HoloViz DataApp Architect* agent to design our application architecture. This agent knows best practices for Panel dashboards and will create a comprehensive plan.
+Now that we have the context, let's use the *HoloViz App Architect* agent to design our application architecture. This agent knows best practices for Panel dashboards and will create a comprehensive plan.
 
-- Select the **HoloViz DataApp Architect** agent
+- Select the **HoloViz App Architect** agent
 - Then **ask**:
 
 ```text
@@ -52,9 +52,9 @@ Keep it simple:
 - clean, well-organized and well tested code
 ```
 
-- Press Enter and wait for the HoloViz DataApp Architect to respond
+- Press Enter and wait for the HoloViz App Architect to respond
 
-![HoloViz DataApp Architect](../assets/images/weather-dashboard-architect.png)
+![HoloViz App Architect](../assets/images/weather-dashboard-architect.png)
 
 !!! success "What you'll see"
     The architect will provide a detailed architecture including:
@@ -119,7 +119,7 @@ Once the dashboard is running, you can further fine-tune it:
 
 Congratulations! In this tutorial, you have:
 
-- ✅ Used the HoloViz DataApp Architect agent to design a complex dashboard architecture
+- ✅ Used the HoloViz App Architect agent to design a complex dashboard architecture
 - ✅ Implemented a multi-file Python application with proper separation of concerns
 - ✅ Created animated, interactive charts with ECharts
 - ✅ Built a Material UI dashboard with professional styling

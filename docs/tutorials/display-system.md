@@ -372,14 +372,14 @@ For comprehensive help, see the [Troubleshooting Guide](../how-to/troubleshootin
 
 Congratulations! You've completed the Display System tutorial. You now know how to:
 
-✅ Start the Display Server standalone or via MCP
-✅ Create visualizations using the web interface
-✅ Create visualizations via REST API
-✅ Create visualizations using AI assistants and natural language
-✅ View, browse, and manage your visualizations
-✅ Understand execution methods
-✅ Build interactive dashboards
-✅ Troubleshoot common issues
+- ✅ Start the Display Server standalone or via MCP
+- ✅ Create visualizations using the web interface
+- ✅ Create visualizations via REST API
+- ✅ Create visualizations using AI assistants and natural language
+- ✅ View, browse, and manage your visualizations
+- ✅ Understand execution methods
+- ✅ Build interactive dashboards
+- ✅ Troubleshoot common issues
 
 ## Next Steps
 

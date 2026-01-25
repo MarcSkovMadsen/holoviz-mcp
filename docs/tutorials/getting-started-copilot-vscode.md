@@ -180,14 +180,14 @@ Ask Copilot:
 
 ## Step 9: Using HoloViz Agents
 
-### Creating a Plan with the HoloViz DataApp Architect Agent
+### Creating a Plan with the HoloViz App Architect Agent
 
 Instead of diving straight into code, let's use the specialized agent to plan an application architecture.
 
 1. In the Copilot Chat interface, click the **Set Agent** dropdown
-2. Select **`HoloViz DataApp Architect`** from the list
+2. Select **`HoloViz App Architect`** from the list
 
-![HoloViz DataApp Architect](../assets/images/copilot-holoviz-app-architect.png)
+![HoloViz App Architect](../assets/images/copilot-holoviz-app-architect.png)
 
 Type the following prompt:
 
@@ -198,7 +198,7 @@ Press Enter and wait for the agent to respond.
 ![Copilot Dashboard Plan](../assets/images/copilot-dashboard-plan.png)
 
 !!! note "What's happening"
-    The HoloViz DataApp Architect agent analyzes your requirements and creates an architecture plan following HoloViz best practices. This ensures your application is well-structured before you write any code.
+    The HoloViz App Architect agent analyzes your requirements and creates an architecture plan following HoloViz best practices. This ensures your application is well-structured before you write any code.
 
 ### Implementing the Dashboard
 
@@ -259,14 +259,14 @@ For more help, see the [Troubleshooting Guide](../how-to/troubleshooting.md) or 
 
 In this tutorial, you:
 
-✅ Installed HoloViz MCP using uv
-✅ Created the documentation index
-✅ Installed Chromium
-✅ Installed HoloViz Copilot agents
-✅ Configured Github Copilot and VS Code
-✅ Verified the installation
-✅ Built your first Panel dashboard
-✅ Used HoloViz MCP resources
-✅ Used specialized HoloViz agents
+- ✅ Installed HoloViz MCP using uv
+- ✅ Created the documentation index
+- ✅ Installed Chromium
+- ✅ Installed HoloViz Copilot agents
+- ✅ Configured Github Copilot and VS Code
+- ✅ Verified the installation
+- ✅ Built your first Panel dashboard
+- ✅ Used HoloViz MCP resources
+- ✅ Used specialized HoloViz agents
 
 You're now ready to use HoloViz MCP with Copilot + VS Code to accelerate your Panel development! Happy coding! 🚀
