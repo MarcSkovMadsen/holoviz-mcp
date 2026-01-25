@@ -1,4 +1,4 @@
-# Generate Visualization from Picture
+# Generate Plot from Picture
 
 Upload an image of a plot and ask Claude Code to recreate it!
 
@@ -9,8 +9,6 @@ Upload an image of a plot and ask Claude Code to recreate it!
 Upload the image below to Claude Code.
 
 ![Distribution of Electricity Plot - Input](../assets/images/examples/distribution-of-electricity-input.png)
-
-(Source: [ECharts Examples](https://echarts.apache.org/examples/en/index.html))
 
 Then ask Claude to recreate it using the HoloViz ecosystem:
 
@@ -26,7 +24,7 @@ Please implement the plan.
 
 ## Result
 
-Not perfect but a really good starting point.
+Not perfect, but a really good starting point.
 
 ![Distribution of Electricity Plot - Output](../assets/images/examples/distribution-of-electricity-output.png)
 
@@ -222,3 +220,7 @@ create_plot()
 ```
 
 </details>
+
+## Credits
+
+The original plot is from [ECharts Examples](https://echarts.apache.org/examples/en/index.html).

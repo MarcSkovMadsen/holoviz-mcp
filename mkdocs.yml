@@ -106,7 +106,7 @@ nav:
             - Weather Dashboard (Claude): tutorials/weather-dashboard-claude-code.md
     - Examples:
         - examples/index.md
-        - Visualization from Picture: examples/generate-viz-from-picture.md
+        - Plot from Picture: examples/generate-plot-from-picture.md
         - Dashboard from Picture: examples/generate-dashboard-from-picture.md
     - How-To Guides:
         - Installation:

@@ -16,7 +16,7 @@ Then ask Claude to recreate it:
 Please study the attached image. Then plan how to recreate the dashboard. Use ECharts for plotting.
 ```
 
-When the plan is ready, ask Claude Code to implement it:
+When the plan is ready, ask Claude to implement it:
 
 ```text
 Please implement the plan.
