@@ -22,7 +22,7 @@ By following this tutorial, you will:
 ## What You'll Need
 
 - Python 3.11 or later installed on your system
-- HoloViz MCP installed (`uv tool install holoviz-mcp[pydata]`)
+- HoloViz MCP installed (`uv tool install "holoviz-mcp[pydata]"`)
 - Basic familiarity with Python and data visualization
 - A web browser
 - (Optional) An AI assistant configured with HoloViz MCP for Part 2

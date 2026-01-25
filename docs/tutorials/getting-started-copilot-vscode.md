@@ -25,7 +25,7 @@ This tutorial will guide you through installing and using HoloViz MCP with GitHu
 Open your terminal and install HoloViz MCP as a uv tool:
 
 ```bash
-uv tool install holoviz-mcp[pydata]
+uv tool install "holoviz-mcp[pydata]"
 ```
 
 This command installs HoloViz MCP globally, making it available for your AI assistant to reference.
