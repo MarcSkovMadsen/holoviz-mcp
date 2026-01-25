@@ -5,9 +5,8 @@ This tutorial will guide you through installing and using HoloViz MCP with Claud
 !!! tip "What you'll learn"
     - How to install HoloViz MCP
     - How to configure it with Claude Code
-    - How to use it to get help building Panel applications
     - How to verify everything is working correctly
-    - How to build your first Panel dashboard
+    - How to create your first visualizations
 
 !!! note "Prerequisites"
     Before you begin, ensure you have:
@@ -66,28 +65,40 @@ This will update your `~/.claude.json` file with the HoloViz MCP server configur
 
 HoloViz MCP includes specialized agents for Claude Code that help with planning and implementing HoloViz applications.
 
-Navigate to your project directory and run:
+Install the agents for your user:
 
 ```bash
-holoviz-mcp install claude
+holoviz-mcp install claude --scope user
 ```
 
-This creates a `.claude/agents/` directory with:
+This creates a `~/.claude/agents/` directory with:
 
 - `holoviz-data-explorer.md` - Agent for quick data exploration and data visualization
 - `holoviz-app-architect.md` - Agent for architecting production Panel data applications
 
-!!! tip "Install User-Level Agents"
+!!! tip "Install Project-Level Agents"
 
-    To make agents available across all your projects:
+    To make agents available in your current project only:
 
     ```bash
-    holoviz-mcp install claude --scope user
+    holoviz-mcp install claude --scope project
     ```
 
-    This installs agents to `~/.claude/agents/`.
+    This installs agents to `.claude/agents/`.
 
-## Step 6: Verify Installation
+## Step 6: Install Panel and Dependencies (Optional)
+
+For Claude Code to create and run visualizations in your terminal, it needs access to Panel, hvPlot, and related libraries.
+
+Here's how to install them in a project-specific environment:
+
+```bash
+uv venv
+source .venv/bin/activate  # On Linux/macOS (use `.venv\Scripts\activate` on Windows)
+uv pip install panel watchfiles hvplot # Add your own favorite libraries
+```
+
+## Step 7: Verify Installation
 
 Let's verify that HoloViz MCP is working correctly!
 
@@ -127,7 +138,7 @@ What parameters does the Panel Button component accept?
 
 If Claude provides detailed, accurate answers with specific Panel component information, congratulations! HoloViz MCP is working correctly! 🎉
 
-## Step 7: Build Your First Dashboard
+## Step 8: Build Your First Dashboard
 
 Now that everything is set up, let's build a simple dashboard.
 
@@ -145,15 +156,11 @@ Save the code to `app.py` and run it:
 run it
 ```
 
-!!! tip "Panel is not installed"
-    If the command errors with "Panel is not installed" you will have to create a virtual
-    environment and install panel
-
 Your dashboard will open in your default web browser!
 
 ![Dashboard](../assets/images/getting-started-dashboard.png)
 
-## Step 8: Displaying Data Visualizations
+## Step 9: Displaying Data Visualizations
 
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Claude:
 
