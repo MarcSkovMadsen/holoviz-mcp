@@ -104,6 +104,9 @@ nav:
             - Stock Analysis (Claude): tutorials/stock-analysis-claude-code.md
             - Weather Dashboard (Copilot): tutorials/weather-dashboard-copilot-vscode.md
             - Weather Dashboard (Claude): tutorials/weather-dashboard-claude-code.md
+    - Examples:
+        - examples/index.md
+        - Dashboard from Picture: examples/generate-dashboard-from-picture.md
     - How-To Guides:
         - Installation:
             - uv (recommended): how-to/install-uv.md
