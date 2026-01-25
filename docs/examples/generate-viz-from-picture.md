@@ -1,18 +1,18 @@
 # Generate Visualization from Picture
 
-Upload an image of a plot and ask Claude to recreate it!
+Upload an image of a plot and ask Claude Code to recreate it!
 
 ![Claude Logo](../assets/images/claude-logo.svg)
 
 ## Input
 
-Upload the image below to Claude.
+Upload the image below to Claude Code.
 
 ![Distribution of Electricity Plot - Input](../assets/images/examples/distribution-of-electricity-input.png)
 
 (Source: [ECharts Examples](https://echarts.apache.org/examples/en/index.html))
 
-Then ask Claude to recreate it:
+Then ask Claude to recreate it using the HoloViz ecosystem:
 
 ```text
 Please study the attached image carefully including styling, labels, grids, annotations, titles etc. Then plan how to recreate it using the HoloViz ecosystem. Please hide the bokeh logo and autohide the bokeh tools. The tools should only be shown when I hover over the plot.
