@@ -1,12 +1,12 @@
 # Generate Dashboard from Picture
 
-Upload an image and ask Claude to recreate it!
+Upload an image and ask Claude Code to recreate it!
 
 ![Claude Logo](../assets/images/claude-logo.svg)
 
 ## Input
 
-Upload the image below to Claude.
+Upload the image below to Claude Code.
 
 ![Source Dashboard](../assets/images/examples/dashboard-from-image-input.png)
 
@@ -16,7 +16,7 @@ Then ask Claude to recreate it:
 Please study the attached image. Then plan how to recreate the dashboard. Use ECharts for plotting.
 ```
 
-When the plan is ready, ask Claude to implement it:
+When the plan is ready, ask Claude Code to implement it:
 
 ```text
 Please implement the plan.
