@@ -14,9 +14,6 @@ By the end, you'll have built an interactive report that displays financial data
     Before starting, ensure you have:
 
     - Claude Code CLI installed and configured ([Getting Started Guide](getting-started-claude-code.md))
-    - HoloViz MCP server configured with Claude Code
-    - HoloViz agents installed `holoviz-mcp install claude`
-    - `panel` and `yfinance` installed: `pip install panel yfinance`
 
 ## Step 1: Plan Your Report
 
