@@ -28,16 +28,20 @@ Take a moment to review Claude's summary. This will guide our dashboard design!
 Now let's ask Claude to help us plan the dashboard architecture:
 
 ```text
-I want to create an awesome dashboard for exploring the Seattle Weather dataset. The dashboard should:
+I want to create a modern, professional looking dashboard for exploring the Seattle Weather dataset. The dashboard should:
 
 - Enable filtering by multiple years (default: 2015)
 - Include plots for temperature and wind grouped by year
 - Include a plot by weather type
 - Include a table with the raw data
-- Use ECharts with smooth transitions
-- Use consistent and modern styling
+- Use panel-material-ui for a modern look and feel
+- Use ECharts with smooth transitions for an awesome look and feel. Not hvplot
+- Use consistent, modern and appealing styling
+- Use the vega-datasets package for providing the Seattle weather data
 
-Please plan the architecture for this dashboard. What components should I use from Panel? How should the code be organized?
+Please plan the architecture for this dashboard. What components should I use from Panel? How should I organize them?
+Keep it as a single script weather_dashboard.py file for simplicity
+Add the tests in test_weather_dashboard.py file and make sure the tests pass
 ```
 
 Claude will provide a detailed architecture including:
@@ -49,22 +53,14 @@ Claude will provide a detailed architecture including:
 - Color palette suggestions
 
 !!! success "What you'll see"
-    Take time to read through Claude's plan - it's the blueprint for your application!
+    Take time to review and refine Claude's plan - it's the blueprint for your application!
 
 ## Step 3: Implement the Dashboard
 
 With a solid plan, let's create the dashboard. We'll create it as a project file:
 
 ```text
-Based on the plan above, create a weather_dashboard.py file that implements the Seattle Weather dashboard. Include:
-
-- Data loading and filtering
-- ECharts visualizations for temperature, wind, and weather types
-- Panel components for interactivity
-- Clean, well-organized code with docstrings
-- The vega_datasets package provides the Seattle weather data
-
-Keep it as a single file for simplicity.
+Based on the plan implement the Seattle Weather dashboard in a single weather_dashboard.py file. Make sure all tests pass.
 ```
 
 Claude will create the `weather_dashboard.py` file in your current directory.

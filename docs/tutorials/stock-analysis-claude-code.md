@@ -20,7 +20,9 @@ By the end, you'll have built an interactive report that displays financial data
 First, let's ask Claude to help us plan our stock analysis report. Open claude and run:
 
 ```text
-I want to create a stock analysis report showing AAPL and META's hourly data for the last 5 days. The report should include:
+I want to quickly display a stock analysis report showing AAPL and META's hourly data for the last 60 days.
+
+The report should include:
 
 - Individual price charts for each stock
 - Summary statistics table
@@ -28,15 +30,12 @@ I want to create a stock analysis report showing AAPL and META's hourly data for
 - Trading volume visualization
 - Professional styling
 
-Please plan the architecture for this report. What components should I use from Panel and hvPlot?
+Please design and plan this report. Keep it simple and as a single script.
 ```
 
-Claude will provide a detailed architecture plan including:
+Claude will use `holoviz-data-explorer` to develop a detailed architecture plan:
 
-- Data sources and how to fetch stock data with yfinance
-- Chart types to use for price and volume visualization
-- Panel components for layout and statistics
-- Best practices for organizing the report
+![Claude Data Explorer](../assets/images/getting-started-claude-data-eplorer.png)
 
 !!! success "What you'll see"
     Claude will outline a clear plan for building your report, including the key libraries and components needed.
@@ -46,7 +45,7 @@ Claude will provide a detailed architecture plan including:
 Now let's ask Claude to implement the report and use the display tool to show it:
 
 ```text
-Implement it. Display it using the holoviz_display tool.
+Please implement the report. Then display it using the holoviz_display tool.
 ```
 
 Claude will:
@@ -81,7 +80,7 @@ Open the URL in your browser. You should see your stock analysis report with:
 Now that you understand how the report works, let's modify it to analyze different stocks:
 
 ```text
-Modify the report to show GOOGL and MSFT instead of AAPL and META
+Display GOOGL and MSFT instead of AAPL and META
 ```
 
 Claude will generate updated code with the new stocks and provide a new URL to view the modified report.
@@ -93,7 +92,7 @@ Claude will generate updated code with the new stocks and provide a new URL to v
 Let's enhance the report by adding a moving average to the price charts:
 
 ```text
-Add a 20-period moving average line to each stock's price chart
+Display a 20-period moving average line in each stock's price chart
 ```
 
 Claude will update the code to include moving average trend lines and provide a new URL to view the enhanced report.
