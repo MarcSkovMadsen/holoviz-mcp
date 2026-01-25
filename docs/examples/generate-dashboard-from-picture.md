@@ -24,11 +24,11 @@ Please implement the plan.
 
 ## Result
 
-![Claude Completion Message](../assets/images/examples/dashboard-from-image-complete.png)
-
 ![Generated Dashboard](../assets/images/examples/dashboard-from-image-output.png)
 
-## Code
+It even created a tests, requirements.txt and a README.md.
+
+![Claude Completion Message](../assets/images/examples/dashboard-from-image-complete.png)
 
 <details><summary>Code</summary>
 
