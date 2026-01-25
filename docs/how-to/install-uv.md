@@ -25,7 +25,7 @@ Install HoloViz MCP as a uv tool:
 uv tool install holoviz-mcp
 
 # Or with PyData packages (recommended for data science)
-uv tool install holoviz-mcp[pydata]
+uv tool install "holoviz-mcp[pydata]"
 
 # Or with specific extra packages
 uv tool install holoviz-mcp --with altair --with polars
