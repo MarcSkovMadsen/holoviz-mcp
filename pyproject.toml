@@ -94,6 +94,7 @@ pydata = [
     "pytest",
     "scikit-learn",
     "seaborn",
+    "vega_datasets",
     "yfinance",
 ]
 [tool.ruff]
