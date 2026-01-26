@@ -173,6 +173,10 @@ filterwarnings = [
 ]
 testpaths = ["tests"]
 
+[tool.codespell]
+ignore-words-list = "acn"
+skip = "*.js,*.css,*.svg,*.json"
+
 [tool.mypy]
 python_version = '3.11'
 no_implicit_optional = true

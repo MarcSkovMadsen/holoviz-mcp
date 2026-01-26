@@ -339,6 +339,7 @@ template = pn.template.FastListTemplate(
 ```
 
 - In the `sidebar`, DO use the order: 1) optional logo, 2) description, 3) input widgets, 4) documentation
+- In the `sidebar`, DO make sure components stretch width.
 - Do set `main_layout=None` for a modern styling.
 
 ### Responsive Design

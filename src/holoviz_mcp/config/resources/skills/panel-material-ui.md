@@ -135,7 +135,6 @@ elif pn.state.served:
 
 DO always create test in separate test files and DO run test via pytest:
 
-
 ```python
 import ...
 
@@ -165,12 +164,14 @@ def test_characters_reactivity():
 - DO use Material UI `sx` parameter for all css styling over `styles` and `stylesheets`
 - DO use panel-material-ui components instead of panel components for projects already using panel-material-ui and for new projects
 - DON'T configure the `design`, i.e. DO NOT `pn.extension(design='material')`.
+- DO prefer professional Material UI icons over emojies
 
 ## Component Instructions
 
 ### Page
 
 - DO provide the title to the `Page.title` argument. DON'T provide it in the `Page.main` area.
+- DO make sure components in the `sidebar` stretch width.
 - DO provide an optional image, description, navigation menu to the `Page.sidebar` argument. Normally DON't put them in the `header` or `main` areas.
 - DO provide the input widgets as children to the `Page.sidebar` argument
 - DO not add advanced or high components to the `Page.header` as it is only 100px high by default. Normally only buttons, indicators, text and navigation links go into the header.

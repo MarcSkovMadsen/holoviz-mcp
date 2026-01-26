@@ -108,6 +108,7 @@ nav:
         - examples/index.md
         - Plot from Picture: examples/generate-plot-from-picture.md
         - Dashboard from Picture: examples/generate-dashboard-from-picture.md
+        - Convert Streamlit App: examples/convert-streamlit-app.md
     - How-To Guides:
         - Installation:
             - uv (recommended): how-to/install-uv.md
