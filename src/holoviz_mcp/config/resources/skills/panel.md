@@ -519,6 +519,8 @@ def kpi_value(self):
 ### Tabulator
 
 - DO set `Tabulator.disabled=True` unless you would like the user to be able to edit the table.
+- DO prefer [Tabulator Formatters](https://tabulator.info/docs/6.3/format) over Bokeh formatters and Pandas Styling.
+- DO prefer [Tabulator Editors](https://tabulator.info/docs/6.3/edit) over Bokeh Editor types
 
 ### Markdown
 
