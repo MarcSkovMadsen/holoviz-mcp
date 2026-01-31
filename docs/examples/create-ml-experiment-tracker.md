@@ -437,7 +437,7 @@ if pn.state.served:
 
 Key features demonstrated:
 
-- **Parameter Types**: Uses `param.String`, `param.Number`, `param.Integer`, `param.Selector`, and `param.Boolean`
+- **Parameter Types**: Uses `param.String`, `param.Number`, `param.Integer`, and `param.Boolean`
 - **Validation**: Learning rate bounded to 0.0001-1.0, batch size restricted to powers of 2
 - **Conditional Logic**: Patience parameter disabled when early_stopping is False
 - **Change Tracking**: Automatic history with timestamps via param watchers
