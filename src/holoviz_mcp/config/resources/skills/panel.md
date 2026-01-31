@@ -220,11 +220,10 @@ DO fix any errors identified.
 ### Parameter-Driven Architecture
 
 - DO use `param.Parameterized` or `pn.viewable.Viewer` classes to organize and manage state
-- DO create widgets with `.from_param()` method
+- DO create widgets with `.from_param()` method. DON'T do this for panes, i.e. pn.pane.Str has no from_param method.
 - DO use `@param.depends()` for reactive methods
 - DO use `@param.depends(..., watch=True)` to update parameter/ state values and for side-effects like sending an email.
 - DO group related parameters in separate `Parameterized` or `Viewable` classes
-
 
 ```python
 # ❌ AVOID: Updating panes and other components directly. This makes it hard to reason about application flow and state

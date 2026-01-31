@@ -108,6 +108,7 @@ nav:
         - examples/index.md
         - Plot from Picture: examples/generate-plot-from-picture.md
         - Dashboard from Picture: examples/generate-dashboard-from-picture.md
+        - Create ML Experiment Tracker: examples/create-ml-experiment-tracker.md
         - Convert Excel Sheet: examples/convert-excel-app.md
         - Convert Streamlit App: examples/convert-streamlit-app.md
     - How-To Guides:
