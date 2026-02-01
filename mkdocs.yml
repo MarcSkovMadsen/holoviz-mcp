@@ -112,6 +112,7 @@ nav:
         - Build A Shipping Form: examples/build-a-shipping-form.md
         - Convert Excel Sheet: examples/convert-excel-app.md
         - Convert Streamlit App: examples/convert-streamlit-app.md
+        - Build Custom Model Viewer: examples/build-custom-model-viewer.md
     - How-To Guides:
         - Installation:
             - uv (recommended): how-to/install-uv.md
