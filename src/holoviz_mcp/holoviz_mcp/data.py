@@ -483,15 +483,16 @@ class DocumentationIndexer:
         self.repos_dir.mkdir(parents=True, exist_ok=True)
 
         # Use configurable directory for vector database path
-        vector_db_path = vector_dir or config.server.vector_db_path
-        vector_db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._vector_db_path = vector_dir or config.server.vector_db_path
+        self._vector_db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Disable ChromaDB telemetry based on config
         if not config.server.anonymized_telemetry:
             os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
         # Initialize ChromaDB
-        self.chroma_client = chromadb.PersistentClient(path=str(vector_db_path))
+        self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+
         self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
 
         # Lazy-initialized async lock for database operations to prevent corruption from concurrent access
@@ -929,7 +930,7 @@ class DocumentationIndexer:
         )
 
         await log_info(f"✅ Successfully indexed {len(all_docs)} documents", ctx)
-        await log_info(f"📊 Vector database stored at: {self.data_dir / 'chroma'}", ctx)
+        await log_info(f"📊 Vector database stored at: {self._vector_db_path}", ctx)
         await log_info(f"🔍 Index contains {self.collection.count()} total documents", ctx)
 
         # Show detailed summary table
@@ -1245,7 +1246,7 @@ class DocumentationIndexer:
             logger.info(f"📦 Default config: {indexer._holoviz_mcp_config.config_file_path(location='default')}")
             logger.info(f"🏠 User config: {indexer._holoviz_mcp_config.config_file_path(location='user')}")
             logger.info(f"📁 Repository directory: {indexer.repos_dir}")
-            logger.info(f"💾 Vector database: {indexer.data_dir / 'chroma'}")
+            logger.info(f"💾 Vector database: {self._vector_db_path}")
             logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")
             logger.info("")
 

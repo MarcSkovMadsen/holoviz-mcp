@@ -109,6 +109,7 @@ nav:
         - Plot from Picture: examples/generate-plot-from-picture.md
         - Dashboard from Picture: examples/generate-dashboard-from-picture.md
         - Create ML Experiment Tracker: examples/create-ml-experiment-tracker.md
+        - Build A Shipping Form: examples/build-a-shipping-form.md
         - Convert Excel Sheet: examples/convert-excel-app.md
         - Convert Streamlit App: examples/convert-streamlit-app.md
     - How-To Guides:
