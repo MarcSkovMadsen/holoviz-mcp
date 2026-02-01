@@ -189,7 +189,7 @@ def list_skills() -> list[str]:
     Returns
     -------
         list[str]: A list of the skills available.
-            Names are returned in hyphenated format (e.g., "panel-material-ui").
+            Names are returned in hyphenated format (e.g., "panel-material-ui", "panel-custom-components" and "a-custom-skill").
     """
     return _list_skills()
 
