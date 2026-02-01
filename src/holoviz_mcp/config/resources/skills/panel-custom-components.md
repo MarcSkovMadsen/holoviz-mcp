@@ -1,4 +1,3 @@
----
 name: panel-custom-components
 description: Build custom Panel components using JSComponent (vanilla JS, web components), ReactComponent (React/JSX), AnyWidgetComponent (AnyWidget spec for cross-platform), or MaterialUIComponent (Material UI themed). Use when wrapping JS libraries, creating interactive widgets, or building themed components. Includes decision guide, best practices, DOs/DON'Ts, and Playwright UI testing patterns.
 metadata:
@@ -6,7 +5,6 @@ metadata:
   author: holoviz
   category: web-development
   difficulty: advanced
----
 
 # Panel Custom Components
 
@@ -18,7 +16,6 @@ This skill covers building custom Panel components that bridge Python and JavaSc
 
 **Prerequisites:** Solid JavaScript and React knowledge assumed.
 
----
 
 ## 1. Decision Guide - Which Component Type to Use
 
@@ -53,7 +50,6 @@ This skill covers building custom Panel components that bridge Python and JavaSc
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
 
 ## 2. Development Workflow
 
@@ -125,6 +121,8 @@ poc = MyComponentPOC(value="Test", height=200, sizing_mode="stretch_width")
 poc.servable()
 ```
 
+ALWAYS test the UI via Playwright smoke tests! (see details below)
+
 **POC validation checklist:**
 
 - [ ] No console errors (especially import/CORS errors)
@@ -139,12 +137,9 @@ poc.servable()
 Once the POC validates all three concerns, build out the full component:
 
 1. Add all parameters and their JS sync handlers
-2. Implement the actual library integration
+2. Implement the full library integration
 3. Add error handling and edge cases
 4. Add CSS styling via `_stylesheets`
-5. Write Playwright tests (smoke tests first!)
-
----
 
 ## 3. Core Patterns (All Component Types)
 
@@ -275,8 +270,6 @@ model.on('msg:custom', (event) => {
     }
 });
 ```
-
----
 
 ## 4. JSComponent Patterns
 
@@ -416,8 +409,6 @@ class D3BarChart(JSComponent):
     """
 ```
 
----
-
 ## 4.1. Wrapping Third-Party Web Components
 
 When wrapping existing web components, follow these patterns:
@@ -491,8 +482,6 @@ export function render({ model, el }) {
     });
 }
 ```
-
----
 
 ## 5. ReactComponent Patterns
 
@@ -617,7 +606,6 @@ class ChartComponent(ReactComponent):
     """
 ```
 
----
 
 ## 6. AnyWidgetComponent Patterns
 
@@ -722,8 +710,6 @@ class ReactCounter(AnyWidgetComponent):
 ```
 
 > **Important:** Always pin React versions when using `@anywidget/react`. Use `?deps=react@18.2.0,react-dom@18.2.0` to bundle dependencies together with specific versions. Without version pinning, esm.sh serves React 19 which has breaking changes.
-
----
 
 ## 7. MaterialUIComponent Patterns
 
@@ -896,7 +882,6 @@ class IconComponent(MaterialUIComponent):
 > - Do NOT use the trailing slash pattern (`@mui/icons-material/`) with query parameters - importmaps require values ending in `/` when keys end in `/`, which breaks `?external=react`. Use explicit imports for each icon instead.
 > - Use inline `style` props for icon dimensions (`width`, `height`) because MUI CSS classes may not load properly with custom MaterialUIComponent.
 
----
 
 ## 8. Best Practices
 
@@ -1035,8 +1020,6 @@ class IconComponent(MaterialUIComponent):
 
    > **Why?** `__javascript__` loads scripts asynchronously. This causes race conditions where `render()` executes before the library finishes loading - especially problematic for web components that must register custom elements before you can create them.
 
----
-
 ## 9. Testing with Playwright
 
 Custom components should be tested using Playwright for UI testing. Panel provides test utilities that make this straightforward.
@@ -1044,7 +1027,7 @@ Custom components should be tested using Playwright for UI testing. Panel provid
 ### Setup
 
 ```bash
-pip install panel pytest pytest-playwright
+pip install panel pytest pytest-playwright pytest-xdist
 playwright install chromium
 ```
 
@@ -1161,10 +1144,11 @@ class TextInput(JSComponent):
 
 
 # =============================================================================
-# Fixtures
+# Fixtures - CRITICAL: Always reset state to properly shuts down all threaded Panel
+# servers, allowing pytest to exit cleanly after tests complete.
 # =============================================================================
 
-
+# ALWAYS INCLUDE THIS FIXTURE!
 @pytest.fixture(autouse=True)
 def server_cleanup():
     """Clean up Panel state after each test."""
@@ -1296,15 +1280,17 @@ def test_component_with_external_resources(page):
 ### Running Tests
 
 ```bash
-# Run UI tests (exit on first failure - recommended since UI tests are slow)
+# Run UI tests in parallel for faster feedback (recommended)
+pytest path/to/test_file.py -n auto
+
+# Run UI tests sequentially (exit on first failure)
 pytest path/to/test_file.py -x
 ```
 
-- Run headless unless debugging
-- Use `-x` (exit on first failure) for faster feedback
-- Use `--headed --slowmo 500` for debugging
-
----
+- Use `-n auto` (pytest-xdist) to run tests in parallel for faster feedback
+- Run headless unless users ask for headed mode
+- Use `-x` (exit on first failure) for sequential runs
+- Use `--headed --slowmo 500` for debugging if the users asks for this
 
 ## 10. Complete Examples
 
@@ -1423,7 +1409,6 @@ def test_counter(page, CounterClass):
     expect(button).to_have_text("Count: 1")
 ```
 
----
 
 ## 11. Troubleshooting
 
@@ -1451,7 +1436,6 @@ def test_counter(page, CounterClass):
 2. For inline CSS, ensure it's a list of strings
 3. CSS is scoped to shadow DOM - use `:host` for root styling
 
----
 
 ## 12. Common Patterns
 
@@ -1630,7 +1614,6 @@ export function render({ model, el }) {
 }
 ```
 
----
 
 ## 13. Learning More
 
