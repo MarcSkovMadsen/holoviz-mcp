@@ -248,8 +248,8 @@ widget.jslink(plot, code={'value': "color_mapper.palette = cmap_dict[source.valu
 
 | Pattern | Do | Don't |
 |---|---|---|
-| Update UI | Pass `@param.depends` method ref to pane; or `param.watch` for multi-component orchestration | Return new panes/layouts from `@param.depends` |
+| Update UI | Pass `@param.depends` method ref to pane; or `pn.bind` for multi-component orchestration | Return new panes/layouts from `@param.depends` |
 | Preserve zoom | `hv.DynamicMap(pn.bind(fn, trigger))` | `pane.object = new_plot` |
 | Overlay composition | One DynamicMap per element, `*` at layout | `hv.Overlay([...])` inside callback |
 | Empty chart state | `hv.Scatter([], kdims=..., vdims=...)` | `hv.Overlay([])` or `hv.Text(...)` |
-| Side effects | `param.watch(fn, ['param'])` | `@param.depends` with `watch=True` for UI |
+| Side effects | `pn.bind(fn, obj.param.value)` | `@param.depends` with `watch=True` for UI |
