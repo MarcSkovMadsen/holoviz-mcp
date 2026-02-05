@@ -36,20 +36,18 @@ def __init__(self, **params):
     super().__init__(**params)
     # Pane created ONCE; method reference passed as content
     self._summary_pane = pn.pane.Markdown(self._summary_text)
-    self._chart_pane = pn.pane.HoloViews(self.param.chart)
+    self._chart_pane = pn.pane.HoloViews()
 
 @param.depends("data")
 def _summary_text(self):
-    # Returns CONTENT (string), not a pane
-    return f"**Rows**: {len(self.data)}"
+    self._summary_pane.object = f"**Rows**: {len(self.data)}"
 
 @param.depends("data", watch=True, on_init=True)
 def _update_chart(self):
-    # Updates a parameter; pane bound to self.param.chart sees the change
-    self.chart = self.data.hvplot.scatter(...)
+    self._chart_pane.object = self.data.hvplot.scatter(...)
 ```
 
-### DO: Use `param.watch` when orchestrating multiple component updates from one event
+### DO: Use `param.depends` when orchestrating multiple component updates from one event
 
 When a single data change needs to update many components at once (status HTML, chart trigger, table value, visibility flags), a single watcher is cleaner than having each component independently depend on the same param:
 
@@ -58,8 +56,8 @@ def __init__(self, **params):
     super().__init__(**params)
     self._table = pn.widgets.Tabulator(pd.DataFrame(), ...)
     self._status_html = pn.pane.HTML("", sizing_mode="stretch_width")
-    self.param.watch(self._on_data_changed, ['data'])
 
+@param.depends("data", watch=True)
 def _on_data_changed(self, *events):
     self._status_html.object = self._render_status(self.data)
     self._table.value = self._prepare_df(self.data)
@@ -70,7 +68,6 @@ def _on_data_changed(self, *events):
 **When to use which**:
 - `@param.depends("x")` (no watch) → return content, pass method ref to a pane. Preferred for simple 1-param → 1-pane reactivity.
 - `@param.depends("x", watch=True)` → update state parameters or trigger side effects.
-- `self.param.watch(fn, ['x'])` → orchestrate updates to multiple components from one event.
 
 ---
 
