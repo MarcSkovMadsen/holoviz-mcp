@@ -3,7 +3,7 @@ name: panel-holoviews-interactions
 description: Best practices for using HoloViews/hvPlot with Panel, especially DynamicMap patterns for live-updating dashboards.
 metadata:
   version: "1.0.0"
-  author: ahuang
+  author: ahuang11
   category: web-development
   difficulty: intermediate
 ---
