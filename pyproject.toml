@@ -91,9 +91,11 @@ pydata = [
     "altair",
     "duckdb",
     "polars",
+    "pyarrow",
     "pytest",
     "scikit-learn",
     "seaborn",
+    "shapely",
     "vega_datasets",
     "yfinance",
 ]

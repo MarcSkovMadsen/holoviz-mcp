@@ -266,15 +266,68 @@ layout = ls(scatter) + ls(hist_x) + ls(hist_y)
 pn.pane.HoloViews(layout, sizing_mode="stretch_width").servable()
 ```
 
-### DON'T: Use pre-binned `np.histogram` or pre-aggregated data
+### Categorical bars: Custom Operation to preserve data lineage
+
+`hv.operation.histogram` only works for **numeric** dimensions. For categorical bar charts
+(e.g. counting trades per commodity), you need a custom `Operation` subclass. Because
+operations wrap the source element, `link_selections` can "unwrap" them to access all
+original dimensions when resolving cross-filter expressions.
+
+```python
+from holoviews.core import Operation
+
+class category_count(Operation):
+    """Count occurrences of a categorical dimension, returning Bars.
+
+    Preserves data lineage back to the source element so that
+    link_selections can resolve all source dimensions during cross-filtering.
+    """
+    dimension = param.String(doc="Categorical dimension to count")
+
+    def _process(self, element, key=None):
+        vals = element.dimension_values(self.p.dimension, expanded=True)
+        unique, counts = np.unique(vals, return_counts=True)
+        return hv.Bars(
+            list(zip(unique, counts)),
+            kdims=[self.p.dimension],
+            vdims=["Count"],
+        )
+
+# Usage with link_selections:
+ls = hv.link_selections.instance()
+points = hv.Points(df, kdims=['price', 'volume'],
+                   vdims=['commodity', 'region', 'trade_type', 'pnl'])
+
+hist_price = histogram(points, dimension='price', num_bins=20)           # numeric → histogram
+bars_commodity = category_count(points, dimension='commodity')           # categorical → custom op
+
+layout = ls(points) + ls(hist_price) + ls(bars_commodity)
+```
+
+**Why this works**: HoloViews operations maintain a reference to their source element.
+When `link_selections` encounters a selection expression like `(dim('price') >= 50)`,
+it recurses into the operation's source (`points`) where `price` exists, applies the
+filter, then re-runs the operation on the filtered data. Pre-aggregated `hv.Bars` lack
+this source reference, so the expression cannot resolve and raises `CallbackError`.
+
+### DON'T: Use pre-binned histograms, pre-aggregated data, or histogram on categorical dimensions
 
 ```python
 # BAD — pre-binned histogram loses data lineage; link_selections can't resolve
 # the scatter's 'y' dimension on the histogram → CallbackError
 hist = hv.Histogram(np.histogram(df['x'], bins=20), kdims='x')
 
-# BAD — pre-aggregated bars lose the original x/y columns; same problem
+# BAD — pre-aggregated bars lose the original x/y columns;
+# selection expressions referencing those dimensions → CallbackError
 bars = hv.Bars(df.groupby('cat').size().reset_index(name='n'), kdims='cat', vdims='n')
+
+# BAD — histogram() only supports numeric dimensions;
+# raises "Cannot create histogram from categorical data"
+bars = histogram(points, dimension='commodity')
+
+# BAD — hv.Bars(raw_df, kdims=['cat']) auto-detects ALL other columns as vdims,
+# including datetime and string columns that cause DType errors during rendering
+bars = hv.Bars(df, kdims=['commodity'])  # timestamp vdim → DTypePromotionError
 ```
 
 ### Accessing the selection for filtering
@@ -296,6 +349,7 @@ if expr is not None:
 - DO use `.instance()` to create the link_selections object — calling `hv.link_selections(plot)` directly returns a plot, not a reusable linker
 - DO apply `selection_expr` to a `hv.Dataset`, not a pandas DataFrame — `expr.apply(df)` raises `AttributeError`
 - DO use `hv.operation.histogram(source_element, dimension='x')` for histograms — this preserves the data lineage so `link_selections` can filter by all source dimensions. DON'T use `hv.Histogram(np.histogram(...))` — pre-binned histograms lose the source data link, and `link_selections` raises `CallbackError` when the selection expression references dimensions not present on the histogram
+- DO use a custom `Operation` subclass (like `category_count` above) for **categorical bar charts** — this preserves data lineage the same way `histogram` does for numeric dimensions. DON'T use `histogram()` on categorical dimensions (it raises an error) and DON'T use pre-aggregated `groupby().size()` bars (they lose the source data link)
 - DON'T add selection tools manually — `link_selections` adds `box_select` and `lasso_select` automatically
 - Each linked plot must share the same dimension names for cross-filtering to work
 - **Dependencies**: `link_selections` requires `pyarrow` at runtime for selection display. Lasso selection additionally requires `shapely` (or `spatialpandas`). Install both: `pip install pyarrow shapely`. Without `pyarrow`, selections silently fail with `CallbackError`; without `shapely`, lasso raises `ImportError` while box-select still works
@@ -382,6 +436,7 @@ widget.jslink(plot, code={'value': """
 | Responsive width (HoloViews) | `.opts(responsive=True, height=N)` + `sizing_mode="stretch_width"` on pane | Fixed `width` in opts (conflicts with responsive pane, emits warning) |
 | React to selections | `streams.Selection1D(source=plot)` + DynamicMap | Manual click tracking with `param.depends` |
 | Cross-filtering | `hv.link_selections.instance()` | Building manual stream wiring |
+| Cross-filter categorical bars | Custom `Operation` subclass on source element | Pre-aggregated `groupby().size()` bars or `histogram()` on categorical dims |
 | Streaming data | `Pipe` (replace) or `Buffer` (append) streams | Replacing pane.object in a loop |
 | Renderer theme | `pn.pane.HoloViews(plot, theme=...)` | `hv.renderer('bokeh').theme = ...` |
 | Client-side styling | `widget.jslink(plot, value='glyph.fill_alpha')` | DynamicMap for pure visual tweaks |
