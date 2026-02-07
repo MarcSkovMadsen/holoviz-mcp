@@ -163,7 +163,8 @@ def get_skill(name: str) -> str:
     Use list_skills tool to see available skills.
 
     Args:
-        name (str): The name of the skill to get. For example, "panel", "panel-material-ui", etc.
+        name (str): The name of the skill to get. For example, "panel", "panel-material-ui",
+        "panel-holoviews", "panel-custom-components" etc.
 
 
     Returns

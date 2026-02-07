@@ -535,10 +535,7 @@ def kpi_value(self):
 
 ### HoloViews/hvPlot
 
-- DO let Panel control the renderer theme
-    - DON'T set `hv.renderer('bokeh').theme = 'dark_minimal'`
-
-DO follow the hvplot and holoviews best practice guides!
+DO follow the relevant `hvplot`, `holoviews` and `panel-holoviews` skills/ best practice guides!
 
 ### Matplotlib
 
