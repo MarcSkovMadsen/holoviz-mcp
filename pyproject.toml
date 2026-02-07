@@ -90,10 +90,14 @@ mypy = [
 pydata = [
     "altair",
     "duckdb",
+    "ipywidgets_bokeh",
     "polars",
+    "pyarrow",
     "pytest",
     "scikit-learn",
     "seaborn",
+    "setuptools", # Due to https://github.com/bokeh/ipywidgets_bokeh/issues/125
+    "shapely",
     "vega_datasets",
     "yfinance",
 ]
