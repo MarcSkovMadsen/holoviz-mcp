@@ -8,6 +8,10 @@ Use this server to access:
 - Panel Components: Detailed information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
+import asyncio
+import atexit
+import logging
+from asyncio import sleep
 from importlib.metadata import distributions
 
 from fastmcp import Context
@@ -440,8 +444,62 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     return component.parameters
 
 
+logger = logging.getLogger(__name__)
+
+
+class PlaywrightManager:
+    """Persistent Playwright browser for fast repeated screenshots."""
+
+    def __init__(self):
+        self._playwright = None
+        self._browser = None
+        self._lock = asyncio.Lock()
+
+    async def get_browser(self):
+        """Get a connected Playwright browser instance, launching if necessary."""
+        async with self._lock:
+            if self._browser is not None and self._browser.is_connected():
+                return self._browser
+            await self._cleanup()
+            from playwright.async_api import async_playwright
+
+            self._playwright = await async_playwright().start()
+            self._browser = await self._playwright.chromium.launch(headless=True)
+            return self._browser
+
+    async def _cleanup(self):
+        if self._browser is not None:
+            try:
+                await self._browser.close()
+            except Exception:
+                pass
+            self._browser = None
+        if self._playwright is not None:
+            try:
+                await self._playwright.stop()
+            except Exception:
+                pass
+            self._playwright = None
+
+    async def close(self):
+        """Clean up Playwright resources."""
+        async with self._lock:
+            await self._cleanup()
+
+
+_playwright_manager: PlaywrightManager | None = None
+
+
+def _get_playwright_manager() -> PlaywrightManager:
+    global _playwright_manager
+    if _playwright_manager is None:
+        _playwright_manager = PlaywrightManager()
+        atexit.register(lambda: asyncio.run(_playwright_manager.close()) if _playwright_manager else None)
+    return _playwright_manager
+
+
 @mcp.tool()
-async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920, height: int = 1200, full_page: bool = False) -> ImageContent:
+async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920, height: int = 1200, full_page: bool = False, delay: int = 2) -> ImageContent:
     """
     Take a screenshot of the specified url.
 
@@ -455,15 +513,21 @@ async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920
         The height of the browser viewport.
     full_page : bool, default=False
         Whether to capture the full scrollable page.
+    delay : int, default=2
+        Seconds to wait after page load before taking the screenshot, to allow dynamic content to render.
     """
-    from playwright.async_api import async_playwright
-
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page(ignore_https_errors=True, viewport={"width": width, "height": height})
+    manager = _get_playwright_manager()
+    browser = await manager.get_browser()
+    page = await browser.new_page(
+        ignore_https_errors=True,
+        viewport={"width": width, "height": height},
+    )
+    try:
         await page.goto(url, wait_until="networkidle")
+        await sleep(delay=delay)
         buffer = await page.screenshot(type="png", full_page=full_page)
-        await browser.close()
+    finally:
+        await page.close()
 
     image = Image(data=buffer, format="png")
     return image.to_image_content()
