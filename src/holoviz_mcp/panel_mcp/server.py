@@ -12,7 +12,10 @@ import asyncio
 import atexit
 import logging
 from asyncio import sleep
+from datetime import datetime
 from importlib.metadata import distributions
+from pathlib import Path
+from uuid import uuid4
 
 from fastmcp import Context
 from fastmcp import FastMCP
@@ -543,10 +546,6 @@ async def take_screenshot(
 
     # Handle screenshot saving
     if save_screenshot:
-        from datetime import datetime
-        from pathlib import Path
-        from uuid import uuid4
-
         if isinstance(save_screenshot, str):
             # Custom path specified
             save_path = Path(save_screenshot)
