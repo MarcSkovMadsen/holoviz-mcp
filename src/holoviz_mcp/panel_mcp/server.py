@@ -508,7 +508,7 @@ async def take_screenshot(
     height: int = 1200,
     full_page: bool = False,
     delay: int = 2,
-    save_screenshot: bool | str = True,
+    save_screenshot: bool | str = False,
 ) -> ImageContent:
     """
     Take a screenshot of the specified url.
@@ -525,7 +525,7 @@ async def take_screenshot(
         Whether to capture the full scrollable page.
     delay : int, default=2
         Seconds to wait after page load before taking the screenshot, to allow dynamic content to render.
-    save_screenshot : bool | str, default=True
+    save_screenshot : bool | str, default=False
         Whether and where to save the screenshot to disk:
         - True: Save to default screenshots directory (~/.holoviz-mcp/screenshots/) with auto-generated filename
         - False: Don't save screenshot to disk (only return to AI)
@@ -544,6 +544,10 @@ async def take_screenshot(
     finally:
         await page.close()
 
+    # Coerce string "false"/"true" to bool (MCP clients may serialize bools as strings)
+    if isinstance(save_screenshot, str) and save_screenshot.lower() in ("true", "false"):
+        save_screenshot = save_screenshot.lower() == "true"
+
     # Handle screenshot saving
     if save_screenshot:
         if isinstance(save_screenshot, str):
@@ -555,7 +559,7 @@ async def take_screenshot(
             # Default path - use screenshots_dir from config
             screenshots_dir = _config.server.screenshots_dir
             screenshots_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Generate filename with timestamp and UUID
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             unique_id = str(uuid4())[:8]
@@ -564,7 +568,7 @@ async def take_screenshot(
 
         # Ensure parent directory exists
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Write the screenshot to disk
         save_path.write_bytes(buffer)
         logger.info(f"Screenshot saved to: {save_path}")
