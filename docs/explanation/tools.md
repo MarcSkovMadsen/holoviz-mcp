@@ -81,10 +81,20 @@ Tools for discovering and working with Panel components.
 
 **Parameters**:
 - `url` (string): The url to take the screenshot of. Default is 'http://localhost:5006/'
+- `width` (int): The width of the browser viewport. Default is 1920
+- `height` (int): The height of the browser viewport. Default is 1200
+- `full_page` (bool): Whether to capture the full scrollable page. Default is False
+- `delay` (int): Seconds to wait after page load before taking the screenshot. Default is 2
+- `save_screenshot` (bool | string): Whether and where to save the screenshot to disk. Default is True
+  - `True`: Save to default screenshots directory (`~/.holoviz-mcp/screenshots/`) with auto-generated filename
+  - `False`: Don't save screenshot to disk (only return to AI)
+  - `string`: Save to specified absolute path (raises ValueError if path is not absolute)
 
-**Use Case**: Understand how the app looks
+**Use Case**: Understand how the app looks and save screenshots for later review
 
-**Returns**: ImageContent.
+**Returns**: ImageContent (screenshot image returned to AI).
+
+**Note**: When `save_screenshot=True` or a path is provided, the screenshot is also saved to disk with a timestamp-based filename (e.g., `screenshot_2026-02-09_12-01-03_abc123.png`).
 
 **Example Query**: *"Take a screenshot of http://127.0.0.1:8000/"**
 
