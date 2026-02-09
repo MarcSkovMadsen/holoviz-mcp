@@ -499,7 +499,14 @@ def _get_playwright_manager() -> PlaywrightManager:
 
 
 @mcp.tool()
-async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920, height: int = 1200, full_page: bool = False, delay: int = 2) -> ImageContent:
+async def take_screenshot(
+    url: str = "http://localhost:5006/",
+    width: int = 1920,
+    height: int = 1200,
+    full_page: bool = False,
+    delay: int = 2,
+    save_screenshot: bool | str = True,
+) -> ImageContent:
     """
     Take a screenshot of the specified url.
 
@@ -515,6 +522,11 @@ async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920
         Whether to capture the full scrollable page.
     delay : int, default=2
         Seconds to wait after page load before taking the screenshot, to allow dynamic content to render.
+    save_screenshot : bool | str, default=True
+        Whether and where to save the screenshot to disk:
+        - True: Save to default screenshots directory (~/.holoviz-mcp/screenshots/) with auto-generated filename
+        - False: Don't save screenshot to disk (only return to AI)
+        - str: Save to specified absolute path (raises ValueError if path is not absolute)
     """
     manager = _get_playwright_manager()
     browser = await manager.get_browser()
@@ -528,6 +540,35 @@ async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920
         buffer = await page.screenshot(type="png", full_page=full_page)
     finally:
         await page.close()
+
+    # Handle screenshot saving
+    if save_screenshot:
+        from datetime import datetime
+        from pathlib import Path
+        from uuid import uuid4
+
+        if isinstance(save_screenshot, str):
+            # Custom path specified
+            save_path = Path(save_screenshot)
+            if not save_path.is_absolute():
+                raise ValueError(f"save_screenshot path must be absolute, got: {save_screenshot}")
+        else:
+            # Default path - use screenshots_dir from config
+            screenshots_dir = _config.server.screenshots_dir
+            screenshots_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Generate filename with timestamp and UUID
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            unique_id = str(uuid4())[:8]
+            filename = f"screenshot_{timestamp}_{unique_id}.png"
+            save_path = screenshots_dir / filename
+
+        # Ensure parent directory exists
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write the screenshot to disk
+        save_path.write_bytes(buffer)
+        logger.info(f"Screenshot saved to: {save_path}")
 
     image = Image(data=buffer, format="png")
     return image.to_image_content()

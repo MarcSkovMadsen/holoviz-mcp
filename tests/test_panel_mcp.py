@@ -339,3 +339,144 @@ class TestPanelMCPIntegration:
         image_content = result.content[0]
 
         assert isinstance(image_content, ImageContent)
+
+    @pytest.mark.asyncio
+    async def test_take_screenshot_saves_to_default_location(self):
+        """Test that take_screenshot saves to default location when save_screenshot=True."""
+        import tempfile
+        from pathlib import Path
+
+        playwright = pytest.importorskip("playwright.async_api")
+
+        # Skip cleanly if the browser binary is not available
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(headless=True)
+                await browser.close()
+            except Exception as exc:  # pragma: no cover - defensive skip
+                pytest.skip(f"Playwright chromium not available: {exc}")
+
+        # Use a temporary directory for this test
+        with tempfile.TemporaryDirectory() as tmpdir:
+            from holoviz_mcp.config.loader import get_config
+
+            config = get_config()
+            original_screenshots_dir = config.server.screenshots_dir
+            config.server.screenshots_dir = Path(tmpdir) / "screenshots"
+
+            try:
+                client = Client(mcp)
+                async with client:
+                    url = "data:text/html,<html><body><h1>Screenshot</h1></body></html>"
+                    result = await client.call_tool("take_screenshot", {"url": url, "save_screenshot": True})
+
+                # Verify image was returned
+                image_content = result.content[0]
+                assert isinstance(image_content, ImageContent)
+
+                # Verify file was saved
+                screenshots_dir = Path(tmpdir) / "screenshots"
+                assert screenshots_dir.exists()
+                saved_files = list(screenshots_dir.glob("screenshot_*.png"))
+                assert len(saved_files) == 1
+                assert saved_files[0].stat().st_size > 0
+            finally:
+                config.server.screenshots_dir = original_screenshots_dir
+
+    @pytest.mark.asyncio
+    async def test_take_screenshot_no_save_when_false(self):
+        """Test that take_screenshot doesn't save when save_screenshot=False."""
+        import tempfile
+        from pathlib import Path
+
+        playwright = pytest.importorskip("playwright.async_api")
+
+        # Skip cleanly if the browser binary is not available
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(headless=True)
+                await browser.close()
+            except Exception as exc:  # pragma: no cover - defensive skip
+                pytest.skip(f"Playwright chromium not available: {exc}")
+
+        # Use a temporary directory for this test
+        with tempfile.TemporaryDirectory() as tmpdir:
+            from holoviz_mcp.config.loader import get_config
+
+            config = get_config()
+            original_screenshots_dir = config.server.screenshots_dir
+            config.server.screenshots_dir = Path(tmpdir) / "screenshots"
+
+            try:
+                client = Client(mcp)
+                async with client:
+                    url = "data:text/html,<html><body><h1>Screenshot</h1></body></html>"
+                    result = await client.call_tool("take_screenshot", {"url": url, "save_screenshot": False})
+
+                # Verify image was returned
+                image_content = result.content[0]
+                assert isinstance(image_content, ImageContent)
+
+                # Verify no file was saved
+                screenshots_dir = Path(tmpdir) / "screenshots"
+                if screenshots_dir.exists():
+                    saved_files = list(screenshots_dir.glob("screenshot_*.png"))
+                    assert len(saved_files) == 0
+            finally:
+                config.server.screenshots_dir = original_screenshots_dir
+
+    @pytest.mark.asyncio
+    async def test_take_screenshot_saves_to_custom_path(self):
+        """Test that take_screenshot saves to custom absolute path."""
+        import tempfile
+        from pathlib import Path
+
+        playwright = pytest.importorskip("playwright.async_api")
+
+        # Skip cleanly if the browser binary is not available
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(headless=True)
+                await browser.close()
+            except Exception as exc:  # pragma: no cover - defensive skip
+                pytest.skip(f"Playwright chromium not available: {exc}")
+
+        # Use a temporary directory for this test
+        with tempfile.TemporaryDirectory() as tmpdir:
+            custom_path = str(Path(tmpdir) / "custom_screenshot.png")
+
+            client = Client(mcp)
+            async with client:
+                url = "data:text/html,<html><body><h1>Screenshot</h1></body></html>"
+                result = await client.call_tool("take_screenshot", {"url": url, "save_screenshot": custom_path})
+
+            # Verify image was returned
+            image_content = result.content[0]
+            assert isinstance(image_content, ImageContent)
+
+            # Verify file was saved to custom path
+            assert Path(custom_path).exists()
+            assert Path(custom_path).stat().st_size > 0
+
+    @pytest.mark.asyncio
+    async def test_take_screenshot_rejects_relative_path(self):
+        """Test that take_screenshot raises ValueError for relative paths."""
+        playwright = pytest.importorskip("playwright.async_api")
+
+        # Skip cleanly if the browser binary is not available
+        async with playwright.async_playwright() as p:
+            try:
+                browser = await p.chromium.launch(headless=True)
+                await browser.close()
+            except Exception as exc:  # pragma: no cover - defensive skip
+                pytest.skip(f"Playwright chromium not available: {exc}")
+
+        client = Client(mcp)
+        async with client:
+            url = "data:text/html,<html><body><h1>Screenshot</h1></body></html>"
+            # Should raise ValueError for relative path
+            with pytest.raises(Exception) as exc_info:
+                await client.call_tool("take_screenshot", {"url": url, "save_screenshot": "./relative.png"})
+
+            # The exception should mention that path must be absolute
+            assert "absolute" in str(exc_info.value).lower()
