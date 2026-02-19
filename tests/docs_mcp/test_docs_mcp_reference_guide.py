@@ -2,6 +2,8 @@
 Comprehensive tests for the get_reference_guide tool in the documentation MCP server.
 
 Tests the get_reference_guide tool functionality and all docstring examples.
+
+All tests are marked as slow because they require documentation indexing.
 """
 
 import pytest
@@ -10,6 +12,7 @@ from fastmcp import Client
 from holoviz_mcp.holoviz_mcp.server import mcp
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_button_no_project():
     """Test get_reference_guide for Button component across all projects."""
@@ -33,6 +36,7 @@ async def test_get_reference_guide_button_no_project():
         assert len(result.data) > 0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_button_panel_specific():
     """Test get_reference_guide finds the one and only Button reference guide in Panel project specifically."""
@@ -51,6 +55,7 @@ async def test_get_reference_guide_button_panel_specific():
         assert document["relevance_score"] == 1.0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_button_panel_material_ui_specific():
     """Test get_reference_guide finds the one and only Button reference guide in Panel Material UI project specifically."""
@@ -69,6 +74,7 @@ async def test_get_reference_guide_button_panel_material_ui_specific():
         assert document["relevance_score"] == 1.0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_textinput_material_ui():
     """Test get_reference_guide for TextInput component in Material UI project."""
@@ -86,6 +92,7 @@ async def test_get_reference_guide_textinput_material_ui():
         assert document["relevance_score"] == 1.0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_bar_hvplot():
     """Test get_reference_guide for bar chart component in hvPlot project."""
@@ -109,6 +116,7 @@ async def test_get_reference_guide_bar_hvplot():
             assert document["is_reference"] == True
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_scatter_hvplot():
     """Test get_reference_guide for scatter plot component in hvPlot project."""
@@ -129,6 +137,7 @@ async def test_get_reference_guide_scatter_hvplot():
         assert len(result.data) > 0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_audio_no_content():
     """Test get_reference_guide for Audio component with content=False for faster response."""
@@ -152,6 +161,7 @@ async def test_get_reference_guide_audio_no_content():
         assert len(result.data) > 0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_common_widgets():
     """Test get_reference_guide for common Panel widgets."""
@@ -174,6 +184,7 @@ async def test_get_reference_guide_common_widgets():
             assert len(result.data) == 1
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_edge_cases():
     """Test get_reference_guide with edge cases."""
@@ -196,6 +207,7 @@ async def test_get_reference_guide_edge_cases():
         assert len(result.data) == 0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_relevance_scoring():
     """Test that get_reference_guide returns results with relevance scores."""
@@ -217,6 +229,7 @@ async def test_get_reference_guide_relevance_scoring():
             assert scores == sorted(scores, reverse=True)
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_return_structure():
     """Test that get_reference_guide returns properly structured Documents."""
@@ -256,6 +269,7 @@ async def test_get_reference_guide_return_structure():
             assert document["project"] in known_projects
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_maximum_results():
     """Test that get_reference_guide returns at most 5 results."""
@@ -274,6 +288,7 @@ async def test_get_reference_guide_maximum_results():
         assert len(result.data) <= 5
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_no_duplicates():
     """Test that get_reference_guide doesn't return duplicate results."""
@@ -296,6 +311,7 @@ async def test_get_reference_guide_no_duplicates():
         assert len(source_urls) == len(set(source_urls)), "Found duplicate source URLs in results"
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_multiple_projects():
     """Test that get_reference_guide can find components across multiple projects."""
@@ -315,6 +331,7 @@ async def test_get_reference_guide_multiple_projects():
         assert len(projects_found.intersection(expected_projects)) > 0
 
 
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_reference_guide_exact_filename_matching():
     """Test that get_reference_guide prioritizes exact filename matches."""

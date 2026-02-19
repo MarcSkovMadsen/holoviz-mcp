@@ -78,6 +78,7 @@ dev = [
     "pre-commit",
     "pytest-asyncio",
     "pytest-rerunfailures",
+    "pytest-timeout",
     "pytest-xdist",
     "pytest",
     "types-PyYAML",
@@ -170,12 +171,17 @@ asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
+timeout = 300
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning",
     "ignore::UserWarning",
 ]
 testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (e.g., tests that clone repos or build large indexes)",
+    "integration: marks tests as integration tests",
+]
 
 [tool.codespell]
 ignore-words-list = "acn"
