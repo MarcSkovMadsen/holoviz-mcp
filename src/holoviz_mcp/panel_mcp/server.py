@@ -10,20 +10,26 @@ Use this server to access:
 
 import asyncio
 import atexit
+import json
 import logging
 from asyncio import sleep
+from datetime import datetime
 from importlib.metadata import distributions
+from pathlib import Path
+from uuid import uuid4
 
 from fastmcp import Context
 from fastmcp import FastMCP
 from fastmcp.utilities.types import Image
 from mcp.types import ImageContent
+from mcp.types import TextContent
 
 from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.panel_mcp.data import get_components as _get_components_org
 from holoviz_mcp.panel_mcp.models import ComponentDetails
 from holoviz_mcp.panel_mcp.models import ComponentSummary
 from holoviz_mcp.panel_mcp.models import ComponentSummarySearchResult
+from holoviz_mcp.panel_mcp.models import ConsoleLogEntry
 from holoviz_mcp.panel_mcp.models import ParameterInfo
 
 # Create the FastMCP server
@@ -499,14 +505,29 @@ def _get_playwright_manager() -> PlaywrightManager:
 
 
 @mcp.tool()
-async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920, height: int = 1200, full_page: bool = False, delay: int = 2) -> ImageContent:
+async def inspect_app(
+    url: str = "http://localhost:5006/",
+    width: int = 1920,
+    height: int = 1200,
+    full_page: bool = False,
+    delay: int = 2,
+    save_screenshot: bool | str = False,
+    screenshot: bool = True,
+    console_logs: bool = True,
+    log_level: str | None = None,
+) -> list[TextContent | ImageContent]:
     """
-    Take a screenshot of the specified url.
+    Inspect a running Panel app by capturing a screenshot and/or browser console logs.
+
+    Panel apps (especially custom components) often have JavaScript errors that are
+    invisible to users and LLMs. This tool captures both a visual screenshot and the
+    browser console output in a single call, making it easy to diagnose rendering
+    issues, JS errors, and runtime warnings.
 
     Arguments
     ----------
     url : str, default="http://localhost:5006/"
-        The URL of the page to take a screenshot of.
+        The URL of the page to inspect.
     width : int, default=1920
         The width of the browser viewport.
     height : int, default=1200
@@ -514,23 +535,99 @@ async def take_screenshot(url: str = "http://localhost:5006/", width: int = 1920
     full_page : bool, default=False
         Whether to capture the full scrollable page.
     delay : int, default=2
-        Seconds to wait after page load before taking the screenshot, to allow dynamic content to render.
+        Seconds to wait after page load before capturing, to allow dynamic content to render.
+    save_screenshot : bool | str, default=False
+        Whether and where to save the screenshot to disk:
+        - True: Save to default screenshots directory (~/.holoviz-mcp/screenshots/) with auto-generated filename
+        - False: Don't save screenshot to disk (only return to AI)
+        - str: Save to specified absolute path (raises ValueError if path is not absolute)
+    screenshot : bool, default=True
+        Whether to capture a screenshot of the page.
+    console_logs : bool, default=True
+        Whether to capture browser console log messages.
+    log_level : str | None, default=None
+        Filter console logs by level. If None, all levels are captured.
+        Common levels: 'log', 'info', 'warning', 'error', 'debug'.
     """
+    if not screenshot and not console_logs:
+        raise ValueError("At least one of 'screenshot' or 'console_logs' must be True.")
+
     manager = _get_playwright_manager()
     browser = await manager.get_browser()
     page = await browser.new_page(
         ignore_https_errors=True,
         viewport={"width": width, "height": height},
     )
+
+    # Collect console log entries
+    collected_logs: list[ConsoleLogEntry] = []
+
+    if console_logs:
+
+        def _on_console(msg):
+            collected_logs.append(
+                ConsoleLogEntry(
+                    level=msg.type,
+                    message=msg.text,
+                    timestamp=datetime.now().isoformat(),
+                )
+            )
+
+        page.on("console", _on_console)
+
     try:
         await page.goto(url, wait_until="networkidle")
         await sleep(delay=delay)
-        buffer = await page.screenshot(type="png", full_page=full_page)
+        buffer = await page.screenshot(type="png", full_page=full_page) if screenshot else None
     finally:
         await page.close()
 
-    image = Image(data=buffer, format="png")
-    return image.to_image_content()
+    result: list[TextContent | ImageContent] = []
+
+    # Handle screenshot saving and result
+    if screenshot and buffer is not None:
+        # Coerce string "false"/"true" to bool (MCP clients may serialize bools as strings)
+        save = save_screenshot
+        if isinstance(save, str) and save.lower() in ("true", "false"):
+            save = save.lower() == "true"
+
+        if save:
+            if isinstance(save, str):
+                # Custom path specified
+                save_path = Path(save)
+                if not save_path.is_absolute():
+                    raise ValueError(f"save_screenshot path must be absolute, got: {save_screenshot}")
+            else:
+                # Default path - use screenshots_dir from config
+                screenshots_dir = _config.server.screenshots_dir
+                screenshots_dir.mkdir(parents=True, exist_ok=True)
+
+                # Generate filename with timestamp and UUID
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                unique_id = str(uuid4())[:8]
+                filename = f"screenshot_{timestamp}_{unique_id}.png"
+                save_path = screenshots_dir / filename
+
+            # Ensure parent directory exists
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write the screenshot to disk
+            save_path.write_bytes(buffer)
+            logger.info(f"Screenshot saved to: {save_path}")
+
+        image = Image(data=buffer, format="png")
+        result.append(image.to_image_content())
+
+    # Handle console logs result
+    if console_logs:
+        filtered_logs = collected_logs
+        if log_level is not None:
+            filtered_logs = [entry for entry in collected_logs if entry.level == log_level]
+
+        logs_json = json.dumps([entry.model_dump() for entry in filtered_logs], indent=2)
+        result.append(TextContent(type="text", text=logs_json))
+
+    return result
 
 
 if __name__ == "__main__":

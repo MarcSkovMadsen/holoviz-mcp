@@ -122,3 +122,11 @@ class ComponentDetails(ComponentSummary):
             package=self.package,
             description=self.description,
         )
+
+
+class ConsoleLogEntry(BaseModel):
+    """A single browser console log entry captured during app inspection."""
+
+    level: str = Field(description="Console message level: 'log', 'info', 'warning', 'error', 'debug', etc.")
+    message: str = Field(description="The text content of the console message.")
+    timestamp: Optional[str] = Field(default=None, description="ISO 8601 timestamp when the message was captured.")

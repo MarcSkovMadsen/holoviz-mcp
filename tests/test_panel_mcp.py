@@ -17,9 +17,12 @@ rather than mocking dependencies, providing confidence that the MCP server
 works correctly with actual Panel installations.
 """
 
+import json
+
 import pytest
 from fastmcp import Client
 from mcp.types import ImageContent
+from mcp.types import TextContent
 
 from holoviz_mcp.panel_mcp.server import mcp
 
@@ -243,7 +246,7 @@ class TestPanelMCPIntegration:
             "search_components",
             "get_component",
             "get_component_parameters",
-            "take_screenshot",
+            "inspect_app",
         ]
 
         for tool in expected_tools:
@@ -318,24 +321,161 @@ class TestPanelMCPIntegration:
                 # The actual structure depends on the implementation
 
     @pytest.mark.asyncio
-    async def test_take_screenshot_returns_image(self):
-        """Test the take_screenshot tool returns an image payload."""
+    async def test_inspect_app_returns_screenshot_and_logs(self):
+        """Test inspect_app returns both screenshot and console logs by default."""
+        pytest.importorskip("playwright.async_api")
 
-        playwright = pytest.importorskip("playwright.async_api")
+        import holoviz_mcp.panel_mcp.server as _srv
 
-        # Skip cleanly if the browser binary is not available
-        async with playwright.async_playwright() as p:
-            try:
-                browser = await p.chromium.launch(headless=True)
-                await browser.close()
-            except Exception as exc:  # pragma: no cover - defensive skip
-                pytest.skip(f"Playwright chromium not available: {exc}")
+        # Reset the PlaywrightManager singleton so the browser is created
+        # in the current event loop context (avoids stale cross-context refs).
+        if _srv._playwright_manager is not None:
+            await _srv._playwright_manager.close()
+            _srv._playwright_manager = None
 
         client = Client(mcp)
         async with client:
-            url = "data:text/html,<html><body><h1>Screenshot</h1></body></html>"
-            result = await client.call_tool("take_screenshot", {"url": url})
+            url = "data:text/html,<html><body><h1>Hello</h1><script>console.log('hello')</script></body></html>"
+            result = await client.call_tool("inspect_app", {"url": url})
 
-        image_content = result.content[0]
+        # Should have both image and text content
+        assert len(result.content) == 2
+        assert isinstance(result.content[0], ImageContent)
+        assert isinstance(result.content[1], TextContent)
 
-        assert isinstance(image_content, ImageContent)
+        # Parse the console logs JSON
+        logs = json.loads(result.content[1].text)
+        assert isinstance(logs, list)
+        assert any(entry["message"] == "hello" for entry in logs)
+
+        # Clean up to avoid cross-test browser leaks
+        if _srv._playwright_manager is not None:
+            await _srv._playwright_manager.close()
+            _srv._playwright_manager = None
+
+    @pytest.mark.asyncio
+    async def test_inspect_app_screenshot_only(self):
+        """Test inspect_app with console_logs=False returns only a screenshot."""
+        pytest.importorskip("playwright.async_api")
+
+        client = Client(mcp)
+        async with client:
+            url = "data:text/html,<html><body><h1>Hello</h1></body></html>"
+            result = await client.call_tool("inspect_app", {"url": url, "console_logs": False})
+
+        assert len(result.content) == 1
+        assert isinstance(result.content[0], ImageContent)
+
+        import holoviz_mcp.panel_mcp.server as _srv
+
+        if _srv._playwright_manager is not None:
+            await _srv._playwright_manager.close()
+            _srv._playwright_manager = None
+
+    @pytest.mark.asyncio
+    async def test_inspect_app_console_logs_only(self):
+        """Test inspect_app with screenshot=False returns only console logs."""
+        pytest.importorskip("playwright.async_api")
+
+        client = Client(mcp)
+        async with client:
+            url = "data:text/html,<html><body><script>console.log('test-msg')</script></body></html>"
+            result = await client.call_tool("inspect_app", {"url": url, "screenshot": False})
+
+        assert len(result.content) == 1
+        assert isinstance(result.content[0], TextContent)
+
+        logs = json.loads(result.content[0].text)
+        assert any(entry["message"] == "test-msg" for entry in logs)
+
+        import holoviz_mcp.panel_mcp.server as _srv
+
+        if _srv._playwright_manager is not None:
+            await _srv._playwright_manager.close()
+            _srv._playwright_manager = None
+
+    @pytest.mark.asyncio
+    async def test_inspect_app_log_level_filter(self):
+        """Test inspect_app filters console logs by level."""
+        pytest.importorskip("playwright.async_api")
+
+        client = Client(mcp)
+        async with client:
+            url = "data:text/html,<html><body><script>console.log('info-msg');console.error('err-msg')</script></body></html>"
+            result = await client.call_tool("inspect_app", {"url": url, "screenshot": False, "log_level": "error"})
+
+        assert len(result.content) == 1
+        logs = json.loads(result.content[0].text)
+        # Only error-level messages should be present
+        assert all(entry["level"] == "error" for entry in logs)
+        assert any(entry["message"] == "err-msg" for entry in logs)
+
+        import holoviz_mcp.panel_mcp.server as _srv
+
+        if _srv._playwright_manager is not None:
+            await _srv._playwright_manager.close()
+            _srv._playwright_manager = None
+
+    @pytest.mark.asyncio
+    async def test_inspect_app_both_false_raises(self):
+        """Test inspect_app raises ValueError when both screenshot and console_logs are False."""
+        pytest.importorskip("playwright.async_api")
+
+        client = Client(mcp)
+        async with client:
+            with pytest.raises(Exception) as exc_info:
+                await client.call_tool("inspect_app", {"url": "data:text/html,<html></html>", "screenshot": False, "console_logs": False})
+            assert "at least one" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    async def test_inspect_app_saves_to_default_location(self):
+        """Test that inspect_app saves screenshot to default location when save_screenshot=True."""
+        import tempfile
+        from pathlib import Path
+
+        pytest.importorskip("playwright.async_api")
+
+        import holoviz_mcp.panel_mcp.server as _srv
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Patch the module-level _config directly so the tool sees the change
+            original_screenshots_dir = _srv._config.server.screenshots_dir
+            _srv._config.server.screenshots_dir = Path(tmpdir) / "screenshots"
+
+            try:
+                client = Client(mcp)
+                async with client:
+                    url = "data:text/html,<html><body><h1>Hello</h1></body></html>"
+                    result = await client.call_tool("inspect_app", {"url": url, "save_screenshot": True, "console_logs": False})
+
+                image_content = result.content[0]
+                assert isinstance(image_content, ImageContent)
+
+                screenshots_dir = Path(tmpdir) / "screenshots"
+                assert screenshots_dir.exists()
+                saved_files = list(screenshots_dir.glob("screenshot_*.png"))
+                assert len(saved_files) == 1
+                assert saved_files[0].stat().st_size > 0
+            finally:
+                _srv._config.server.screenshots_dir = original_screenshots_dir
+                if _srv._playwright_manager is not None:
+                    await _srv._playwright_manager.close()
+                    _srv._playwright_manager = None
+
+    @pytest.mark.asyncio
+    async def test_inspect_app_rejects_relative_path(self):
+        """Test that inspect_app raises ValueError for relative save_screenshot paths."""
+        pytest.importorskip("playwright.async_api")
+
+        import holoviz_mcp.panel_mcp.server as _srv
+
+        try:
+            client = Client(mcp)
+            async with client:
+                with pytest.raises(Exception) as exc_info:
+                    await client.call_tool("inspect_app", {"url": "data:text/html,<html></html>", "save_screenshot": "./relative.png", "console_logs": False})
+                assert "absolute" in str(exc_info.value).lower()
+        finally:
+            if _srv._playwright_manager is not None:
+                await _srv._playwright_manager.close()
+                _srv._playwright_manager = None

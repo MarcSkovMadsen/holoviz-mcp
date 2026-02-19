@@ -75,18 +75,36 @@ Tools for discovering and working with Panel components.
 
 **Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
 
-### panel_take_screenshot
+### panel_inspect_app
 
-**Purpose**: Take a screenshot of your (panel) web app.
+**Purpose**: Inspect your (Panel) web app by capturing a screenshot and/or browser console logs.
 
 **Parameters**:
-- `url` (string): The url to take the screenshot of. Default is 'http://localhost:5006/'
+- `url` (string): The URL to inspect. Default is `http://localhost:5006/`
+- `width` (int): The width of the browser viewport. Default is 1920
+- `height` (int): The height of the browser viewport. Default is 1200
+- `full_page` (bool): Whether to capture the full scrollable page. Default is False
+- `delay` (int): Seconds to wait after page load before capturing. Default is 2
+- `save_screenshot` (bool | string): Whether and where to save the screenshot to disk. Default is False
+  - `True`: Save to default screenshots directory (`~/.holoviz-mcp/screenshots/`) with auto-generated filename
+  - `False`: Don't save screenshot to disk (only return to AI)
+  - `string`: Save to specified absolute path (raises ValueError if path is not absolute)
+- `screenshot` (bool): Whether to capture a screenshot. Default is True
+- `console_logs` (bool): Whether to capture browser console logs. Default is True
+- `log_level` (string, optional): Filter console logs by level (e.g., `"error"`, `"warning"`, `"log"`)
 
-**Use Case**: Understand how the app looks
+**Use Case**: Understand how the app looks, debug JavaScript errors, and inspect browser console output — all in a single call.
 
-**Returns**: ImageContent.
+**Returns**: A list containing:
+- `ImageContent` (screenshot) when `screenshot=True`
+- `TextContent` (console logs as JSON) when `console_logs=True`
 
-**Example Query**: *"Take a screenshot of http://127.0.0.1:8000/"**
+**Note**: At least one of `screenshot` or `console_logs` must be True. When `save_screenshot=True` or a path is provided, the screenshot is also saved to disk with a timestamp-based filename (e.g., `screenshot_2026-02-09_12-01-03_abc123.png`).
+
+**Example Queries**:
+- *"Take a screenshot of http://127.0.0.1:8000/"*
+- *"Check my Panel app for JavaScript errors"*
+- *"Show me the console errors from my app"*
 
 ## HoloViews Tool
 
