@@ -167,6 +167,24 @@ docs:
       folders:
         docs/bokeh/source/docs:
           url_path: "/"
+    panel-live:
+      url: "https://github.com/panel-extensions/panel-live.git"
+      branch: main
+      url_transform: "plotly"
+      folders:
+        docs:
+          url_path: ""
+      base_url: "https://panel-extensions.github.io/panel-live"
+      reference_patterns: []
+    panel-reactflow:
+      url: "https://github.com/panel-extensions/panel-reactflow.git"
+      branch: main
+      url_transform: "plotly"
+      folders:
+        docs:
+          url_path: ""
+      base_url: "https://panel-extensions.github.io/panel-reactflow"
+      reference_patterns: []
 
   index_patterns:
     - "**/*.md"
