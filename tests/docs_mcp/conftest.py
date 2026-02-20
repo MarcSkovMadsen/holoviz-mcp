@@ -7,6 +7,7 @@ to 1-3 minutes. Uses a fixed path (~/.holoviz-mcp-test/) for CI caching.
 
 import asyncio
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -16,8 +17,9 @@ from holoviz_mcp.config.models import HoloVizMCPConfig
 
 logger = logging.getLogger(__name__)
 
-# Fixed test directory (not tmp_path) so CI can cache the index across runs
-TEST_DATA_DIR = Path.home() / ".holoviz-mcp-test"
+# Fixed test directory (not tmp_path) so CI can cache the index across runs.
+# Override with HOLOVIZ_MCP_TEST_DIR for custom locations or concurrent sessions.
+TEST_DATA_DIR = Path(os.environ["HOLOVIZ_MCP_TEST_DIR"]) if "HOLOVIZ_MCP_TEST_DIR" in os.environ else Path.home() / ".holoviz-mcp-test"
 
 # Only these projects are needed by test assertions
 TEST_PROJECTS = ("panel", "hvplot", "panel-material-ui")
@@ -31,8 +33,11 @@ def _build_test_config():
     loader = ConfigLoader(config=env)
     default_config = loader.load_config()
 
-    # Keep only the repos needed for tests
-    test_repos = {name: default_config.docs.repositories[name] for name in TEST_PROJECTS if name in default_config.docs.repositories}
+    # Validate that all expected test repos exist in the default config
+    missing = set(TEST_PROJECTS) - set(default_config.docs.repositories)
+    if missing:
+        raise RuntimeError(f"TEST_PROJECTS not found in default config: {missing}")
+    test_repos = {name: default_config.docs.repositories[name] for name in TEST_PROJECTS}
 
     test_docs = default_config.docs.model_copy(update={"repositories": test_repos})
     test_server = default_config.server.model_copy(update={"vector_db_path": TEST_DATA_DIR / "vector_db" / "chroma"})
@@ -47,7 +52,7 @@ def _build_test_config():
     )
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="package", autouse=True)
 def docs_test_config():
     """Patch get_config() to use a minimal 3-repo test config for the session.
 

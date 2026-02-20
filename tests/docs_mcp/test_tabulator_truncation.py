@@ -14,6 +14,8 @@ import pytest
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
 from holoviz_mcp.holoviz_mcp.data import truncate_content
 
+pytestmark = pytest.mark.integration
+
 
 class TestTabulatorTruncation:
     """Test suite for Tabulator reference guide context-aware truncation."""

@@ -176,6 +176,9 @@ filterwarnings = [
     "ignore::UserWarning",
 ]
 testpaths = ["tests"]
+markers = [
+    "integration: marks tests that require the documentation index (slow)",
+]
 
 [tool.codespell]
 ignore-words-list = "acn"

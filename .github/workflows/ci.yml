@@ -118,14 +118,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.holoviz-mcp-test
-          key: holoviz-mcp-test-index-${{ runner.os }}-${{ hashFiles('src/holoviz_mcp/config/config.yaml') }}-${{ steps.cache-week.outputs.week }}
+          key: holoviz-mcp-test-index-${{ runner.os }}-${{ hashFiles('src/holoviz_mcp/config/config.yaml', 'src/holoviz_mcp/holoviz_mcp/data.py') }}-${{ steps.cache-week.outputs.week }}
           restore-keys: |
-            holoviz-mcp-test-index-${{ runner.os }}-${{ hashFiles('src/holoviz_mcp/config/config.yaml') }}-
+            holoviz-mcp-test-index-${{ runner.os }}-${{ hashFiles('src/holoviz_mcp/config/config.yaml', 'src/holoviz_mcp/holoviz_mcp/data.py') }}-
             holoviz-mcp-test-index-${{ runner.os }}-
       - name: Install repository
         run: pixi run -e ${{ matrix.environment }} postinstall
-      - name: Run pytest
-        run: pixi run -e ${{ matrix.environment }} test-coverage --color=yes
+      - name: Run unit tests (fast)
+        run: pixi run -e ${{ matrix.environment }} pytest tests/ --ignore=tests/docs_mcp --color=yes
+      - name: Run docs integration tests (slow, uses cached index)
+        run: pixi run -e ${{ matrix.environment }} pytest tests/docs_mcp --color=yes
 
   pytest_ui:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}

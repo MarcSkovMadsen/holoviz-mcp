@@ -11,7 +11,7 @@ A README for AI coding agents to effectively contribute to the HoloViz MCP proje
 **Language**: Python 3.11+
 **Build System**: Pixi (conda-based) + Hatchling (PEP 517)
 **Framework**: FastMCP (Python MCP SDK)
-**Key Dependencies**: ChromaDB, sentence-transformers, Panel, PyTorch
+**Key Dependencies**: ChromaDB, sentence-transformers, Panel
 
 ### Project Statistics
 - **Source Files**: ~20 Python modules in `src/holoviz_mcp/`
@@ -564,7 +564,7 @@ First-time indexing takes 5-10 minutes:
 
 ### Memory Usage
 
-Heavy dependencies (PyTorch, sentence-transformers):
+Heavy dependencies (sentence-transformers, ChromaDB):
 - **Development**: ~2-4 GB RAM
 - **Running server**: ~1-2 GB RAM
 - **Indexing docs**: ~3-5 GB RAM (temporary spike)
