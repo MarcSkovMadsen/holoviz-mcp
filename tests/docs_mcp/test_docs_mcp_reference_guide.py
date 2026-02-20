@@ -9,6 +9,8 @@ from fastmcp import Client
 
 from holoviz_mcp.holoviz_mcp.server import mcp
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.asyncio
 async def test_get_reference_guide_button_no_project():

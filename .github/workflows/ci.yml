@@ -110,10 +110,24 @@ jobs:
         uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
           environments: ${{ matrix.environment }}
+      - name: Get cache week key
+        id: cache-week
+        run: echo "week=$(date +%Y-W%V)" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Cache test index
+        uses: actions/cache@v4
+        with:
+          path: ~/.holoviz-mcp-test
+          key: holoviz-mcp-test-index-${{ runner.os }}-${{ hashFiles('src/holoviz_mcp/config/config.yaml', 'src/holoviz_mcp/holoviz_mcp/data.py') }}-${{ steps.cache-week.outputs.week }}
+          restore-keys: |
+            holoviz-mcp-test-index-${{ runner.os }}-${{ hashFiles('src/holoviz_mcp/config/config.yaml', 'src/holoviz_mcp/holoviz_mcp/data.py') }}-
+            holoviz-mcp-test-index-${{ runner.os }}-
       - name: Install repository
         run: pixi run -e ${{ matrix.environment }} postinstall
-      - name: Run pytest
-        run: pixi run -e ${{ matrix.environment }} test-coverage --color=yes
+      - name: Run unit tests (fast)
+        run: pixi run -e ${{ matrix.environment }} pytest tests/ --ignore=tests/docs_mcp --color=yes
+      - name: Run docs integration tests (slow, uses cached index)
+        run: pixi run -e ${{ matrix.environment }} pytest tests/docs_mcp --color=yes
 
   pytest_ui:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}

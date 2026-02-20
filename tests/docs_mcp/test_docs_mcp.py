@@ -19,6 +19,7 @@ async def test_skills_resource():
         assert result.data
 
 
+@pytest.mark.integration
 @pytest.mark.skip(reason="this test is very slow")
 @pytest.mark.asyncio
 async def test_update_index():
@@ -29,6 +30,7 @@ async def test_update_index():
         assert result.data
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_list_projects():
     """Test that all projects are listed correctly."""
@@ -40,6 +42,7 @@ async def test_list_projects():
     assert "panel" in result.data
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_semantic_search():
     """Test the search tool."""
@@ -63,6 +66,7 @@ async def test_semantic_search():
             assert "content" in document
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_by_project():
     """Test the search tool with project filtering."""
@@ -78,6 +82,7 @@ async def test_search_by_project():
             assert document["project"] == "hvplot"
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_with_custom_max_results():
     """Test the search tool with custom max_results parameter."""
@@ -95,6 +100,7 @@ async def test_search_with_custom_max_results():
             assert document["project"] == "panel"
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_without_content():
     """Test the search tool with content=False for metadata only."""
@@ -116,6 +122,7 @@ async def test_search_without_content():
             assert document.get("content") is None
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_material_ui_specific():
     """Test the search tool with Material UI specific query."""
@@ -131,6 +138,7 @@ async def test_search_material_ui_specific():
             assert document["project"] == "panel-material-ui"
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_empty_query():
     """Test the search tool with edge cases."""
@@ -142,6 +150,7 @@ async def test_search_empty_query():
         assert isinstance(result.data, list)
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_invalid_project():
     """Test the search tool with invalid project name."""
@@ -154,6 +163,7 @@ async def test_search_invalid_project():
         assert len(result.data) == 0
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_search_with_project_filter():
     """Test the search tool with project filtering."""
