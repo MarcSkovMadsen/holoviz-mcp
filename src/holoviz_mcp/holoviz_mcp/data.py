@@ -4,6 +4,8 @@ import asyncio
 import logging
 import os
 import re
+import shutil
+import time
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -12,6 +14,7 @@ from typing import Optional
 import chromadb
 import git
 from chromadb.api.collection_configuration import CreateCollectionConfiguration
+from chromadb.api.shared_system_client import SharedSystemClient
 from fastmcp import Context
 from nbconvert import MarkdownExporter
 from nbformat import read as nbread
@@ -490,10 +493,20 @@ class DocumentationIndexer:
         if not config.server.anonymized_telemetry:
             os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
-        # Initialize ChromaDB
-        self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
-
-        self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+        # Initialize ChromaDB with health check
+        try:
+            self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+            self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+            self.collection.count()  # Probe read to verify health
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:
+            logger.error("ChromaDB initialization failed (%s: %s). Wiping and reinitializing.", type(e).__name__, e)
+            shutil.rmtree(self._vector_db_path, ignore_errors=True)
+            self._vector_db_path.mkdir(parents=True, exist_ok=True)
+            SharedSystemClient.clear_system_cache()
+            self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+            self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
 
         # Lazy-initialized async lock for database operations to prevent corruption from concurrent access
         self._db_lock: Optional[asyncio.Lock] = None
@@ -527,12 +540,37 @@ class DocumentationIndexer:
             self._db_lock = asyncio.Lock()
         return self._db_lock
 
+    @property
+    def _backup_path(self) -> Path:
+        """Path to the backup copy of the vector database directory."""
+        return Path(str(self._vector_db_path) + ".bak")
+
+    async def _restore_from_backup(self, ctx: Context | None = None) -> None:
+        """Restore vector database from backup after a write failure."""
+        backup_path = self._backup_path
+        if not backup_path.exists():
+            await log_warning("No backup found to restore from.", ctx)
+            return
+        try:
+            shutil.rmtree(self._vector_db_path, ignore_errors=True)
+            shutil.copytree(backup_path, self._vector_db_path)
+            SharedSystemClient.clear_system_cache()
+            self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+            self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+            await log_info("Restored vector database from backup.", ctx)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:
+            logger.error("Failed to restore from backup (%s: %s). Database may be degraded.", type(e).__name__, e)
+
     def is_indexed(self) -> bool:
         """Check if documentation index exists and is valid."""
         try:
             count = self.collection.count()
             return count > 0
-        except Exception:
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
             return False
 
     async def ensure_indexed(self, ctx: Context | None = None):
@@ -887,6 +925,16 @@ class DocumentationIndexer:
         # Validate for duplicate IDs and log details
         await self._validate_unique_ids(all_docs)
 
+        # Create pre-write backup of vector database
+        backup_path = self._backup_path
+        try:
+            if self._vector_db_path.exists():
+                t0 = time.monotonic()
+                shutil.copytree(self._vector_db_path, backup_path, dirs_exist_ok=True)
+                await log_info(f"Pre-write backup created at {backup_path} ({time.monotonic() - t0:.1f}s)", ctx)
+        except Exception as e:
+            await log_warning(f"Failed to create pre-write backup: {e}. Continuing without backup.", ctx)
+
         # Clear existing collection
         await log_info("Clearing existing index...", ctx)
 
@@ -911,23 +959,30 @@ class DocumentationIndexer:
         # Add documents to ChromaDB
         await log_info(f"Adding {len(all_docs)} documents to index...", ctx)
 
-        self.collection.add(
-            documents=[doc["content"] for doc in all_docs],
-            metadatas=[
-                {
-                    "title": doc["title"],
-                    "url": doc["url"],
-                    "project": doc["project"],
-                    "source_path": doc["source_path"],
-                    "source_path_stem": doc["source_path_stem"],
-                    "source_url": doc["source_url"],
-                    "description": doc["description"],
-                    "is_reference": doc["is_reference"],
-                }
-                for doc in all_docs
-            ],
-            ids=[doc["id"] for doc in all_docs],
-        )
+        try:
+            self.collection.add(
+                documents=[doc["content"] for doc in all_docs],
+                metadatas=[
+                    {
+                        "title": doc["title"],
+                        "url": doc["url"],
+                        "project": doc["project"],
+                        "source_path": doc["source_path"],
+                        "source_path_stem": doc["source_path_stem"],
+                        "source_url": doc["source_url"],
+                        "description": doc["description"],
+                        "is_reference": doc["is_reference"],
+                    }
+                    for doc in all_docs
+                ],
+                ids=[doc["id"] for doc in all_docs],
+            )
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:
+            logger.error("ChromaDB write failed (%s: %s). Attempting restore from backup.", type(e).__name__, e)
+            await self._restore_from_backup(ctx)
+            raise
 
         await log_info(f"✅ Successfully indexed {len(all_docs)} documents", ctx)
         await log_info(f"📊 Vector database stored at: {self._vector_db_path}", ctx)

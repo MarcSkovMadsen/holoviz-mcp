@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import chromadb
 import pytest
 from pydantic import AnyHttpUrl
 
@@ -472,3 +473,106 @@ def test_truncate_content_with_special_characters():
     # Should handle special characters gracefully
     assert result is not None
     assert "foo-bar" in result or "baz_qux" in result or "Start text" in result
+
+
+# --- ChromaDB health check and backup tests ---
+
+
+def test_init_health_check_recovers_from_corrupt_db(tmp_path):
+    """ChromaDB init recovers from a corrupt database by wiping and reinitializing."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    vector_dir = tmp_path / "chroma"
+    vector_dir.mkdir()
+
+    # Write a corrupt chroma.sqlite3 to trigger an init failure
+    (vector_dir / "chroma.sqlite3").write_text("THIS IS NOT A VALID SQLITE FILE")
+
+    # Clear cached ChromaDB state from other tests to avoid stale references
+    SharedSystemClient.clear_system_cache()
+
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+    # Should have recovered: collection exists and is empty
+    assert indexer.collection.count() == 0
+
+
+def test_init_health_check_reraises_keyboard_interrupt(tmp_path):
+    """KeyboardInterrupt during ChromaDB init is not swallowed."""
+    from unittest.mock import patch
+
+    vector_dir = tmp_path / "chroma"
+    vector_dir.mkdir()
+
+    with patch("chromadb.PersistentClient", side_effect=KeyboardInterrupt):
+        with pytest.raises(KeyboardInterrupt):
+            DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+
+def test_is_indexed_catches_base_exception(tmp_path):
+    """is_indexed() returns False when collection.count() raises a BaseException subclass."""
+    from unittest.mock import PropertyMock
+    from unittest.mock import patch
+
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Simulate a PanicException (BaseException subclass) from ChromaDB's Rust backend
+    class FakePanicException(BaseException):
+        pass
+
+    with patch.object(type(indexer.collection), "count", new_callable=PropertyMock) as mock_count:
+        mock_count.return_value = FakePanicException("rust panic")
+        # Replace count as a regular method that raises
+        indexer.collection.count = lambda: (_ for _ in ()).throw(FakePanicException("rust panic"))  # type: ignore[assignment]
+        assert indexer.is_indexed() is False
+
+
+def test_backup_path_property(tmp_path):
+    """_backup_path returns the correct sibling path with .bak suffix."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+    assert indexer._backup_path == tmp_path / "chroma.bak"
+
+
+@pytest.mark.asyncio
+async def test_restore_from_backup_on_write_failure(tmp_path):
+    """On write failure, _restore_from_backup recovers original data."""
+    import shutil
+
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    vector_dir = tmp_path / "chroma"
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+    # Seed the collection with one document
+    indexer.collection.add(documents=["hello world"], metadatas=[{"project": "test"}], ids=["doc1"])
+    assert indexer.collection.count() == 1
+
+    # Force-flush by recreating the client so all WAL data is checkpointed
+    del indexer.chroma_client
+    SharedSystemClient.clear_system_cache()
+    client = chromadb.PersistentClient(path=str(vector_dir))
+    assert client.get_or_create_collection("holoviz_docs").count() == 1
+    del client
+    SharedSystemClient.clear_system_cache()
+
+    # Create a backup (simulating what index_documentation does)
+    backup_path = indexer._backup_path
+    shutil.copytree(vector_dir, backup_path, dirs_exist_ok=True)
+
+    # Recreate indexer to get fresh client after backup
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+    # Now corrupt the live database by clearing and adding a bad doc
+    indexer.collection.delete(ids=["doc1"])
+    indexer.collection.add(documents=["corrupted"], metadatas=[{"project": "bad"}], ids=["bad1"])
+    assert indexer.collection.count() == 1
+
+    # Restore from backup
+    await indexer._restore_from_backup()
+
+    # After restore, should have the original document back
+    assert indexer.collection.count() == 1
+    result = indexer.collection.get(ids=["doc1"])
+    assert result["ids"] == ["doc1"]
+    assert result["documents"] == ["hello world"]
