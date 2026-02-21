@@ -21,6 +21,23 @@ from holoviz_mcp.holoviz_mcp.data import find_keyword_matches
 from holoviz_mcp.holoviz_mcp.data import truncate_content
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _reset_server_indexer_after_module():
+    """Reset the server's indexer singleton after this module's tests.
+
+    Tests in this module create isolated DocumentationIndexer instances and
+    call SharedSystemClient.clear_system_cache() which invalidates cached
+    ChromaDB clients. This fixture ensures the server singleton is reset so
+    subsequent test modules (e.g. reference guide tests) re-create their
+    indexer with a fresh client.
+    """
+    yield
+
+    import holoviz_mcp.holoviz_mcp.server as server_module
+
+    server_module._indexer = None
+
+
 def is_reference_path(relative_path: Path) -> bool:
     """Check if the path is a reference document (simple fallback logic)."""
     return "reference" in relative_path.parts
@@ -1336,7 +1353,7 @@ def test_clone_and_extract_sync_handles_clone_failure(tmp_path):
     )
 
     result = indexer._clone_and_extract_repo_sync("bad-repo", bad_config)
-    assert result == []
+    assert result == {"docs": [], "skipped_hashes": {}}
 
 
 @pytest.mark.asyncio
@@ -1396,3 +1413,452 @@ async def test_parallel_index_documentation_processes_all_repos(tmp_path):
     projects = {m["project"] for m in results["metadatas"]}
     assert "repo-a" in projects
     assert "repo-b" in projects
+
+
+# --- Incremental indexing tests ---
+
+
+def _make_fake_repo(tmp_path, repo_name, files: dict[str, str]):
+    """Helper: create a fake git repo with the given files.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Root temp directory.
+    repo_name : str
+        Name of the repo.
+    files : dict[str, str]
+        Mapping of relative path (under doc/) -> file content.
+
+    Returns
+    -------
+    Path
+        Path to the repo root.
+    """
+    import git
+
+    repo_root = tmp_path / "repos" / repo_name
+    for rel_path, content in files.items():
+        file_path = repo_root / "doc" / rel_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content)
+
+    repo = git.Repo.init(repo_root)
+    repo.index.add([str(repo_root / "doc" / p) for p in files])
+    repo.index.commit("initial")
+    return repo_root
+
+
+def _make_indexer_with_repos(tmp_path, repo_configs):
+    """Helper: create an indexer with fake repo configs and a mock clone."""
+
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    def mock_clone(repo_name, repo_config):
+        repo_path = tmp_path / "repos" / repo_name
+        return repo_path if repo_path.exists() else None
+
+    return indexer, repo_configs, mock_clone
+
+
+def test_compute_file_hash(tmp_path):
+    """SHA-256 of known content matches expected hex digest."""
+    import hashlib
+
+    test_file = tmp_path / "test.md"
+    content = b"# Hello World\n\nSome content here."
+    test_file.write_bytes(content)
+
+    expected = hashlib.sha256(content).hexdigest()
+    result = DocumentationIndexer._compute_file_hash(test_file)
+    assert result == expected
+    assert len(result) == 64  # SHA-256 hex digest length
+
+
+def test_load_hashes_missing_file(tmp_path):
+    """Returns empty dict when hash file doesn't exist."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    assert indexer._load_hashes() == {}
+
+
+def test_load_hashes_corrupt_file(tmp_path):
+    """Returns empty dict on invalid JSON, logs warning."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Write corrupt JSON
+    indexer._hash_file_path.parent.mkdir(parents=True, exist_ok=True)
+    indexer._hash_file_path.write_text("{invalid json!!!")
+
+    assert indexer._load_hashes() == {}
+
+
+def test_save_and_load_hashes_roundtrip(tmp_path):
+    """Save then load preserves all entries."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    hashes = {"doc1___file_md": "abc123", "doc2___file_md": "def456"}
+    indexer._save_hashes(hashes)
+    loaded = indexer._load_hashes()
+    assert loaded == hashes
+
+
+def test_delete_doc_chunks(tmp_path):
+    """_delete_doc_chunks removes all chunks for a given parent_id."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Manually add chunks with a known parent_id
+    indexer.collection.add(
+        documents=["chunk 0 content", "chunk 1 content", "chunk 2 content"],
+        metadatas=[
+            {
+                "parent_id": "test___doc",
+                "title": "Test",
+                "url": "",
+                "project": "test",
+                "source_path": "doc.md",
+                "source_path_stem": "doc",
+                "source_url": "",
+                "description": "",
+                "is_reference": False,
+                "chunk_index": 0,
+            },
+            {
+                "parent_id": "test___doc",
+                "title": "Test",
+                "url": "",
+                "project": "test",
+                "source_path": "doc.md",
+                "source_path_stem": "doc",
+                "source_url": "",
+                "description": "",
+                "is_reference": False,
+                "chunk_index": 1,
+            },
+            {
+                "parent_id": "other___doc",
+                "title": "Other",
+                "url": "",
+                "project": "other",
+                "source_path": "doc.md",
+                "source_path_stem": "doc",
+                "source_url": "",
+                "description": "",
+                "is_reference": False,
+                "chunk_index": 0,
+            },
+        ],
+        ids=["test___doc___chunk_0", "test___doc___chunk_1", "other___doc___chunk_0"],
+    )
+    assert indexer.collection.count() == 3
+
+    deleted = indexer._delete_doc_chunks("test___doc")
+    assert deleted == 2
+    assert indexer.collection.count() == 1
+
+    # The remaining chunk should be from the "other" doc
+    remaining = indexer.collection.get()
+    assert remaining["ids"] == ["other___doc___chunk_0"]
+
+
+@pytest.mark.asyncio
+async def test_incremental_skip_unchanged(tmp_path):
+    """Second index_documentation call with no file changes skips re-embedding."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Test Title\n\nSome test documentation content that is long enough."})
+
+    indexer, repo_configs, mock_clone = _make_indexer_with_repos(
+        tmp_path,
+        {
+            "repo-a": GitRepository(
+                url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+                base_url=AnyHttpUrl("https://example.com/"),
+                folders=["doc"],
+            ),
+        },
+    )
+
+    # First run: full index
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_after_first = indexer.collection.count()
+    assert count_after_first > 0
+    assert indexer._hash_file_path.exists()
+
+    # Second run: nothing changed — should exit early
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    assert indexer.collection.count() == count_after_first
+
+
+@pytest.mark.asyncio
+async def test_incremental_detects_changed_file(tmp_path):
+    """Modifying a file causes only that doc to be re-indexed."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Original Title\n\nOriginal content that is sufficient."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Modify the file
+    (tmp_path / "repos" / "repo-a" / "doc" / "test.md").write_text("# Updated Title\n\nUpdated content that is different now.")
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Should still have chunks, and the title should be updated
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "Updated Title" in titles
+    assert "Original Title" not in titles
+
+
+@pytest.mark.asyncio
+async def test_incremental_detects_deleted_file(tmp_path):
+    """Removing a file causes its chunks to be deleted from ChromaDB."""
+    from unittest.mock import patch
+
+    _make_fake_repo(
+        tmp_path,
+        "repo-a",
+        {
+            "keep.md": "# Keep Title\n\nThis file should be kept in the index.",
+            "remove.md": "# Remove Title\n\nThis file will be removed.",
+        },
+    )
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_before = indexer.collection.count()
+    assert count_before > 0
+
+    # Delete one file
+    (tmp_path / "repos" / "repo-a" / "doc" / "remove.md").unlink()
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # The deleted file's chunks should be gone
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "Keep Title" in titles
+    assert "Remove Title" not in titles
+    assert indexer.collection.count() < count_before
+
+
+@pytest.mark.asyncio
+async def test_incremental_detects_new_file(tmp_path):
+    """Adding a new file causes it to be indexed."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"existing.md": "# Existing Title\n\nExisting content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_before = indexer.collection.count()
+
+    # Add a new file
+    new_file = tmp_path / "repos" / "repo-a" / "doc" / "new_file.md"
+    new_file.write_text("# New File Title\n\nNew file content here.")
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # New file should be in the index
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "New File Title" in titles
+    assert indexer.collection.count() > count_before
+
+
+@pytest.mark.asyncio
+async def test_incremental_orphan_cleanup(tmp_path):
+    """Changing a doc that produces fewer chunks removes the extra chunks."""
+    from unittest.mock import patch
+
+    # Start with content that has multiple H2 sections → multiple chunks
+    multi_section = "# Doc Title\n\nIntro.\n\n## Section A\n\nContent A.\n\n## Section B\n\nContent B.\n\n## Section C\n\nContent C."
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": multi_section})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_before = indexer.collection.count()
+
+    # Replace with fewer sections
+    (tmp_path / "repos" / "repo-a" / "doc" / "test.md").write_text("# Doc Title\n\nSimple content, no extra sections.")
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Should have fewer chunks now (orphans cleaned up)
+    assert indexer.collection.count() <= count_before
+
+
+@pytest.mark.asyncio
+async def test_full_rebuild_ignores_hashes(tmp_path):
+    """full_rebuild=True re-indexes everything regardless of hashes."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Test Title\n\nSome test content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run: creates hashes
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    assert indexer._hash_file_path.exists()
+    count_after_first = indexer.collection.count()
+
+    # Second run with full_rebuild: should re-index everything
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation(full_rebuild=True)
+
+    # Same count (all docs re-indexed, not doubled)
+    assert indexer.collection.count() == count_after_first
+
+
+@pytest.mark.asyncio
+async def test_projects_filter_scopes_repos(tmp_path):
+    """projects=['repo-a'] only processes repo-a, leaves repo-b unchanged."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Repo A Title\n\nRepo A content here."})
+    _make_fake_repo(tmp_path, "repo-b", {"test.md": "# Repo B Title\n\nRepo B content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+        "repo-b": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-b.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run: index both repos
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Modify repo-a only
+    (tmp_path / "repos" / "repo-a" / "doc" / "test.md").write_text("# Repo A Updated\n\nUpdated content here.")
+
+    # Re-index only repo-a
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation(projects=["repo-a"])
+
+    # repo-a should have updated title, repo-b should still exist
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "Repo A Updated" in titles
+    assert "Repo B Title" in titles  # repo-b unchanged
+
+
+@pytest.mark.asyncio
+async def test_projects_filter_invalid_name(tmp_path):
+    """projects=['nonexistent'] raises ValueError with helpful message."""
+    from unittest.mock import patch
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    with patch.object(indexer.config, "repositories", repo_configs):
+        with pytest.raises(ValueError, match="nonexistent"):
+            await indexer.index_documentation(projects=["nonexistent"])

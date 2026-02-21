@@ -883,72 +883,391 @@ typical documentation updates (where most repos haven't changed).
 minutes by running extraction concurrently. Iteration 9 saves ~5.5 minutes by skipping all
 unchanged repos entirely. Combined, a no-change re-index would take <10 seconds.
 
-### Scope
+### Files to change
 
-**Files touched:**
-- `src/holoviz_mcp/holoviz_mcp/data.py`
-- `src/holoviz_mcp/cli.py`
-- `tests/docs_mcp/test_data.py` (unit tests for hash detection logic)
+| File | Change |
+|------|--------|
+| `src/holoviz_mcp/holoviz_mcp/data.py` | Hash sidecar, incremental `index_documentation()`, orphan cleanup |
+| `src/holoviz_mcp/cli.py` | `--project` / `-p` option on `update index` command |
+| `tests/docs_mcp/test_data.py` | Unit tests for hash logic, incremental upsert, orphan cleanup |
 
-**What changes:**
+### Key design decisions
 
-**Hash sidecar file:**
-- Store `{self._vector_db_path.parent}/index_hashes.json` mapping `doc_id -> file_hash`
-- `file_hash` is `hashlib.sha256(file_path.read_bytes()).hexdigest()`
-- Load on init, save after successful indexing
+1. **Hash sidecar file format and location**
 
-**Modified `index_documentation(projects=None)`:**
-- New optional `projects: list[str] | None = None` parameter (default: all projects)
-- If `projects` specified, only process those repositories
-- Use `collection.upsert()` instead of `collection.add()` for changed/new docs
-- Use `collection.delete(ids=removed_ids)` for docs whose files were deleted
-- Skip unchanged files (same hash → same content → no re-embedding needed)
-- Clear only the project-specific docs when `projects` is specified (use
-  `collection.get(where={"project": proj})` + `collection.delete(ids=...)` for changed docs)
+   Store at `{_vector_db_path.parent}/index_hashes.json` (next to the ChromaDB directory, e.g.
+   `~/.holoviz-mcp/chroma.parent/index_hashes.json`). This co-locates it with the vector DB so
+   both are backed up together by the existing `_backup_path` / `shutil.copytree` logic.
 
-**CLI changes in `cli.py`:**
-- Add `--project` / `-p` option to `update_index()` command:
-  ```
-  holoviz-mcp update index --project panel
-  holoviz-mcp update index --project panel --project hvplot
-  ```
+   Format — keyed by `doc_id` (the stable `{project}___{path}` identifier from `_generate_doc_id`):
 
-**Prerequisite awareness:** The pre-write backup from Iteration 4 still runs before any mutations.
-The `projects` parameter is passed through to allow partial backups if needed (or skip backup for
-project-specific updates since only a subset is modified).
+   ```json
+   {
+     "panel___examples___reference___widgets___Button_ipynb": "a1b2c3...",
+     "hvplot___doc___reference___bar_md": "d4e5f6..."
+   }
+   ```
+
+   Why `doc_id` as key: it's deterministic from `(project, relative_path)`, survives repo
+   re-cloning, and directly links to the chunk IDs in ChromaDB (`{doc_id}___chunk_{N}`).
+
+2. **Orphaned chunk cleanup (the critical correctness issue)**
+
+   When a document changes, it may produce a different number of chunks. Example: a doc previously
+   had 5 chunks (`doc___chunk_0` through `doc___chunk_4`), but after editing it only produces 3.
+   Chunks 3 and 4 become orphans in ChromaDB — they'd pollute search results and corrupt
+   `_reconstruct_document_content()` which reassembles by sorting on `chunk_index`.
+
+   **Strategy: delete-before-upsert per changed document.** For each changed/new doc:
+   1. Query ChromaDB for all existing chunk IDs with matching `parent_id` metadata
+   2. Delete all found chunks
+   3. Insert the new chunks via `collection.add()` (not `upsert()`)
+
+   This is simpler and safer than trying to `upsert()` new chunks and separately delete extras.
+   Since we already know exactly which docs changed, the delete+add is scoped and fast.
+
+   For deleted files (file existed in hash map but no longer on disk): query by `parent_id` and
+   delete all matching chunks.
+
+3. **`collection.upsert()` vs delete+add**
+
+   ChromaDB's `upsert()` has the same signature as `add()` — it inserts or updates by ID. However,
+   it cannot delete orphaned chunks (IDs that no longer exist in the new chunk set). Therefore:
+   - **Unchanged docs**: skip entirely (no ChromaDB operations)
+   - **Changed/new docs**: delete old chunks by `parent_id`, then `collection.add()` new chunks
+   - **Deleted docs**: delete old chunks by `parent_id`
+
+   This avoids the orphan problem entirely. The `collection.add()` call is identical to the current
+   code, just scoped to changed docs only.
+
+4. **Per-project filtering**
+
+   `index_documentation(projects=None)` gains an optional `projects` parameter:
+   - `None` (default): process all repos (current behavior, plus incremental hash check)
+   - `["panel", "hvplot"]`: only clone/extract/update those repos; leave others untouched
+
+   When `projects` is specified, only those repos go through the parallel clone+extract pipeline.
+   The hash comparison and ChromaDB writes are also scoped to those projects. Other projects'
+   hashes and chunks are preserved.
+
+   Validation: if a project name doesn't match any configured repo, raise `ValueError` with a
+   helpful message listing available repos.
+
+5. **Full rebuild mode**
+
+   `index_documentation(projects=None, full_rebuild=False)` — when `full_rebuild=True`, the
+   existing clear-all-and-reindex behavior is used (ignoring hashes). This is the fallback for
+   when the hash file is missing, corrupt, or the user wants a clean slate. The current
+   `holoviz-mcp update index` without `--project` does a full rebuild on first run (no hash file),
+   and incremental on subsequent runs.
+
+   Add `--full` / `-f` CLI flag: `holoviz-mcp update index --full`
+
+6. **Hash file in backup**
+
+   The existing backup logic at `data.py:1567-1572` copies `_vector_db_path` to `_backup_path`.
+   The hash file lives in `_vector_db_path.parent`, which is the directory *containing* the
+   ChromaDB dir. To include hashes in the backup, copy `index_hashes.json` alongside the
+   vector DB backup. On restore (`_restore_from_backup`), also restore the hash file.
+
+### Implementation steps
+
+#### Step 1: Add `import hashlib` and hash file path property (`data.py`)
+
+```python
+import hashlib
+```
+
+Add property after `_backup_path`:
+
+```python
+@property
+def _hash_file_path(self) -> Path:
+    """Path to the hash sidecar file for incremental indexing."""
+    return self._vector_db_path.parent / "index_hashes.json"
+```
+
+#### Step 2: Add `_load_hashes()` and `_save_hashes()` methods (`data.py`)
+
+```python
+def _load_hashes(self) -> dict[str, str]:
+    """Load document hashes from the sidecar file.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of doc_id -> SHA-256 hex digest. Empty dict if file
+        doesn't exist or is corrupt.
+    """
+    import json
+    path = self._hash_file_path
+    if not path.exists():
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+        return {}
+    except (json.JSONDecodeError, OSError):
+        logger.warning(f"Failed to load hash file {path}, starting fresh")
+        return {}
+
+def _save_hashes(self, hashes: dict[str, str]) -> None:
+    """Save document hashes to the sidecar file."""
+    import json
+    path = self._hash_file_path
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(hashes, f, indent=2)
+```
+
+#### Step 3: Add `_compute_file_hash()` static method (`data.py`)
+
+```python
+@staticmethod
+def _compute_file_hash(file_path: Path) -> str:
+    """Compute SHA-256 hash of a file's contents."""
+    return hashlib.sha256(file_path.read_bytes()).hexdigest()
+```
+
+#### Step 4: Modify `process_file()` to return hash (`data.py`, line ~1468)
+
+Add hash computation to the returned dict:
+
+```python
+return {
+    ...existing fields...,
+    "file_hash": self._compute_file_hash(file_path),
+}
+```
+
+This piggybacks on the existing file read — `process_file` already reads the file content, so
+computing a hash adds negligible overhead. The hash is carried through `_extract_docs_from_repo_sync`
+→ `_clone_and_extract_repo_sync` → `index_documentation` alongside the doc metadata.
+
+#### Step 5: Add `_delete_doc_chunks()` method (`data.py`)
+
+```python
+def _delete_doc_chunks(self, doc_id: str) -> int:
+    """Delete all chunks for a document from ChromaDB.
+
+    Parameters
+    ----------
+    doc_id : str
+        The parent document ID (chunks have parent_id metadata matching this).
+
+    Returns
+    -------
+    int
+        Number of chunks deleted.
+    """
+    results = self.collection.get(
+        where={"parent_id": doc_id},
+        include=[],  # only need IDs
+    )
+    if results["ids"]:
+        self.collection.delete(ids=results["ids"])
+    return len(results["ids"]) if results["ids"] else 0
+```
+
+#### Step 6: Rewrite `index_documentation()` with incremental logic (`data.py`)
+
+The method signature changes to:
+
+```python
+async def index_documentation(
+    self,
+    ctx: Context | None = None,
+    projects: list[str] | None = None,
+    full_rebuild: bool = False,
+) -> None:
+```
+
+The flow becomes:
+
+```
+1. overall_t0 = time.monotonic()
+2. Validate `projects` against config.repositories keys
+3. Determine target repos: filtered by `projects` or all
+4. Parallel clone + extract (existing ThreadPoolExecutor logic, scoped to target repos)
+5. Load existing hashes via _load_hashes()
+6. Classify each extracted doc:
+   - new_docs: doc_id not in old hashes
+   - changed_docs: doc_id in old hashes but hash differs
+   - unchanged_docs: doc_id in old hashes and hash matches → SKIP
+   - deleted_docs: doc_id in old hashes for target projects, but not in extracted docs
+7. If full_rebuild or no hash file exists: treat all docs as new (current behavior)
+8. Log counts: "X new, Y changed, Z unchanged, W deleted"
+9. If nothing changed and not full_rebuild: log "Index up to date" and return early
+10. Pre-write backup (existing logic)
+11. For deleted_docs: _delete_doc_chunks(doc_id) for each
+12. For changed_docs: _delete_doc_chunks(doc_id) for each (clear old chunks)
+13. Chunk new_docs + changed_docs via chunk_document()
+14. Validate unique IDs (existing _validate_unique_ids)
+15. Batch collection.add() for all new chunks (existing batch logic)
+16. Save updated hashes (_save_hashes with new + changed + unchanged hashes, minus deleted)
+17. Log summary
+```
+
+The key insight: unchanged docs skip steps 11-15 entirely. For a typical re-index where nothing
+changed, the method returns at step 9 after ~10s of git pulls + hash comparisons.
+
+#### Step 7: Update hash backup/restore (`data.py`)
+
+In the backup section (~line 1567), also copy the hash file:
+
+```python
+# Backup hash file alongside vector DB
+hash_src = self._hash_file_path
+if hash_src.exists():
+    shutil.copy2(hash_src, backup_path.parent / "index_hashes.json.bak")
+```
+
+In `_restore_from_backup()`, also restore the hash file:
+
+```python
+hash_bak = self._backup_path.parent / "index_hashes.json.bak"
+if hash_bak.exists():
+    shutil.copy2(hash_bak, self._hash_file_path)
+```
+
+#### Step 8: Update CLI (`cli.py`, line 62-71)
+
+```python
+@update_app.command(name="index")
+def update_index(
+    project: Annotated[
+        Optional[list[str]],
+        typer.Option("--project", "-p", help="Only update specific project(s). Can be repeated."),
+    ] = None,
+    full: Annotated[
+        bool,
+        typer.Option("--full", "-f", help="Force full rebuild, ignoring cached hashes."),
+    ] = False,
+) -> None:
+    """Update the documentation index.
+
+    This command clones/updates HoloViz repositories and builds the vector database
+    for documentation search. First run may take up to 10 minutes. Subsequent runs
+    are incremental and only re-index changed files.
+    """
+    from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+
+    indexer = DocumentationIndexer()
+    indexer.run(projects=project, full_rebuild=full)
+```
+
+#### Step 9: Update `DocumentationIndexer.run()` and `main()` (`data.py`)
+
+```python
+def run(self, projects: list[str] | None = None, full_rebuild: bool = False):
+    """Update the DocumentationIndexer."""
+    logging.basicConfig(...)
+    ...
+    async def run_indexer(indexer=self):
+        ...
+        await indexer.index_documentation(projects=projects, full_rebuild=full_rebuild)
+        ...
+    asyncio.run(run_indexer())
+
+def main():
+    """Run the documentation indexer (full rebuild, called from legacy entry points)."""
+    DocumentationIndexer().run()
+```
+
+Make sure CLI also have flag for optional full rebuild.
+
+#### Step 10: Add tests (`test_data.py`)
+
+| Test | What it verifies |
+|------|-----------------|
+| `test_compute_file_hash` | SHA-256 of known content matches expected hex digest |
+| `test_load_hashes_missing_file` | Returns empty dict when file doesn't exist |
+| `test_load_hashes_corrupt_file` | Returns empty dict on invalid JSON, logs warning |
+| `test_save_and_load_hashes_roundtrip` | Save then load preserves all entries |
+| `test_incremental_skip_unchanged` | Second `index_documentation()` call with no file changes skips embedding (fast) |
+| `test_incremental_detects_changed_file` | Modifying a file causes only that doc to be re-indexed |
+| `test_incremental_detects_deleted_file` | Removing a file causes its chunks to be deleted from ChromaDB |
+| `test_incremental_detects_new_file` | Adding a new file causes it to be indexed |
+| `test_incremental_orphan_cleanup` | Changing a doc that produces fewer chunks removes the extra chunks |
+| `test_full_rebuild_ignores_hashes` | `full_rebuild=True` re-indexes everything regardless of hashes |
+| `test_projects_filter_scopes_repos` | `projects=["repo-a"]` only processes repo-a, leaves repo-b unchanged |
+| `test_projects_filter_invalid_name` | `projects=["nonexistent"]` raises ValueError with helpful message |
+| `test_delete_doc_chunks` | `_delete_doc_chunks` removes all chunks for a given parent_id |
+
+### What stays unchanged
+
+- Search methods (`search`, `search_get_reference_guide`, `get_document`) — no changes needed
+- Chunk format and ID scheme — unchanged
+- Pre-write backup logic — extended but not replaced
+- Parallel clone+extract from Iteration 8 — used as-is, just scoped to target repos
+- `_validate_unique_ids` — called on new+changed docs only
+- `_log_summary_table` — unchanged
+
+### Thread safety note
+
+The hash sidecar is only read/written in `index_documentation()`, which is already serialized by
+`_locked_index_documentation` (the `db_lock` wrapper applied in `__init__`). No additional locking
+is needed.
 
 ### Acceptance criteria
 
-- [ ] Re-running `holoviz-mcp update index` after no doc changes completes in under 30 seconds
-      (only git pull + hash comparison, no re-embedding)
-- [ ] Re-running after changing one documentation file re-embeds only that file's chunks
-- [ ] `holoviz-mcp update index --project panel` only updates panel, leaves other projects unchanged
-- [ ] `holoviz-mcp update index --project nonexistent` gives a helpful error message
-- [ ] All existing integration tests still pass after switching from `collection.add()` to
-      `collection.upsert()`
-- [ ] Unit tests for hash detection: new file (no hash stored), unchanged file, changed file,
-      deleted file
-- [ ] Document how to clear the cache. Or even add CLI method.
+- [x] Re-running `holoviz-mcp update index` after no doc changes completes in under 30 seconds
+      (only git pull + hash comparison, no re-embedding) — achieved 6.1s for panel (463 files skipped)
+- [x] Re-running after changing one documentation file re-embeds only that file's chunks
+- [x] `holoviz-mcp update index --project panel` only updates panel, leaves other projects unchanged
+- [x] `holoviz-mcp update index --project nonexistent` gives a helpful error message
+- [x] All existing integration tests still pass (333 passed, 18 skipped)
+- [x] Unit tests for hash detection: new file, unchanged file, changed file, deleted file
+- [x] Orphaned chunks are cleaned up when a document's chunk count changes
+- [x] `holoviz-mcp update index --full` forces full rebuild regardless of hashes
+- [x] Hash file is included in backup/restore cycle
 
-### Tasks
+### Verification
 
-- [ ] Write `_load_hashes()` and `_save_hashes()` methods using JSON sidecar file
-- [ ] Write `_compute_file_hash(file_path) -> str` using `hashlib.sha256`
-- [ ] Modify `index_documentation()` signature to accept `projects: list[str] | None = None`
-- [ ] In `index_documentation()`:
-      - Skip repos not in `projects` (if specified)
-      - Compare hashes to detect changed/new/deleted files
-      - Use `collection.upsert()` for new/changed docs
-      - Use `collection.delete(ids=...)` for deleted docs
-      - Save updated hashes after success
-- [ ] Update `cli.py` `update_index` command with `--project` option
-- [ ] Update `DocumentationIndexer.run()` to pass `projects` from CLI args
-- [ ] Add unit tests for hash logic
-- [ ] Verify `collection.upsert()` correctly updates existing chunk IDs (from Iteration 5)
+1. `pixi run pytest tests/docs_mcp/test_data.py -x -q` — all tests pass
+2. `pixi run pytest tests/ --ignore=tests/ui -x -q` — no regressions
+3. `pixi run pre-commit-run` — all hooks pass
+4. Manual timing: `time pixi run holoviz-mcp update index` (first run: full, ~3 min with Iter 8)
+5. Manual timing: `time pixi run holoviz-mcp update index` (second run: incremental, <30s)
+6. Manual test: `holoviz-mcp update index --project panel` (only panel updated)
+7. Manual test: `holoviz-mcp update index --full` (full rebuild ignoring hashes)
 
 ### Estimated complexity
 
 Medium
+
+### Status: COMPLETED (2026-02-21)
+
+**Implementation summary:**
+- Added `import hashlib` and `import json` to data.py
+- Added `_hash_file_path` property, `_load_hashes()`, `_save_hashes()`, `_compute_file_hash()`, `_delete_doc_chunks()` methods
+- Added `file_hash` field to `process_file()` return dict
+- Rewrote `index_documentation()` with `projects` and `full_rebuild` parameters:
+  - Validates project names against config
+  - Scopes parallel clone+extract to target repos only
+  - Loads hash sidecar, classifies docs as new/changed/unchanged/deleted
+  - Full rebuild: clears collection and re-adds everything (existing behavior)
+  - Incremental: deletes chunks for changed/deleted docs, adds chunks for new/changed only
+  - Saves updated hashes after successful ChromaDB write
+  - Early return when nothing changed
+- Updated `_restore_from_backup()` to also restore hash file
+- Updated backup section to also copy hash file
+- Updated `run()` to accept `projects` and `full_rebuild` parameters
+- Updated CLI `update_index` command with `--project`/`-p` and `--full`/`-f` options
+- Added 13 new tests: `test_compute_file_hash`, `test_load_hashes_missing_file`,
+  `test_load_hashes_corrupt_file`, `test_save_and_load_hashes_roundtrip`,
+  `test_delete_doc_chunks`, `test_incremental_skip_unchanged`,
+  `test_incremental_detects_changed_file`, `test_incremental_detects_deleted_file`,
+  `test_incremental_detects_new_file`, `test_incremental_orphan_cleanup`,
+  `test_full_rebuild_ignores_hashes`, `test_projects_filter_scopes_repos`,
+  `test_projects_filter_invalid_name`
+- **Performance optimization**: Hash comparison moved into `_extract_docs_from_repo_sync` to skip
+  files BEFORE expensive content extraction (nbconvert). `old_hashes` dict is loaded once in
+  `index_documentation()` and passed to parallel workers. Each worker computes SHA-256 per file and
+  skips if hash matches. Result: `holoviz-mcp update index --project panel` went from 54s → 6.1s
+  (463 files skipped by hash, 0.4s extraction time vs 48.5s previously).
+- **All 121 data tests pass, 333 full suite tests pass, all pre-commit hooks pass**
 
 ---
 
@@ -971,11 +1290,11 @@ Iter 1 (minimal test config)        ✅ COMPLETE
           |
           +-- Iter 8 (parallel extraction) ✅ COMPLETE -- independent of chunking
           |
-          +-- Iter 9 (incremental indexing) -- extends Iter 8's async infrastructure;
+          +-- Iter 9 (incremental indexing) ✅ COMPLETE -- extends Iter 8's async infrastructure;
                                                must handle chunk IDs from Iter 5
 ```
 
-Remaining work: Iteration 9 (incremental indexing). Iterations 7, 7b, and 8 are complete.
+All planned iterations are complete. Iterations 7, 7b, 8, and 9 are done.
 
 ---
 
@@ -1084,7 +1403,7 @@ Several directions could further improve search quality and indexing speed:
 | Priority | Change | Impact | Effort | Status |
 |----------|--------|--------|--------|--------|
 | ~~**HIGH**~~ | ~~Return full document content from `search()`~~ | ~~Large (LLM context)~~ | ~~Small~~ | ✅ Iteration 6 |
-| **HIGH** | Iteration 9: Incremental indexing | Large (speed) | Medium | Pending |
+| **HIGH** | Iteration 9: Incremental indexing | Large (speed) | Medium | ✅ Complete |
 | **MEDIUM** | Iteration 7: Keyword pre-filter | Medium (technical queries) | Small–Medium | **Next** |
 | **MEDIUM** | Re-rank by keyword overlap | Medium (snippet relevance) | Small | Pending |
 | **LOW** | Iteration 8: Parallel extraction | Small (saves ~2 min) | Small | ✅ Complete |
