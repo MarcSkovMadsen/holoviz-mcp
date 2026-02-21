@@ -65,6 +65,366 @@ async def log_exception(message: str, ctx: Context | None = None):
         raise Exception(message)
 
 
+def extract_tech_terms(query: str) -> list[str]:
+    """Extract technical identifiers from a search query.
+
+    Identifies three categories of terms that benefit from exact substring
+    matching rather than pure semantic similarity:
+
+    - **Compound CamelCase** (requires internal case transition):
+      ``SelectEditor``, ``ReactiveHTML``, ``TextInput`` — but NOT
+      single-word PascalCase like ``Button``, ``Panel``, ``Python``.
+    - **snake_case**: ``add_filter``, ``page_size``
+    - **Dot-separated qualified names**: ``param.watch``,
+      ``pn.widgets.Button`` — excludes common abbreviations like
+      ``e.g``, ``i.e`` via a blocklist and minimum length filter.
+
+    Parameters
+    ----------
+    query : str
+        Search query string.
+
+    Returns
+    -------
+    list[str]
+        Deduplicated list of technical terms preserving original case
+        and discovery order.  Empty list when no technical terms are found.
+    """
+    terms: list[str] = []
+    seen: set[str] = set()
+
+    # Compound CamelCase: requires an internal lower→upper transition
+    # e.g. SelectEditor, ReactiveHTML, TextInput — NOT Button, Panel
+    for m in re.finditer(r"\b[A-Z][a-z]+[A-Z][a-zA-Z]*\b", query):
+        t = m.group()
+        if t not in seen:
+            terms.append(t)
+            seen.add(t)
+
+    # snake_case identifiers
+    for m in re.finditer(r"\b[a-z][a-z0-9]*_[a-z][a-z0-9_]*\b", query):
+        t = m.group()
+        if t not in seen:
+            terms.append(t)
+            seen.add(t)
+
+    # Dot-separated qualified names (param.watch, pn.widgets.Button)
+    dot_blocklist = {"e.g", "i.e", "vs.", "etc."}
+    for m in re.finditer(r"\b[a-z][a-z0-9]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)+\b", query):
+        t = m.group()
+        if len(t) > 3 and t not in dot_blocklist and t not in seen:
+            terms.append(t)
+            seen.add(t)
+
+    return terms
+
+
+_PASCAL_STOPWORDS: set[str] = {
+    # Determiners, pronouns, articles
+    "The",
+    "This",
+    "That",
+    "These",
+    "Those",
+    "Each",
+    "Every",
+    "Some",
+    "Any",
+    "All",
+    "Both",
+    "Few",
+    "Many",
+    "Much",
+    "Most",
+    "Other",
+    "Another",
+    "Such",
+    "My",
+    "Your",
+    "His",
+    "Her",
+    "Its",
+    "Our",
+    "Their",
+    "One",
+    "An",
+    "No",
+    # Short prepositions / conjunctions (sentence-initial)
+    "In",
+    "At",
+    "To",
+    "If",
+    "Or",
+    "So",
+    "As",
+    "By",
+    "Up",
+    "On",
+    # Interrogatives / relatives
+    "Who",
+    "What",
+    "Which",
+    "Where",
+    "When",
+    "Why",
+    "How",
+    "Whom",
+    "Whose",
+    # Personal pronouns
+    "He",
+    "She",
+    "It",
+    "We",
+    "They",
+    # Auxiliary / modal verbs
+    "Is",
+    "Are",
+    "Was",
+    "Were",
+    "Be",
+    "Been",
+    "Being",
+    "Has",
+    "Have",
+    "Had",
+    "Do",
+    "Does",
+    "Did",
+    "Will",
+    "Would",
+    "Could",
+    "Should",
+    "Can",
+    "May",
+    "Might",
+    "Must",
+    "Shall",
+    # Common verbs (sentence-initial in docs)
+    "Get",
+    "Set",
+    "Let",
+    "Make",
+    "Take",
+    "Give",
+    "Put",
+    "Run",
+    "See",
+    "Find",
+    "Use",
+    "Try",
+    "Add",
+    "Go",
+    "Come",
+    "Keep",
+    "Show",
+    "Tell",
+    "Say",
+    "Ask",
+    "Help",
+    "Start",
+    "Stop",
+    "Open",
+    "Close",
+    "Read",
+    "Write",
+    "New",
+    "Old",
+    "Create",
+    "Build",
+    "Deploy",
+    "Install",
+    "Update",
+    "Remove",
+    "Delete",
+    "Enable",
+    "Disable",
+    "Configure",
+    "Define",
+    "Return",
+    "Check",
+    "Pass",
+    "Call",
+    "Load",
+    "Save",
+    "Send",
+    "Move",
+    # Adjectives / adverbs
+    "Not",
+    "Also",
+    "Just",
+    "Only",
+    "Very",
+    "Too",
+    "More",
+    "Less",
+    "First",
+    "Last",
+    "Next",
+    "Best",
+    "Good",
+    "Bad",
+    # Python builtins
+    "True",
+    "False",
+    "None",
+    # Conjunctions / prepositions
+    "And",
+    "But",
+    "For",
+    "Nor",
+    "Yet",
+    "With",
+    "From",
+    "Into",
+    "About",
+    "After",
+    "Before",
+    "Between",
+    "Through",
+    "During",
+    "Without",
+    "Within",
+    "Along",
+    "Above",
+    "Below",
+    # Generic tech words (too broad to be component names)
+    "Data",
+    "Code",
+    "Style",
+    "Type",
+    "Name",
+    "Value",
+    "Event",
+    "Class",
+    "Object",
+    "Method",
+    "Function",
+    "Module",
+    "Package",
+    "File",
+    "Path",
+    "String",
+    "Number",
+    "Integer",
+    "Float",
+    "List",
+    "Dict",
+    "Tuple",
+    "Array",
+    "Index",
+    "Key",
+    "Error",
+    "Warning",
+    "Info",
+    "Debug",
+    "Log",
+    # Common sentence starters / discourse markers
+    "Here",
+    "There",
+    "Then",
+    "Now",
+    "However",
+    "Therefore",
+    "Furthermore",
+    "Moreover",
+    "Although",
+    "Because",
+    "Since",
+    "While",
+    "Until",
+    "Unless",
+    "Whether",
+    "Though",
+    # Documentation filler
+    "Note",
+    "Tip",
+    "Using",
+    "Like",
+}
+# Common English words that can appear PascalCase but are NOT component names.
+
+
+def extract_pascal_terms(query: str) -> list[str]:
+    """Extract single PascalCase words from a query, excluding stopwords.
+
+    Captures words like Scatter, Button, Tabulator that start with an
+    uppercase letter followed by at least one lowercase letter.  Compound
+    CamelCase words (SelectEditor) are also captured — they overlap with
+    :func:`extract_tech_terms` and deduplication happens at the call site.
+
+    Parameters
+    ----------
+    query : str
+        Search query string.
+
+    Returns
+    -------
+    list[str]
+        Deduplicated list of PascalCase terms preserving discovery order.
+        Empty list when no terms are found.
+    """
+    terms: list[str] = []
+    seen: set[str] = set()
+    for m in re.finditer(r"\b[A-Z][a-z][a-zA-Z]*\b", query):
+        t = m.group()
+        if t not in seen and t not in _PASCAL_STOPWORDS:
+            terms.append(t)
+            seen.add(t)
+    return terms
+
+
+def _build_where_document_clause(terms: list[str]) -> dict[str, Any] | None:
+    """Build a ChromaDB ``where_document`` clause for keyword pre-filtering.
+
+    Parameters
+    ----------
+    terms : list[str]
+        Technical terms extracted by :func:`extract_tech_terms`.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        ``None`` when *terms* is empty, a single ``{"$contains": term}``
+        dict for one term, or ``{"$or": [...]}`` for multiple terms.
+    """
+    if not terms:
+        return None
+    if len(terms) == 1:
+        return {"$contains": terms[0]}
+    return {"$or": [{"$contains": t} for t in terms]}
+
+
+def _build_stem_boost_clause(pascal_terms: list[str], project: str | None) -> dict[str, Any] | None:
+    """Build a ChromaDB ``where`` clause matching ``source_path_stem`` metadata.
+
+    Used to boost results whose filename stem exactly matches a PascalCase
+    term from the query (e.g. ``Scatter`` → ``Scatter.ipynb``).
+
+    Parameters
+    ----------
+    pascal_terms : list[str]
+        PascalCase terms extracted by :func:`extract_pascal_terms`.
+    project : str | None
+        Optional project filter.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        ``None`` when *pascal_terms* is empty, otherwise a ``where``
+        clause suitable for ``collection.query(where=...)``.
+    """
+    if not pascal_terms:
+        return None
+    filters: list[dict[str, Any]] = []
+    if len(pascal_terms) == 1:
+        filters.append({"source_path_stem": pascal_terms[0]})
+    else:
+        filters.append({"$or": [{"source_path_stem": t} for t in pascal_terms]})
+    if project:
+        filters.append({"project": str(project)})
+    return filters[0] if len(filters) == 1 else {"$and": filters}
+
+
 def extract_keywords(query: str) -> list[str]:
     """Extract meaningful keywords from search query.
 
@@ -430,32 +790,126 @@ def chunk_document(doc: dict[str, Any], min_chunk_chars: int = 100) -> list[dict
         chunk["parent_id"] = parent_id
         # raw_content: original section text for faithful document reconstruction
         chunk["raw_content"] = part
-        # content: title-prefixed text stored in ChromaDB for better embeddings
-        chunk["content"] = f"{title}\n\n{part}" if title else part
+        # content: context-prefixed text stored in ChromaDB for better embeddings
+        context_prefix = _build_context_prefix(doc.get("project", ""), doc.get("source_path", ""), doc.get("is_reference", False))
+        if title:
+            chunk["content"] = f"{context_prefix}{title}\n\n{part}"
+        elif context_prefix:
+            chunk["content"] = f"{context_prefix}{part}"
+        else:
+            chunk["content"] = part
         chunks.append(chunk)
 
     return chunks
 
 
-def _strip_title_prefix(content: str, title: str) -> str:
+def _strip_title_prefix(
+    content: str,
+    title: str,
+    project: str = "",
+    source_path: str = "",
+    is_reference: bool = False,
+) -> str:
     r"""Remove the title prefix that chunk_document() prepends for embedding.
+
+    Handles both the new format (with context prefix) and the old format
+    (title only) for backward compatibility with existing indexes.
 
     Parameters
     ----------
     content : str
-        Chunk content, possibly prefixed with ``"{title}\n\n"``.
+        Chunk content, possibly prefixed with context + title.
     title : str
         The document title to strip.
+    project : str
+        Project name (used to compute context prefix).
+    source_path : str
+        Relative source path (used to compute context prefix).
+    is_reference : bool
+        Whether the document is a reference guide.
 
     Returns
     -------
     str
         Content with the title prefix removed if present, otherwise unchanged.
     """
-    prefix = f"{title}\n\n"
-    if title and content.startswith(prefix):
-        return content[len(prefix) :]
+    # Try new format: context_prefix + title
+    context_prefix = _build_context_prefix(project, source_path, is_reference)
+    new_prefix = f"{context_prefix}{title}\n\n"
+    if title and content.startswith(new_prefix):
+        return content[len(new_prefix) :]
+    # Backward compat: old format (title only, no context prefix)
+    old_prefix = f"{title}\n\n"
+    if title and content.startswith(old_prefix):
+        return content[len(old_prefix) :]
     return content
+
+
+def _extract_reference_category(source_path: str, is_reference: bool) -> str | None:
+    """Extract the component category from a reference guide's source path.
+
+    Finds ``"reference"`` in the path parts and returns the next non-filename
+    part (i.e. the directory immediately below ``reference/``).
+
+    Parameters
+    ----------
+    source_path : str
+        Relative source path of the document.
+    is_reference : bool
+        Whether this document is a reference guide.
+
+    Returns
+    -------
+    str | None
+        Category name (e.g. ``"widgets"``, ``"elements"``, ``"panes"``),
+        or ``None`` if not a reference doc or no category directory exists.
+    """
+    if not is_reference:
+        return None
+    parts = source_path.split("/")
+    try:
+        ref_idx = parts.index("reference")
+    except ValueError:
+        return None
+    # Category is next part after "reference", if it's not a filename
+    if ref_idx + 1 < len(parts):
+        candidate = parts[ref_idx + 1]
+        if "." not in candidate:  # skip filenames like "guide.md"
+            return candidate
+    return None
+
+
+def _build_context_prefix(project: str, source_path: str, is_reference: bool) -> str:
+    r"""Build a context line prepended before the title in chunk content.
+
+    The prefix enriches the embedding with project and reference-category
+    context so that queries like "HoloViews Scatter" are closer in vector
+    space to the Scatter reference guide chunk.
+
+    Parameters
+    ----------
+    project : str
+        Project name (e.g. ``"panel"``, ``"holoviews"``).
+    source_path : str
+        Relative source path of the document.
+    is_reference : bool
+        Whether this document is a reference guide.
+
+    Returns
+    -------
+    str
+        A context line ending with ``"\n"`` (e.g. ``"panel widgets\n"``),
+        or ``""`` when no context is available.
+    """
+    parts: list[str] = []
+    if project:
+        parts.append(project)
+    category = _extract_reference_category(source_path, is_reference)
+    if category:
+        parts.append(category)
+    if parts:
+        return " ".join(parts) + "\n"
+    return ""
 
 
 def get_skill(name: str) -> str:
@@ -1225,7 +1679,16 @@ class DocumentationIndexer:
                 # Merge content from all chunks if content was requested.
                 # Strip the title prefix that chunk_document() prepends for embedding.
                 if content:
-                    merged_content: str | None = "\n".join(_strip_title_prefix(c[1], doc_title) for c in chunks)
+                    merged_content: str | None = "\n".join(
+                        _strip_title_prefix(
+                            c[1],
+                            doc_title,
+                            project=str(metadata["project"]),
+                            source_path=source_path,
+                            is_reference=bool(metadata["is_reference"]),
+                        )
+                        for c in chunks
+                    )
                 else:
                     merged_content = None
 
@@ -1287,7 +1750,197 @@ class DocumentationIndexer:
 
         chunks.sort(key=lambda c: c[0])
         title = chunks[0][2]
-        return "\n".join(_strip_title_prefix(c[1], title) for c in chunks)
+        is_ref = bool(results["metadatas"][0].get("is_reference", False)) if results["metadatas"] else False
+        return "\n".join(_strip_title_prefix(c[1], title, project=project, source_path=source_path, is_reference=is_ref) for c in chunks)
+
+    def _extract_documents_from_results(
+        self,
+        results: dict[str, Any],
+        documents: list[Document],
+        seen_paths: set[str],
+        max_results: int,
+        content_mode: str | None,
+        max_content_chars: int | None,
+        query: str,
+    ) -> None:
+        """Extract :class:`Document` objects from a ChromaDB query result.
+
+        Appends to *documents* in place, deduplicating by ``source_path``
+        via the shared *seen_paths* set.  Stops once *documents* reaches
+        *max_results*.
+
+        Must be called while holding ``db_lock``.
+
+        Parameters
+        ----------
+        results : dict[str, Any]
+            Raw ChromaDB ``collection.query()`` return value.
+        documents : list[Document]
+            Accumulator list — new documents are appended here.
+        seen_paths : set[str]
+            Already-seen ``source_path`` values for deduplication.
+        max_results : int
+            Stop after this many documents have been collected.
+        content_mode : str | None
+            One of ``"chunk"``, ``"truncated"``, ``"full"``, or ``None``.
+        max_content_chars : int | None
+            Passed through to :func:`truncate_content`.
+        query : str
+            Original search query (used for context-aware truncation).
+        """
+        if not (results["ids"] and results["ids"][0]):
+            return
+
+        for i, _ in enumerate(results["ids"][0]):
+            if len(documents) >= max_results:
+                break
+
+            if not (results["metadatas"] and results["metadatas"][0]):
+                continue
+
+            metadata = results["metadatas"][0][i]
+
+            # Deduplicate by source_path — keep only the best-scoring chunk per document
+            source_path = str(metadata["source_path"])
+            if source_path in seen_paths:
+                continue
+            seen_paths.add(source_path)
+
+            # Resolve content based on content mode
+            if content_mode is None:
+                content_text = None
+            elif content_mode == "chunk":
+                content_text = results["documents"][0][i] if results["documents"] else None
+                if content_text:
+                    content_text = _strip_title_prefix(
+                        content_text,
+                        str(metadata["title"]),
+                        project=str(metadata.get("project", "")),
+                        source_path=source_path,
+                        is_reference=bool(metadata.get("is_reference", False)),
+                    )
+                content_text = truncate_content(content_text, max_content_chars, query=query)
+            else:
+                # "truncated", "full", or unknown mode — reconstruct full document
+                content_text = self._reconstruct_document_content(source_path, str(metadata["project"]))
+                if content_mode != "full":
+                    content_text = truncate_content(content_text, max_content_chars, query=query)
+
+            # Safe URL construction
+            url_value = metadata.get("url", "https://example.com")
+            if not url_value or url_value == "None" or not isinstance(url_value, str):
+                url_value = "https://example.com"
+
+            # Safe relevance score calculation
+            relevance_score = None
+            if (
+                results.get("distances")
+                and isinstance(results["distances"], list)
+                and len(results["distances"]) > 0
+                and isinstance(results["distances"][0], list)
+                and len(results["distances"][0]) > i
+            ):
+                try:
+                    relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
+                except (ValueError, TypeError):
+                    relevance_score = None
+
+            document = Document(
+                title=str(metadata["title"]),
+                url=HttpUrl(url_value),
+                project=str(metadata["project"]),
+                source_path=source_path,
+                source_url=HttpUrl(str(metadata.get("source_url", ""))),
+                description=str(metadata["description"]),
+                is_reference=bool(metadata["is_reference"]),
+                content=content_text,
+                relevance_score=relevance_score,
+            )
+            documents.append(document)
+
+    def _merge_search_results(
+        self,
+        metadata_results: dict[str, Any] | None,
+        keyword_results: dict[str, Any] | None,
+        semantic_results: dict[str, Any],
+        max_results: int,
+        content_mode: str | None,
+        max_content_chars: int | None,
+        query: str,
+    ) -> list[Document]:
+        """Merge metadata-boosted, keyword-filtered and semantic search results.
+
+        Results are merged in priority order: metadata boost (exact stem
+        match) > keyword pre-filter (content ``$contains``) > pure semantic
+        similarity.  Deduplication by ``source_path`` is maintained across
+        all passes.
+
+        Must be called while holding ``db_lock``.
+
+        Parameters
+        ----------
+        metadata_results : dict[str, Any] | None
+            ChromaDB query result with ``source_path_stem`` metadata filter,
+            or ``None`` when no PascalCase terms were found.
+        keyword_results : dict[str, Any] | None
+            ChromaDB query result with ``where_document`` pre-filter, or
+            ``None`` when no technical terms were found.
+        semantic_results : dict[str, Any]
+            ChromaDB query result from pure semantic similarity.
+        max_results : int
+            Maximum number of documents to return.
+        content_mode : str | None
+            Content resolution mode.
+        max_content_chars : int | None
+            Maximum content characters.
+        query : str
+            Original search query.
+
+        Returns
+        -------
+        list[Document]
+            Merged, deduplicated document list.
+        """
+        documents: list[Document] = []
+        seen_paths: set[str] = set()
+
+        # Pass 0: metadata-boosted results (exact stem match)
+        if metadata_results is not None:
+            self._extract_documents_from_results(
+                metadata_results,
+                documents,
+                seen_paths,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
+
+        # Pass 1: keyword-filtered results (content $contains)
+        if keyword_results is not None and len(documents) < max_results:
+            self._extract_documents_from_results(
+                keyword_results,
+                documents,
+                seen_paths,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
+
+        # Pass 2: fill remaining slots from semantic results
+        if len(documents) < max_results:
+            self._extract_documents_from_results(
+                semantic_results,
+                documents,
+                seen_paths,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
+
+        return documents
 
     async def search(
         self,
@@ -1316,71 +1969,57 @@ class DocumentationIndexer:
             # Over-query to allow deduplication across chunks of the same document
             n_results = max_results * 3
 
-            # Perform vector similarity search
-            results = self.collection.query(query_texts=[query], n_results=n_results, where=where_clause)  # type: ignore[arg-type]
+            # Extract technical terms for keyword pre-filtering
+            tech_terms = extract_tech_terms(query)
+            # Extract PascalCase terms for metadata boost + content matching
+            pascal_terms = extract_pascal_terms(query)
 
-            documents: list[Document] = []
-            seen_paths: set[str] = set()
-            if results["ids"] and results["ids"][0]:
-                for i, _ in enumerate(results["ids"][0]):
-                    if len(documents) >= max_results:
-                        break
+            # When a project filter is active, drop terms that match the
+            # project name itself — every document in the project trivially
+            # contains the project name, so the pre-filter adds no selectivity
+            # and fills merge slots with irrelevant docs.
+            if project and (tech_terms or pascal_terms):
+                project_lower = project.lower().replace("-", "")
+                tech_terms = [t for t in tech_terms if t.lower().replace("-", "") != project_lower]
+                pascal_terms = [t for t in pascal_terms if t.lower().replace("-", "") != project_lower]
 
-                    if results["metadatas"] and results["metadatas"][0]:
-                        metadata = results["metadatas"][0][i]
+            # Combine for content pre-filter: tech_terms + pascal_terms (deduplicated)
+            all_content_terms = list(dict.fromkeys(tech_terms + pascal_terms))
+            where_doc = _build_where_document_clause(all_content_terms)
 
-                        # Deduplicate by source_path — keep only the best-scoring chunk per document
-                        source_path = str(metadata["source_path"])
-                        if source_path in seen_paths:
-                            continue
-                        seen_paths.add(source_path)
+            # Query 0: metadata boost on source_path_stem
+            metadata_results = None
+            if pascal_terms:
+                stem_clause = _build_stem_boost_clause(pascal_terms, project)
+                if stem_clause:
+                    metadata_results = self.collection.query(
+                        query_texts=[query],
+                        n_results=n_results,
+                        where=stem_clause,  # type: ignore[arg-type]
+                    )
 
-                        # Resolve content based on content mode
-                        if content_mode is None:
-                            content_text = None
-                        elif content_mode == "chunk":
-                            content_text = results["documents"][0][i] if results["documents"] else None
-                            if content_text:
-                                content_text = _strip_title_prefix(content_text, str(metadata["title"]))
-                            content_text = truncate_content(content_text, max_content_chars, query=query)
-                        else:
-                            # "truncated", "full", or unknown mode — reconstruct full document
-                            content_text = self._reconstruct_document_content(source_path, str(metadata["project"]))
-                            if content_mode != "full":
-                                content_text = truncate_content(content_text, max_content_chars, query=query)
+            # Query 1: keyword-filtered (only when content terms are found)
+            keyword_results = None
+            if where_doc:
+                keyword_results = self.collection.query(
+                    query_texts=[query],
+                    n_results=n_results,
+                    where=where_clause,
+                    where_document=where_doc,  # type: ignore[arg-type]
+                )
 
-                        # Safe URL construction
-                        url_value = metadata.get("url", "https://example.com")
-                        if not url_value or url_value == "None" or not isinstance(url_value, str):
-                            url_value = "https://example.com"
+            # Query 2: pure semantic similarity (always)
+            semantic_results = self.collection.query(query_texts=[query], n_results=n_results, where=where_clause)  # type: ignore[arg-type]
 
-                        # Safe relevance score calculation
-                        relevance_score = None
-                        if (
-                            results.get("distances")
-                            and isinstance(results["distances"], list)
-                            and len(results["distances"]) > 0
-                            and isinstance(results["distances"][0], list)
-                            and len(results["distances"][0]) > i
-                        ):
-                            try:
-                                relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
-                            except (ValueError, TypeError):
-                                relevance_score = None
-
-                        document = Document(
-                            title=str(metadata["title"]),
-                            url=HttpUrl(url_value),
-                            project=str(metadata["project"]),
-                            source_path=source_path,
-                            source_url=HttpUrl(str(metadata.get("source_url", ""))),
-                            description=str(metadata["description"]),
-                            is_reference=bool(metadata["is_reference"]),
-                            content=content_text,
-                            relevance_score=relevance_score,
-                        )
-                        documents.append(document)
-            return documents
+            return self._merge_search_results(
+                metadata_results,
+                keyword_results,
+                semantic_results,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
 
     async def get_document(self, path: str, project: str, ctx: Context | None = None) -> Document:
         """Get a specific document, reconstructing from chunks if needed."""

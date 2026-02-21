@@ -7,10 +7,16 @@ from pydantic import AnyHttpUrl
 
 from holoviz_mcp.config import GitRepository
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import _build_context_prefix
+from holoviz_mcp.holoviz_mcp.data import _build_stem_boost_clause
+from holoviz_mcp.holoviz_mcp.data import _build_where_document_clause
+from holoviz_mcp.holoviz_mcp.data import _extract_reference_category
 from holoviz_mcp.holoviz_mcp.data import chunk_document
 from holoviz_mcp.holoviz_mcp.data import convert_path_to_url
 from holoviz_mcp.holoviz_mcp.data import extract_keywords
+from holoviz_mcp.holoviz_mcp.data import extract_pascal_terms
 from holoviz_mcp.holoviz_mcp.data import extract_relevant_excerpt
+from holoviz_mcp.holoviz_mcp.data import extract_tech_terms
 from holoviz_mcp.holoviz_mcp.data import find_keyword_matches
 from holoviz_mcp.holoviz_mcp.data import truncate_content
 
@@ -707,8 +713,8 @@ def test_chunk_document_empty_content():
     chunks = chunk_document(doc)
     assert len(chunks) == 1
     assert chunks[0]["chunk_index"] == 0
-    # Title prefix is prepended even for empty content
-    assert chunks[0]["content"] == "Test Doc\n\n"
+    # Context prefix + title prefix is prepended even for empty content
+    assert chunks[0]["content"] == "test-project\nTest Doc\n\n"
     assert chunks[0]["raw_content"] == ""
 
 
@@ -770,6 +776,25 @@ MULTI_SECTION_CONTENT = (
 )
 
 
+TECH_TERMS_CONTENT = (
+    "# Tabulator Reference Guide\n"
+    "The Tabulator widget provides a feature-rich table component for displaying and editing data.\n"
+    "It supports a wide range of configuration options for columns, filtering, and pagination.\n"
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Editors\n"
+    "The SelectEditor allows choosing values from a dropdown list of options.\n"
+    "The CheckboxEditor provides a boolean toggle for true/false columns.\n"
+    "Use add_filter to apply programmatic filters to the table data.\n"
+    "The NumberEditor supports min, max, and step constraints for numeric input.\n"
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Formatters\n"
+    "The NumberFormatter controls how numeric values are displayed in table cells.\n"
+    "Use param.watch to respond to value changes and trigger callbacks.\n"
+    "The BooleanFormatter renders checkmarks for true values and crosses for false values.\n"
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters."
+)
+
+
 @pytest.fixture
 def populated_indexer(tmp_path):
     """Create an indexer with a multi-chunk test document for content mode testing."""
@@ -783,12 +808,47 @@ def populated_indexer(tmp_path):
         vector_dir=tmp_path / "chroma",
     )
 
+    # Document 1: multi-section document for content mode tests
     doc = _make_doc(content=MULTI_SECTION_CONTENT, title="Test Document")
     chunks = chunk_document(doc)
     assert len(chunks) >= 3, f"Expected at least 3 chunks, got {len(chunks)}"
 
+    # Document 2: technical terms document for keyword pre-filter tests
+    tech_doc = _make_doc(
+        id="tabulator___ref_md",
+        content=TECH_TERMS_CONTENT,
+        title="Tabulator Reference Guide",
+        source_path="doc/reference/Tabulator.md",
+        source_path_stem="Tabulator",
+        is_reference=True,
+    )
+    tech_chunks = chunk_document(tech_doc)
+
+    # Document 3: Scatter reference guide for metadata boost tests
+    scatter_content = (
+        "# Scatter\n"
+        "A Scatter element visualizes data as a collection of point glyphs in a 2D space.\n"
+        "Scatter is useful for exploring relationships between two continuous variables.\n"
+        "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+        "## Options\n"
+        "Scatter supports color, size, and marker options for customizing the appearance.\n"
+        "You can also use hover tools to display additional information about each point.\n"
+        "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters."
+    )
+    scatter_doc = _make_doc(
+        id="scatter___ref_ipynb",
+        content=scatter_content,
+        title="Scatter",
+        source_path="examples/reference/elements/Scatter.ipynb",
+        source_path_stem="Scatter",
+        is_reference=True,
+    )
+    scatter_chunks = chunk_document(scatter_doc)
+
+    all_chunks = chunks + tech_chunks + scatter_chunks
+
     indexer.collection.add(
-        documents=[c["content"] for c in chunks],
+        documents=[c["content"] for c in all_chunks],
         metadatas=[
             {
                 "title": c["title"],
@@ -802,9 +862,9 @@ def populated_indexer(tmp_path):
                 "chunk_index": c["chunk_index"],
                 "parent_id": c["parent_id"],
             }
-            for c in chunks
+            for c in all_chunks
         ],
-        ids=[c["id"] for c in chunks],
+        ids=[c["id"] for c in all_chunks],
     )
 
     return indexer
@@ -872,3 +932,358 @@ async def test_search_content_true_backward_compat(populated_indexer):
     assert results_truncated[0].content is not None
     # Content should be the same
     assert results_true[0].content == results_truncated[0].content
+
+
+# --- extract_tech_terms tests ---
+
+
+def test_extract_tech_terms_camelcase():
+    """Compound CamelCase identifiers are extracted."""
+    terms = extract_tech_terms("CheckboxEditor SelectEditor")
+    assert "CheckboxEditor" in terms
+    assert "SelectEditor" in terms
+
+
+def test_extract_tech_terms_snake_case():
+    """snake_case identifiers are extracted."""
+    terms = extract_tech_terms("add_filter page_size")
+    assert "add_filter" in terms
+    assert "page_size" in terms
+
+
+def test_extract_tech_terms_dot_separated():
+    """Dot-separated qualified names are extracted."""
+    terms = extract_tech_terms("param.watch pn.widgets.Button")
+    assert "param.watch" in terms
+    assert "pn.widgets.Button" in terms
+
+
+def test_extract_tech_terms_mixed():
+    """All three categories extracted from a mixed query."""
+    terms = extract_tech_terms("SelectEditor add_filter param.watch")
+    assert "SelectEditor" in terms
+    assert "add_filter" in terms
+    assert "param.watch" in terms
+
+
+def test_extract_tech_terms_natural_language():
+    """Pure natural language returns empty list."""
+    terms = extract_tech_terms("how to create a dashboard with buttons")
+    assert terms == []
+
+
+def test_extract_tech_terms_single_pascal_not_extracted():
+    """Single-word PascalCase (Button, Panel, Python) is NOT extracted."""
+    terms = extract_tech_terms("Button Panel Python")
+    assert terms == []
+
+
+def test_extract_tech_terms_abbreviations_excluded():
+    """Common abbreviations like e.g and i.e are excluded."""
+    terms = extract_tech_terms("e.g. this is i.e. an example")
+    assert terms == []
+
+
+def test_extract_tech_terms_deduplication():
+    """Duplicate terms are deduplicated."""
+    terms = extract_tech_terms("SelectEditor SelectEditor add_filter add_filter")
+    assert terms.count("SelectEditor") == 1
+    assert terms.count("add_filter") == 1
+
+
+def test_extract_tech_terms_case_preserved():
+    """Original case is preserved."""
+    terms = extract_tech_terms("ReactiveHTML")
+    assert "ReactiveHTML" in terms
+
+
+def test_extract_tech_terms_short_dot_excluded():
+    """Short dot-separated terms (<=3 chars) are excluded."""
+    terms = extract_tech_terms("a.b")
+    assert terms == []
+
+
+def test_extract_tech_terms_real_world_query():
+    """Real-world technical query extracts expected terms."""
+    terms = extract_tech_terms("Tabulator CheckboxEditor SelectEditor add_filter page_size param.watch")
+    assert "CheckboxEditor" in terms
+    assert "SelectEditor" in terms
+    assert "add_filter" in terms
+    assert "page_size" in terms
+    assert "param.watch" in terms
+    # Tabulator is single PascalCase — should NOT be extracted
+    assert "Tabulator" not in terms
+
+
+# --- _build_where_document_clause tests ---
+
+
+def test_build_where_document_clause_empty():
+    """Empty list returns None."""
+    assert _build_where_document_clause([]) is None
+
+
+def test_build_where_document_clause_single():
+    """Single term returns simple $contains."""
+    result = _build_where_document_clause(["SelectEditor"])
+    assert result == {"$contains": "SelectEditor"}
+
+
+def test_build_where_document_clause_multiple():
+    """Multiple terms return $or clause."""
+    result = _build_where_document_clause(["SelectEditor", "add_filter"])
+    assert result == {"$or": [{"$contains": "SelectEditor"}, {"$contains": "add_filter"}]}
+
+
+# --- Keyword pre-filter search tests ---
+
+
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_camelcase(populated_indexer):
+    """CamelCase query prioritizes document containing that term."""
+    results = await populated_indexer.search("CheckboxEditor SelectEditor", content=False, max_results=5)
+    assert len(results) >= 1
+    # Tabulator document should appear in results
+    source_paths = [r.source_path for r in results]
+    assert "doc/reference/Tabulator.md" in source_paths
+
+
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_snake_case(populated_indexer):
+    """snake_case query prioritizes document containing that term."""
+    results = await populated_indexer.search("add_filter programmatic", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "doc/reference/Tabulator.md" in source_paths
+
+
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_dot_separated(populated_indexer):
+    """Dot-separated query prioritizes document containing that term."""
+    results = await populated_indexer.search("param.watch value changes", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "doc/reference/Tabulator.md" in source_paths
+
+
+@pytest.mark.asyncio
+async def test_search_natural_language_unchanged(populated_indexer):
+    """Natural language query without tech terms still works (no keyword pre-filter)."""
+    results = await populated_indexer.search("preamble general information document", content=False, max_results=5)
+    assert len(results) >= 1
+    # The original test document should still be found via pure semantic search
+    source_paths = [r.source_path for r in results]
+    assert "doc/test.md" in source_paths
+
+
+# --- _extract_reference_category tests ---
+
+
+def test_extract_reference_category_panel_widget():
+    """Panel widget reference path returns 'widgets'."""
+    assert _extract_reference_category("examples/reference/widgets/Tabulator.ipynb", True) == "widgets"
+
+
+def test_extract_reference_category_holoviews_element():
+    """HoloViews element reference path returns 'elements'."""
+    assert _extract_reference_category("examples/reference/elements/bokeh/Scatter.ipynb", True) == "elements"
+
+
+def test_extract_reference_category_param():
+    """Param reference path returns 'param'."""
+    assert _extract_reference_category("doc/reference/param/Parameter.md", True) == "param"
+
+
+def test_extract_reference_category_file_under_reference():
+    """File directly under reference/ returns None (no category directory)."""
+    assert _extract_reference_category("docs/reference/guide.md", True) is None
+
+
+def test_extract_reference_category_not_reference():
+    """Non-reference document always returns None."""
+    assert _extract_reference_category("doc/how_to/callbacks/foo.md", False) is None
+
+
+# --- _build_context_prefix tests ---
+
+
+def test_build_context_prefix_reference_with_category():
+    """Reference with category returns 'project category\\n'."""
+    assert _build_context_prefix("panel", "examples/reference/widgets/Tabulator.ipynb", True) == "panel widgets\n"
+
+
+def test_build_context_prefix_non_reference_with_project():
+    """Non-reference with project returns 'project\\n'."""
+    assert _build_context_prefix("panel", "doc/how_to/callbacks/foo.md", False) == "panel\n"
+
+
+def test_build_context_prefix_empty_project():
+    """Empty project returns empty string."""
+    assert _build_context_prefix("", "doc/test.md", False) == ""
+
+
+def test_build_context_prefix_reference_no_reference_in_path():
+    """Reference flag set but 'reference' not in path returns just project."""
+    assert _build_context_prefix("panel", "doc/guide.md", True) == "panel\n"
+
+
+# --- chunk_document context prefix tests ---
+
+
+def test_chunk_document_context_prefix_non_reference():
+    """Non-reference doc chunks get 'project\\ntitle\\n\\n...' prefix."""
+    doc = _make_doc(content="Plain text long enough to survive filtering. Adding filler to reach the threshold.")
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["content"].startswith("test-project\nTest Doc\n\n")
+
+
+def test_chunk_document_context_prefix_reference():
+    """Reference doc chunks get 'project category\\ntitle\\n\\n...' prefix."""
+    content = "Widget docs long enough to survive filtering. Adding filler to reach the threshold."
+    doc = _make_doc(
+        content=content,
+        project="panel",
+        source_path="examples/reference/widgets/Button.ipynb",
+        is_reference=True,
+    )
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["content"].startswith("panel widgets\nTest Doc\n\n")
+    # raw_content should NOT have the prefix
+    assert chunks[0]["raw_content"] == content
+
+
+# --- Project-name tech term filtering tests ---
+
+
+def test_search_filters_project_name_tech_terms(populated_indexer):
+    """Tech terms matching the project name are dropped when project filter is active."""
+    # "TestProject" is a compound CamelCase term that extract_tech_terms would extract.
+    # When searching within project "test-project", the term should be filtered out.
+    terms = extract_tech_terms("TestProject")
+    assert "TestProject" in terms  # Would normally be extracted
+
+    # Simulate the filtering logic from search()
+    project = "test-project"
+    project_lower = project.lower().replace("-", "")
+    filtered = [t for t in terms if t.lower().replace("-", "") != project_lower]
+    assert filtered == []  # "TestProject" matches "test-project" after normalization
+
+
+# --- extract_pascal_terms tests ---
+
+
+def test_extract_pascal_terms_component_names():
+    """Component names like Scatter, Button, Tabulator are extracted."""
+    terms = extract_pascal_terms("Scatter Button Tabulator")
+    assert "Scatter" in terms
+    assert "Button" in terms
+    assert "Tabulator" in terms
+
+
+def test_extract_pascal_terms_stopwords_excluded():
+    """Common English words in PascalCase are excluded."""
+    terms = extract_pascal_terms("The Create Using About")
+    assert terms == []
+
+
+def test_extract_pascal_terms_mixed():
+    """Mixed query extracts only non-stopword PascalCase terms."""
+    terms = extract_pascal_terms("How to use Scatter in Panel")
+    assert "Scatter" in terms
+    assert "Panel" in terms
+    assert "How" not in terms
+
+
+def test_extract_pascal_terms_lowercase_ignored():
+    """Lowercase words are not extracted."""
+    terms = extract_pascal_terms("scatter button")
+    assert terms == []
+
+
+def test_extract_pascal_terms_allcaps_ignored():
+    """ALL_CAPS words are not extracted (regex requires lowercase after initial upper)."""
+    terms = extract_pascal_terms("HTML CSS API")
+    assert terms == []
+
+
+def test_extract_pascal_terms_compound_camelcase():
+    """Compound CamelCase words are also captured."""
+    terms = extract_pascal_terms("SelectEditor")
+    assert "SelectEditor" in terms
+
+
+def test_extract_pascal_terms_deduplication():
+    """Duplicate terms appear only once."""
+    terms = extract_pascal_terms("Scatter Scatter")
+    assert terms.count("Scatter") == 1
+
+
+def test_extract_pascal_terms_project_name_filtering():
+    """Project-name filtering can remove pascal terms matching the project."""
+    terms = extract_pascal_terms("HoloViews Scatter")
+    assert "HoloViews" in terms
+    assert "Scatter" in terms
+
+    # Simulate project-name filtering from search()
+    project = "holoviews"
+    project_lower = project.lower().replace("-", "")
+    filtered = [t for t in terms if t.lower().replace("-", "") != project_lower]
+    assert "HoloViews" not in filtered
+    assert "Scatter" in filtered
+
+
+# --- _build_stem_boost_clause tests ---
+
+
+def test_build_stem_boost_clause_empty():
+    """Empty list returns None."""
+    assert _build_stem_boost_clause([], None) is None
+
+
+def test_build_stem_boost_clause_single_no_project():
+    """Single term without project returns simple metadata filter."""
+    result = _build_stem_boost_clause(["Scatter"], None)
+    assert result == {"source_path_stem": "Scatter"}
+
+
+def test_build_stem_boost_clause_single_with_project():
+    """Single term with project returns $and clause."""
+    result = _build_stem_boost_clause(["Scatter"], "holoviews")
+    assert result == {"$and": [{"source_path_stem": "Scatter"}, {"project": "holoviews"}]}
+
+
+def test_build_stem_boost_clause_multiple_no_project():
+    """Multiple terms without project return $or clause for stems."""
+    result = _build_stem_boost_clause(["Scatter", "Curve"], None)
+    assert result == {"$or": [{"source_path_stem": "Scatter"}, {"source_path_stem": "Curve"}]}
+
+
+def test_build_stem_boost_clause_multiple_with_project():
+    """Multiple terms with project return $and wrapping $or + project."""
+    result = _build_stem_boost_clause(["Scatter", "Curve"], "holoviews")
+    assert result == {"$and": [{"$or": [{"source_path_stem": "Scatter"}, {"source_path_stem": "Curve"}]}, {"project": "holoviews"}]}
+
+
+# --- Metadata boost search integration tests ---
+
+
+@pytest.mark.asyncio
+async def test_search_metadata_boost_finds_scatter(populated_indexer):
+    """Searching 'Scatter' finds the Scatter reference guide via metadata boost."""
+    results = await populated_indexer.search("Scatter", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "examples/reference/elements/Scatter.ipynb" in source_paths
+    # Scatter should be the first result due to metadata boost
+    assert results[0].source_path == "examples/reference/elements/Scatter.ipynb"
+
+
+@pytest.mark.asyncio
+async def test_search_metadata_boost_with_project_name_filtered(populated_indexer):
+    """Searching 'TestProject Scatter' with project filter finds Scatter via metadata boost."""
+    results = await populated_indexer.search("TestProject Scatter", project="test-project", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "examples/reference/elements/Scatter.ipynb" in source_paths

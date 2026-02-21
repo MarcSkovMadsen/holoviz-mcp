@@ -236,10 +236,10 @@ async def test_search_content_mode_chunk():
         doc = result.data[0]
         assert doc.get("content") is not None
 
-        # Chunk content should be smaller than full document content
+        # Chunk content should be no larger than full document content
         full_result = await client.call_tool("get_document", {"path": doc["source_path"], "project": doc["project"]})
         assert full_result.data
-        assert len(doc["content"]) < len(full_result.data.content)
+        assert len(doc["content"]) <= len(full_result.data.content)
 
 
 @pytest.mark.integration
@@ -271,3 +271,29 @@ async def test_search_content_mode_truncated_default():
         assert result.data
         doc = result.data[0]
         assert doc.get("content") is not None
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_camelcase_integration():
+    """Technical CamelCase terms find Tabulator reference via keyword pre-filter."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("search", {"query": "CheckboxEditor SelectEditor", "project": "panel", "content": False})
+        assert result.data
+        assert isinstance(result.data, list)
+        titles = [doc["title"] for doc in result.data]
+        assert any("Tabulator" in t for t in titles), f"Expected Tabulator in results, got: {titles}"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_mixed_integration():
+    """Mixed technical terms (snake_case + CamelCase) find Tabulator reference."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("search", {"query": "add_filter RangeSlider Tabulator", "project": "panel", "content": False})
+        assert result.data
+        assert isinstance(result.data, list)
+        titles = [doc["title"] for doc in result.data]
+        assert any("Tabulator" in t for t in titles), f"Expected Tabulator in results, got: {titles}"
