@@ -1287,3 +1287,112 @@ async def test_search_metadata_boost_with_project_name_filtered(populated_indexe
     assert len(results) >= 1
     source_paths = [r.source_path for r in results]
     assert "examples/reference/elements/Scatter.ipynb" in source_paths
+
+
+# --- Thread-local nb_exporter tests ---
+
+
+def test_thread_local_nb_exporter_isolation(tmp_path):
+    """Each thread gets a different MarkdownExporter instance."""
+    import threading
+
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    exporters: dict[int, object] = {}
+    barrier = threading.Barrier(3)
+
+    def get_exporter(thread_id):
+        barrier.wait()  # Ensure threads overlap
+        exporters[thread_id] = indexer._get_nb_exporter()
+
+    threads = [threading.Thread(target=get_exporter, args=(i,)) for i in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # All 3 threads should have gotten distinct instances
+    instances = list(exporters.values())
+    assert len(instances) == 3
+    assert len(set(id(e) for e in instances)) == 3
+
+
+def test_get_nb_exporter_returns_same_instance_per_thread(tmp_path):
+    """Same thread calling _get_nb_exporter twice gets the same instance."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    first = indexer._get_nb_exporter()
+    second = indexer._get_nb_exporter()
+    assert first is second
+
+
+def test_clone_and_extract_sync_handles_clone_failure(tmp_path):
+    """Bad repo URL returns empty list, does not raise."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    bad_config = GitRepository(
+        url=AnyHttpUrl("https://github.com/nonexistent-org-12345/nonexistent-repo-99999.git"),
+        base_url=AnyHttpUrl("https://example.com/"),
+    )
+
+    result = indexer._clone_and_extract_repo_sync("bad-repo", bad_config)
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_parallel_index_documentation_processes_all_repos(tmp_path):
+    """index_documentation processes repositories in parallel and collects all docs."""
+
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Create two fake repo directories with markdown files
+    for repo_name in ["repo-a", "repo-b"]:
+        repo_dir = tmp_path / "repos" / repo_name / "doc"
+        repo_dir.mkdir(parents=True)
+        md_file = repo_dir / "test.md"
+        md_file.write_text(f"# {repo_name} Title\n\nThis is the {repo_name} documentation content that is long enough to pass chunking thresholds.")
+        # Initialize as a git repo so git.Repo doesn't fail
+        import git
+
+        repo = git.Repo.init(tmp_path / "repos" / repo_name)
+        repo.index.add([str(md_file)])
+        repo.index.commit("initial")
+
+    # Patch the config to use our fake repos
+    from unittest.mock import patch
+
+    fake_repos = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+        "repo-b": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-b.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+
+    # Mock _clone_or_update_repo_sync to just return the existing path
+    original_clone = indexer._clone_or_update_repo_sync
+
+    def mock_clone(repo_name, repo_config):
+        repo_path = tmp_path / "repos" / repo_name
+        if repo_path.exists():
+            return repo_path
+        return original_clone(repo_name, repo_config)
+
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", fake_repos):
+            await indexer.index_documentation()
+
+    # Both repos should have contributed documents
+    assert indexer.collection.count() > 0
+    results = indexer.collection.get(include=["metadatas"])
+    projects = {m["project"] for m in results["metadatas"]}
+    assert "repo-a" in projects
+    assert "repo-b" in projects

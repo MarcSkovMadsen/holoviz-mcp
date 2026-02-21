@@ -5,7 +5,9 @@ import logging
 import os
 import re
 import shutil
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -1096,8 +1098,8 @@ class DocumentationIndexer:
         # Lazy-initialized async lock for database operations to prevent corruption from concurrent access
         self._db_lock: Optional[asyncio.Lock] = None
 
-        # Initialize notebook converter
-        self.nb_exporter = MarkdownExporter()
+        # Thread-local storage for MarkdownExporter (not thread-safe due to Jinja2)
+        self._thread_local = threading.local()
 
         # Load documentation config from the centralized config system
         self.config = get_config().docs
@@ -1114,6 +1116,16 @@ class DocumentationIndexer:
 
             self.index_documentation = _locked_index_documentation  # type: ignore[method-assign]
             self._index_documentation_wrapped = True
+
+    def _get_nb_exporter(self) -> MarkdownExporter:
+        """Get or create a thread-local MarkdownExporter instance.
+
+        MarkdownExporter uses Jinja2 templates internally which are not
+        thread-safe, so each thread gets its own instance.
+        """
+        if not hasattr(self._thread_local, "nb_exporter"):
+            self._thread_local.nb_exporter = MarkdownExporter()
+        return self._thread_local.nb_exporter
 
     @property
     def db_lock(self) -> asyncio.Lock:
@@ -1165,27 +1177,34 @@ class DocumentationIndexer:
             await self.index_documentation()
 
     async def clone_or_update_repo(self, repo_name: str, repo_config: "GitRepository", ctx: Context | None = None) -> Optional[Path]:
-        """Clone or update a single repository."""
+        """Clone or update a single repository.
+
+        Delegates to the synchronous implementation via run_in_executor.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._clone_or_update_repo_sync, repo_name, repo_config)
+
+    def _clone_or_update_repo_sync(self, repo_name: str, repo_config: "GitRepository") -> Optional[Path]:
+        """Clone or update a single repository (synchronous, for thread pool).
+
+        Same logic as clone_or_update_repo but uses logger instead of async ctx.
+        """
         repo_path = self.repos_dir / repo_name
 
         try:
             if repo_path.exists():
-                # Update existing repository
-                await log_info(f"Updating {repo_name} repository at {repo_path}...", ctx)
+                logger.info(f"Updating {repo_name} repository at {repo_path}...")
                 repo = git.Repo(repo_path)
                 repo.remotes.origin.pull()
             else:
-                # Clone new repository
-                await log_info(f"Cloning {repo_name} repository to {repo_path}...", ctx)
-                clone_kwargs: dict[str, Any] = {"depth": 1}  # Shallow clone for efficiency
+                logger.info(f"Cloning {repo_name} repository to {repo_path}...")
+                clone_kwargs: dict[str, Any] = {"depth": 1}
 
-                # Add branch, tag, or commit if specified
                 if repo_config.branch:
                     clone_kwargs["branch"] = repo_config.branch
                 elif repo_config.tag:
                     clone_kwargs["branch"] = repo_config.tag
                 elif repo_config.commit:
-                    # For specific commits, we need to clone and then checkout
                     git.Repo.clone_from(str(repo_config.url), repo_path, **clone_kwargs)
                     repo = git.Repo(repo_path)
                     repo.git.checkout(repo_config.commit)
@@ -1195,9 +1214,61 @@ class DocumentationIndexer:
 
             return repo_path
         except Exception as e:
-            msg = f"Failed to clone/update {repo_name}: {e}"
-            await log_warning(msg, ctx)  # Changed from log_exception to log_warning so it doesn't raise
+            logger.warning(f"Failed to clone/update {repo_name}: {e}")
             return None
+
+    def _extract_docs_from_repo_sync(self, repo_path: Path, project: str) -> list[dict[str, Any]]:
+        """Extract documentation files from a repository (synchronous, for thread pool).
+
+        Same logic as extract_docs_from_repo but uses logger instead of async ctx.
+        """
+        docs = []
+        repo_config = self.config.repositories[project]
+
+        if isinstance(repo_config.folders, dict):
+            folders = repo_config.folders
+        else:
+            folders = {name: FolderConfig() for name in repo_config.folders}
+
+        files: set = set()
+        logger.info(f"Processing {project} documentation files in {','.join(folders.keys())}")
+
+        for folder_name in folders.keys():
+            docs_folder: Path = repo_path / folder_name
+            if docs_folder.exists():
+                for pattern in self.config.index_patterns:
+                    files.update(docs_folder.glob(pattern))
+
+        for file in files:
+            if file.exists() and not file.is_dir():
+                folder_name = ""
+                for fname in folders.keys():
+                    folder_path = repo_path / fname
+                    try:
+                        file.relative_to(folder_path)
+                        folder_name = fname
+                        break
+                    except ValueError:
+                        continue
+
+                doc_data = self.process_file(file, project, repo_config, folder_name)
+                if doc_data:
+                    docs.append(doc_data)
+
+        reference_count = sum(1 for doc in docs if doc["is_reference"])
+        regular_count = len(docs) - reference_count
+        logger.info(f"  {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)")
+        return docs
+
+    def _clone_and_extract_repo_sync(self, repo_name: str, repo_config: "GitRepository") -> list[dict[str, Any]]:
+        """Clone/update a repo and extract its documents (single unit of work for thread pool)."""
+        t0 = time.monotonic()
+        repo_path = self._clone_or_update_repo_sync(repo_name, repo_config)
+        if not repo_path:
+            return []
+        docs = self._extract_docs_from_repo_sync(repo_path, repo_name)
+        logger.info(f"Completed {repo_name}: {len(docs)} docs in {time.monotonic() - t0:.1f}s")
+        return docs
 
     def _is_reference_document(self, file_path: Path, project: str, folder_name: str = "") -> bool:
         """Check if the document is a reference document using configurable patterns.
@@ -1371,7 +1442,7 @@ class DocumentationIndexer:
             with open(notebook_path, "r", encoding="utf-8") as f:
                 notebook = nbread(f, as_version=4)
 
-            (body, resources) = self.nb_exporter.from_notebook_node(notebook)
+            (body, resources) = self._get_nb_exporter().from_notebook_node(notebook)
             return body
         except Exception as e:
             logger.error(f"Failed to convert notebook {notebook_path}: {e}")
@@ -1444,64 +1515,41 @@ class DocumentationIndexer:
             return None
 
     async def extract_docs_from_repo(self, repo_path: Path, project: str, ctx: Context | None = None) -> list[dict[str, Any]]:
-        """Extract documentation files from a repository."""
-        docs = []
-        repo_config = self.config.repositories[project]
+        """Extract documentation files from a repository.
 
-        # Use the new folder structure with URL path mapping
-        if isinstance(repo_config.folders, dict):
-            folders = repo_config.folders
-        else:
-            # Convert list to dict with default FolderConfig
-            folders = {name: FolderConfig() for name in repo_config.folders}
-
-        files: set = set()
-        await log_info(f"Processing {project} documentation files in {','.join(folders.keys())}", ctx)
-
-        for folder_name in folders.keys():
-            docs_folder: Path = repo_path / folder_name
-            if docs_folder.exists():
-                # Use index patterns from config
-                for pattern in self.config.index_patterns:
-                    files.update(docs_folder.glob(pattern))
-
-        for file in files:
-            if file.exists() and not file.is_dir():
-                # Determine which folder this file belongs to
-                folder_name = ""
-                for fname in folders.keys():
-                    folder_path = repo_path / fname
-                    try:
-                        file.relative_to(folder_path)
-                        folder_name = fname
-                        break
-                    except ValueError:
-                        continue
-
-                doc_data = self.process_file(file, project, repo_config, folder_name)
-                if doc_data:
-                    docs.append(doc_data)
-
-        # Count reference vs regular documents
-        reference_count = sum(1 for doc in docs if doc["is_reference"])
-        regular_count = len(docs) - reference_count
-
-        await log_info(f"  📄 {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)", ctx)
-        return docs
+        Delegates to the synchronous implementation via run_in_executor.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._extract_docs_from_repo_sync, repo_path, project)
 
     async def index_documentation(self, ctx: Context | None = None):
         """Indexes all documentation."""
+        overall_t0 = time.monotonic()
         await log_info("Starting documentation indexing...", ctx)
 
-        all_docs = []
+        all_docs: list[dict[str, Any]] = []
 
-        # Clone/update repositories and extract documentation
-        for repo_name, repo_config in self.config.repositories.items():
-            await log_info(f"Processing {repo_name}...", ctx)
-            repo_path = await self.clone_or_update_repo(repo_name, repo_config)
-            if repo_path:
-                docs = await self.extract_docs_from_repo(repo_path, repo_name, ctx)
-                all_docs.extend(docs)
+        # Clone/update repositories and extract documentation in parallel
+        num_repos = len(self.config.repositories)
+        if num_repos > 0:
+            max_workers = min(4, num_repos)
+            await log_info(f"Processing {num_repos} repositories with {max_workers} workers...", ctx)
+
+            loop = asyncio.get_running_loop()
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    loop.run_in_executor(executor, self._clone_and_extract_repo_sync, repo_name, repo_config): repo_name
+                    for repo_name, repo_config in self.config.repositories.items()
+                }
+                gather_results = await asyncio.gather(*futures.keys(), return_exceptions=True)
+                for result, repo_name in zip(gather_results, futures.values(), strict=False):
+                    if isinstance(result, BaseException):
+                        await log_warning(f"Repository {repo_name} failed: {result}", ctx)
+                    elif isinstance(result, list):
+                        all_docs.extend(result)
+
+        clone_extract_elapsed = time.monotonic() - overall_t0
+        await log_info(f"Clone + extract completed in {clone_extract_elapsed:.1f}s ({len(all_docs)} documents)", ctx)
 
         if not all_docs:
             await log_warning("No documentation found to index", ctx)
@@ -1582,7 +1630,8 @@ class DocumentationIndexer:
             await self._restore_from_backup(ctx)
             raise
 
-        await log_info(f"✅ Successfully indexed {len(all_chunks)} chunks from {len(all_docs)} documents", ctx)
+        total_elapsed = time.monotonic() - overall_t0
+        await log_info(f"✅ Successfully indexed {len(all_chunks)} chunks from {len(all_docs)} documents in {total_elapsed:.1f}s", ctx)
         await log_info(f"📊 Vector database stored at: {self._vector_db_path}", ctx)
         await log_info(f"🔍 Index contains {self.collection.count()} total documents", ctx)
 
