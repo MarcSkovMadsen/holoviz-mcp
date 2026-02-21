@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import chromadb
 import pytest
@@ -6,6 +7,7 @@ from pydantic import AnyHttpUrl
 
 from holoviz_mcp.config import GitRepository
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import chunk_document
 from holoviz_mcp.holoviz_mcp.data import convert_path_to_url
 from holoviz_mcp.holoviz_mcp.data import extract_keywords
 from holoviz_mcp.holoviz_mcp.data import extract_relevant_excerpt
@@ -576,3 +578,297 @@ async def test_restore_from_backup_on_write_failure(tmp_path):
     result = indexer.collection.get(ids=["doc1"])
     assert result["ids"] == ["doc1"]
     assert result["documents"] == ["hello world"]
+
+
+# --- chunk_document tests ---
+
+
+def _make_doc(**overrides: Any) -> dict[str, Any]:
+    """Create a minimal document dict for testing chunk_document()."""
+    doc: dict[str, Any] = {
+        "id": "test___doc_md",
+        "title": "Test Doc",
+        "url": "https://example.com/doc.html",
+        "project": "test-project",
+        "source_path": "doc/test.md",
+        "source_path_stem": "test",
+        "source_url": "https://github.com/org/repo/blob/main/doc/test.md",
+        "description": "A test document.",
+        "is_reference": False,
+        "content": "Hello world",
+    }
+    doc.update(overrides)
+    return doc
+
+
+def test_chunk_document_no_headers():
+    """Document without headers -> single chunk with chunk_index=0."""
+    doc = _make_doc(content="No headers here, just plain text that is long enough to survive filtering.")
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["chunk_index"] == 0
+    assert chunks[0]["parent_id"] == doc["id"]
+    assert "No headers here" in chunks[0]["content"]
+
+
+def test_chunk_document_single_h1():
+    """Document with one H1 -> preamble + 1 section (2 chunks)."""
+    preamble = "This is the preamble with enough text to pass the minimum character threshold for chunking. Adding more text to exceed 100 characters."
+    section = "This is section one content with enough text to pass the minimum character threshold. Adding more text to exceed 100 characters."
+    content = f"{preamble}\n# Section One\n{section}"
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    assert len(chunks) == 2
+    assert "preamble" in chunks[0]["content"]
+    assert "# Section One" in chunks[1]["content"]
+
+
+def test_chunk_document_multiple_h2():
+    """Multiple H2 headers -> correct number of chunks."""
+    filler = " Extra filler text to ensure each section is well over the one hundred character minimum threshold."
+    content = (
+        f"Preamble text that is definitely long enough to pass the minimum character threshold for this test.{filler}\n"
+        f"## Section A\nContent A with enough text to pass the minimum character threshold for chunking.{filler}\n"
+        f"## Section B\nContent B with enough text to pass the minimum character threshold for chunking.{filler}\n"
+        f"## Section C\nContent C with enough text to pass the minimum character threshold for chunking.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    assert len(chunks) == 4  # preamble + 3 sections
+    assert "## Section A" in chunks[1]["content"]
+    assert "## Section B" in chunks[2]["content"]
+    assert "## Section C" in chunks[3]["content"]
+
+
+def test_chunk_document_metadata_preserved():
+    """All parent metadata (url, project, etc.) copied to each chunk."""
+    filler = " Extra filler text to ensure each section is over the minimum threshold."
+    content = (
+        f"Preamble text long enough to survive the minimum character threshold easily.{filler}"
+        f"\n# Section\nSection content long enough to survive the minimum character threshold easily.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    assert len(chunks) == 2
+
+    for chunk in chunks:
+        assert chunk["title"] == doc["title"]
+        assert chunk["url"] == doc["url"]
+        assert chunk["project"] == doc["project"]
+        assert chunk["source_path"] == doc["source_path"]
+        assert chunk["source_path_stem"] == doc["source_path_stem"]
+        assert chunk["source_url"] == doc["source_url"]
+        assert chunk["description"] == doc["description"]
+        assert chunk["is_reference"] == doc["is_reference"]
+
+
+def test_chunk_document_ids():
+    """Chunk IDs follow {parent_id}___chunk_{N} pattern."""
+    filler = " Extra filler text to ensure each section is over the minimum threshold."
+    content = (
+        f"Preamble with enough text for minimum character threshold easily cleared.{filler}"
+        f"\n# Section\nSection with enough text for minimum character threshold easily cleared.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    for idx, chunk in enumerate(chunks):
+        assert chunk["id"] == f"{doc['id']}___chunk_{idx}"
+
+
+def test_chunk_document_parent_id():
+    """parent_id field set correctly on every chunk."""
+    filler = " Extra filler text to ensure each section is over the minimum threshold."
+    content = (
+        f"Long enough preamble text for the minimum character threshold requirement.{filler}"
+        f"\n## H2\nLong enough section text for the minimum character threshold requirement.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    for chunk in chunks:
+        assert chunk["parent_id"] == doc["id"]
+
+
+def test_chunk_document_skips_tiny_chunks():
+    """Chunks under min_chunk_chars are skipped."""
+    content = (
+        "Preamble text that is definitely long enough to survive filtering at any threshold."
+        "\n# A\nTiny\n# B\nThis section has enough content to survive the minimum character threshold."
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc, min_chunk_chars=50)
+    # "# A\nTiny" should be skipped (only ~10 chars)
+    for chunk in chunks:
+        assert len(chunk["content"].strip()) >= 50
+
+
+def test_chunk_document_empty_content():
+    """Empty content -> single chunk."""
+    doc = _make_doc(content="")
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["chunk_index"] == 0
+    # Title prefix is prepended even for empty content
+    assert chunks[0]["content"] == "Test Doc\n\n"
+    assert chunks[0]["raw_content"] == ""
+
+
+def test_chunk_document_h3_no_split():
+    """H3/H4 headers do NOT cause splitting."""
+    content = "Preamble long enough text to pass any threshold we need for this test to work properly.\n### H3 Header\nH3 content\n#### H4 Header\nH4 content"
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    # H3/H4 should not split, so only 1 chunk
+    assert len(chunks) == 1
+    assert "### H3 Header" in chunks[0]["content"]
+    assert "#### H4 Header" in chunks[0]["content"]
+
+
+def test_chunk_document_code_block_comments_not_split():
+    """Python comments and decorative lines inside code blocks do NOT cause splitting."""
+    content = (
+        "# Real Header\n\n"
+        "Some intro text that is long enough to exceed the minimum character threshold for chunking.\n\n"
+        "```python\n"
+        "# This is a Python comment that should NOT split\n"
+        "x = 1\n"
+        "# ========================================\n"
+        "# Another decorative divider in code\n"
+        "y = 2\n"
+        "```\n\n"
+        "## Second Header\n\n"
+        "More content here that is long enough to exceed the minimum character threshold for chunking."
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    # Should only split at the two real markdown headers, not at Python comments
+    assert len(chunks) == 2
+    assert "# Real Header" in chunks[0]["content"]
+    assert "# This is a Python comment" in chunks[0]["content"]
+    assert "# ========" in chunks[0]["content"]
+    assert "## Second Header" in chunks[1]["content"]
+
+
+# --- Search content mode tests ---
+
+# Multi-section document for content mode testing
+MULTI_SECTION_CONTENT = (
+    "This is the preamble of the test document. It contains general information about the document. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters. "
+    "Adding more text to make sure this preamble section is substantial enough for proper chunking.\n"
+    "## Section Alpha\n"
+    "This is the first section about alpha topics. It discusses alpha-related features and functionality. "
+    "The alpha section contains information about configuration, setup, and basic usage patterns. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Section Beta\n"
+    "This is the second section about beta features. Beta features include advanced formatting options. "
+    "The beta section covers formatters, editors, and other display customization possibilities. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Section Gamma\n"
+    "This is the third section covering gamma capabilities. Gamma includes pagination and data loading. "
+    "The gamma section explains page_size, local vs remote pagination, and streaming data updates. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters."
+)
+
+
+@pytest.fixture
+def populated_indexer(tmp_path):
+    """Create an indexer with a multi-chunk test document for content mode testing."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+
+    indexer = DocumentationIndexer(
+        data_dir=tmp_path,
+        repos_dir=tmp_path / "repos",
+        vector_dir=tmp_path / "chroma",
+    )
+
+    doc = _make_doc(content=MULTI_SECTION_CONTENT, title="Test Document")
+    chunks = chunk_document(doc)
+    assert len(chunks) >= 3, f"Expected at least 3 chunks, got {len(chunks)}"
+
+    indexer.collection.add(
+        documents=[c["content"] for c in chunks],
+        metadatas=[
+            {
+                "title": c["title"],
+                "url": c["url"],
+                "project": c["project"],
+                "source_path": c["source_path"],
+                "source_path_stem": c["source_path_stem"],
+                "source_url": c["source_url"],
+                "description": c["description"],
+                "is_reference": c["is_reference"],
+                "chunk_index": c["chunk_index"],
+                "parent_id": c["parent_id"],
+            }
+            for c in chunks
+        ],
+        ids=[c["id"] for c in chunks],
+    )
+
+    return indexer
+
+
+@pytest.mark.asyncio
+async def test_search_content_chunk_returns_single_chunk(populated_indexer):
+    """content='chunk' returns only the best-matching chunk, not the full document."""
+    results = await populated_indexer.search("alpha", content="chunk", max_results=1)
+    assert len(results) == 1
+    doc = results[0]
+    assert doc.content is not None
+    # Should contain the alpha section
+    assert "alpha" in doc.content.lower()
+    # Should NOT contain the full document (just a single chunk)
+    full_doc = await populated_indexer.get_document(doc.source_path, doc.project)
+    assert len(doc.content) < len(full_doc.content)
+
+
+@pytest.mark.asyncio
+async def test_search_content_truncated_returns_full_doc_truncated(populated_indexer):
+    """content='truncated' returns truncated full document content."""
+    results = await populated_indexer.search("alpha", content="truncated", max_results=1, max_content_chars=300)
+    assert len(results) == 1
+    doc = results[0]
+    assert doc.content is not None
+    # Should be truncated — the full doc is much longer than 300 chars
+    full_doc = await populated_indexer.get_document(doc.source_path, doc.project)
+    assert len(doc.content) < len(full_doc.content)
+
+
+@pytest.mark.asyncio
+async def test_search_content_full_returns_complete_document(populated_indexer):
+    """content='full' returns the complete untruncated document."""
+    results = await populated_indexer.search("alpha", content="full", max_results=1)
+    assert len(results) == 1
+    doc = results[0]
+    assert doc.content is not None
+    # Should contain ALL sections
+    assert "alpha" in doc.content.lower()
+    assert "beta" in doc.content.lower()
+    assert "gamma" in doc.content.lower()
+    # Should match get_document() output
+    full_doc = await populated_indexer.get_document(doc.source_path, doc.project)
+    assert doc.content == full_doc.content
+
+
+@pytest.mark.asyncio
+async def test_search_content_false_returns_no_content(populated_indexer):
+    """content=False returns None for content."""
+    results = await populated_indexer.search("alpha", content=False, max_results=1)
+    assert len(results) == 1
+    assert results[0].content is None
+
+
+@pytest.mark.asyncio
+async def test_search_content_true_backward_compat(populated_indexer):
+    """content=True behaves like 'truncated' (backward compatibility)."""
+    results_true = await populated_indexer.search("alpha", content=True, max_results=1)
+    results_truncated = await populated_indexer.search("alpha", content="truncated", max_results=1)
+    assert len(results_true) == 1
+    assert len(results_truncated) == 1
+    # Both should have content
+    assert results_true[0].content is not None
+    assert results_truncated[0].content is not None
+    # Content should be the same
+    assert results_true[0].content == results_truncated[0].content

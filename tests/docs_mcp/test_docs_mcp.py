@@ -173,3 +173,101 @@ async def test_search_with_project_filter():
         result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "hvplot"})
         assert result.data
         assert result.data.title == "hvPlot"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_get_document_returns_full_content_after_chunking():
+    """get_document() reconstructs full content from chunks."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "hvplot"})
+        assert result.data
+        # Content should be non-empty and substantial (reconstructed from all chunks)
+        assert result.data.content is not None
+        assert len(result.data.content) > 100
+        # Should contain content that appears in the full document
+        assert "hvPlot" in result.data.content or "hvplot" in result.data.content.lower()
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_search_returns_unique_source_paths():
+    """search() deduplicates by source_path — no two results share the same path."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("search", {"query": "widgets buttons interactive", "project": "panel", "max_results": 5})
+        assert result.data
+        assert isinstance(result.data, list)
+
+        # All source_paths should be unique
+        paths = [doc["source_path"] for doc in result.data]
+        assert len(paths) == len(set(paths)), f"Duplicate source_paths found: {paths}"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_reference_guide_content_complete_after_chunking():
+    """Reference guide returns complete merged content from all chunks."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
+        assert result.data
+        assert isinstance(result.data, list)
+        assert len(result.data) == 1
+
+        doc = result.data[0]
+        assert doc["content"] is not None
+        # Content should be substantial (merged from chunks, not just first chunk)
+        assert len(doc["content"]) > 200
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_search_content_mode_chunk():
+    """MCP tool with content='chunk' returns chunk-sized content."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("search", {"query": "Button widget", "project": "panel", "content": "chunk", "max_results": 1})
+        assert result.data
+        assert isinstance(result.data, list)
+        assert len(result.data) >= 1
+
+        doc = result.data[0]
+        assert doc.get("content") is not None
+
+        # Chunk content should be smaller than full document content
+        full_result = await client.call_tool("get_document", {"path": doc["source_path"], "project": doc["project"]})
+        assert full_result.data
+        assert len(doc["content"]) < len(full_result.data.content)
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_search_content_mode_full():
+    """MCP tool with content='full' returns content matching get_document()."""
+    client = Client(mcp)
+    async with client:
+        # Get search result with full content
+        search_result = await client.call_tool("search", {"query": "Button widget", "project": "panel", "content": "full", "max_results": 1})
+        assert search_result.data
+        search_doc = search_result.data[0]
+
+        # Get the same document via get_document
+        full_doc = await client.call_tool("get_document", {"path": search_doc["source_path"], "project": search_doc["project"]})
+        assert full_doc.data
+
+        # Content should match
+        assert search_doc.get("content") == full_doc.data.content
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_search_content_mode_truncated_default():
+    """Default content mode returns truncated full content."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("search", {"query": "dashboard layout", "max_results": 1})
+        assert result.data
+        doc = result.data[0]
+        assert doc.get("content") is not None

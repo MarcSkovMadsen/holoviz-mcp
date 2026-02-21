@@ -8,14 +8,20 @@ to 1-3 minutes. Uses a fixed path (~/.holoviz-mcp-test/) for CI caching.
 import asyncio
 import logging
 import os
+import shutil
 from pathlib import Path
 
 import pytest
+from chromadb.api.shared_system_client import SharedSystemClient
 
 from holoviz_mcp.config.loader import ConfigLoader
 from holoviz_mcp.config.models import HoloVizMCPConfig
 
 logger = logging.getLogger(__name__)
+
+# Bump this version whenever the ChromaDB schema changes (e.g. new metadata fields).
+# A mismatch triggers a clean re-index so tests use the updated schema.
+SCHEMA_VERSION = "v4_title_prefixed_chunks"
 
 # Fixed test directory (not tmp_path) so CI can cache the index across runs.
 # Override with HOLOVIZ_MCP_TEST_DIR for custom locations or concurrent sessions.
@@ -88,6 +94,21 @@ def docs_test_config():
         ", ".join(config.docs.repositories.keys()),
         config.server.vector_db_path,
     )
+
+    # Check schema version — wipe the vector DB if the schema has changed
+    # so tests re-index with the new metadata fields (e.g. chunk_index, parent_id).
+    schema_marker = TEST_DATA_DIR / ".schema_version"
+    schema_stale = not schema_marker.exists() or schema_marker.read_text().strip() != SCHEMA_VERSION
+    if schema_stale:
+        vector_db_path = config.server.vector_db_path
+        if vector_db_path.exists():
+            logger.info("Schema version changed to %s — wiping test vector DB at %s", SCHEMA_VERSION, vector_db_path)
+            shutil.rmtree(vector_db_path, ignore_errors=True)
+            SharedSystemClient.clear_system_cache()
+            # Reset indexer so it picks up the cleaned DB
+            server_module._indexer = None
+        schema_marker.parent.mkdir(parents=True, exist_ok=True)
+        schema_marker.write_text(SCHEMA_VERSION)
 
     # Pre-build the index if it doesn't exist.  This MUST happen here (outside
     # any db_lock) because the MCP tools call ensure_indexed() from within
