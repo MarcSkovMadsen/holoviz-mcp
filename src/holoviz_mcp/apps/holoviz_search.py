@@ -40,7 +40,11 @@ This tool provides powerful semantic search capabilities across the extended Hol
 - **`query`**: Your search text - the tool uses semantic similarity to find the most relevant documents
 - **`project`**: Filter results by specific project (e.g., "panel", "hvplot", "datashader") or search across all projects
 - **`max_results`**: Control the number of results returned (1-50 documents)
-- **`content`**: Choose whether to include full document content or just metadata for faster responses
+- **`content`**: Controls what content is returned per result:
+  - `"truncated"` (default): Full document content, smart-truncated around query keywords
+  - `"chunk"`: Only the best-matching chunk from the document (useful for quick snippets)
+  - `"full"`: Complete document content with no truncation (can be very large)
+  - `"none"`: No content, metadata only (fastest)
 - **`max_content_chars`**: Maximum characters of content per result (100-50,000). Smaller values provide faster responses. Content is truncated at word boundaries with query-relevant excerpts.
 
 ### Query Optimization Tips
@@ -103,8 +107,11 @@ class SearchConfiguration(param.Parameterized):
 
     max_results = param.Integer(default=2, bounds=(1, 50), doc="Maximum number of search results to return")
 
-    content = param.Boolean(
-        default=True, label="Include Full Content", doc="Include full document content in results. Disable for faster and simpler responses with metadata only."
+    content = param.Selector(
+        default="truncated",
+        objects=["truncated", "chunk", "full", "none"],
+        doc='Controls what content is returned. "truncated": full doc smart-truncated around query keywords (default). '
+        '"chunk": only best-matching chunk. "full": complete document, no truncation. "none": metadata only (fastest).',
     )
 
     max_content_chars = param.Integer(
@@ -131,9 +138,8 @@ class SearchConfiguration(param.Parameterized):
     async def _update_results(self):
         indexer = _get_indexer()
         project = self.project if self.project != ALL else None
-        self.results = await indexer.search(
-            self.query, project=project, content=self.content, max_results=self.max_results, max_content_chars=self.max_content_chars
-        )
+        content = self.content if self.content != "none" else False
+        self.results = await indexer.search(self.query, project=project, content=content, max_results=self.max_results, max_content_chars=self.max_content_chars)
 
 
 async def _update_projects(self):

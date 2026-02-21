@@ -1,15 +1,41 @@
 from pathlib import Path
+from typing import Any
 
+import chromadb
 import pytest
 from pydantic import AnyHttpUrl
 
 from holoviz_mcp.config import GitRepository
 from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
+from holoviz_mcp.holoviz_mcp.data import _build_context_prefix
+from holoviz_mcp.holoviz_mcp.data import _build_stem_boost_clause
+from holoviz_mcp.holoviz_mcp.data import _build_where_document_clause
+from holoviz_mcp.holoviz_mcp.data import _extract_reference_category
+from holoviz_mcp.holoviz_mcp.data import chunk_document
 from holoviz_mcp.holoviz_mcp.data import convert_path_to_url
 from holoviz_mcp.holoviz_mcp.data import extract_keywords
+from holoviz_mcp.holoviz_mcp.data import extract_pascal_terms
 from holoviz_mcp.holoviz_mcp.data import extract_relevant_excerpt
+from holoviz_mcp.holoviz_mcp.data import extract_tech_terms
 from holoviz_mcp.holoviz_mcp.data import find_keyword_matches
 from holoviz_mcp.holoviz_mcp.data import truncate_content
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _reset_server_indexer_after_module():
+    """Reset the server's indexer singleton after this module's tests.
+
+    Tests in this module create isolated DocumentationIndexer instances and
+    call SharedSystemClient.clear_system_cache() which invalidates cached
+    ChromaDB clients. This fixture ensures the server singleton is reset so
+    subsequent test modules (e.g. reference guide tests) re-create their
+    indexer with a fresh client.
+    """
+    yield
+
+    import holoviz_mcp.holoviz_mcp.server as server_module
+
+    server_module._indexer = None
 
 
 def is_reference_path(relative_path: Path) -> bool:
@@ -472,3 +498,1367 @@ def test_truncate_content_with_special_characters():
     # Should handle special characters gracefully
     assert result is not None
     assert "foo-bar" in result or "baz_qux" in result or "Start text" in result
+
+
+# --- ChromaDB health check and backup tests ---
+
+
+def test_init_health_check_recovers_from_corrupt_db(tmp_path):
+    """ChromaDB init recovers from a corrupt database by wiping and reinitializing."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    vector_dir = tmp_path / "chroma"
+    vector_dir.mkdir()
+
+    # Write a corrupt chroma.sqlite3 to trigger an init failure
+    (vector_dir / "chroma.sqlite3").write_text("THIS IS NOT A VALID SQLITE FILE")
+
+    # Clear cached ChromaDB state from other tests to avoid stale references
+    SharedSystemClient.clear_system_cache()
+
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+    # Should have recovered: collection exists and is empty
+    assert indexer.collection.count() == 0
+
+
+def test_init_health_check_reraises_keyboard_interrupt(tmp_path):
+    """KeyboardInterrupt during ChromaDB init is not swallowed."""
+    from unittest.mock import patch
+
+    vector_dir = tmp_path / "chroma"
+    vector_dir.mkdir()
+
+    with patch("chromadb.PersistentClient", side_effect=KeyboardInterrupt):
+        with pytest.raises(KeyboardInterrupt):
+            DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+
+def test_is_indexed_catches_base_exception(tmp_path):
+    """is_indexed() returns False when collection.count() raises a BaseException subclass."""
+    from unittest.mock import PropertyMock
+    from unittest.mock import patch
+
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Simulate a PanicException (BaseException subclass) from ChromaDB's Rust backend
+    class FakePanicException(BaseException):
+        pass
+
+    with patch.object(type(indexer.collection), "count", new_callable=PropertyMock) as mock_count:
+        mock_count.return_value = FakePanicException("rust panic")
+        # Replace count as a regular method that raises
+        indexer.collection.count = lambda: (_ for _ in ()).throw(FakePanicException("rust panic"))  # type: ignore[assignment]
+        assert indexer.is_indexed() is False
+
+
+def test_backup_path_property(tmp_path):
+    """_backup_path returns the correct sibling path with .bak suffix."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+    assert indexer._backup_path == tmp_path / "chroma.bak"
+
+
+@pytest.mark.asyncio
+async def test_restore_from_backup_on_write_failure(tmp_path):
+    """On write failure, _restore_from_backup recovers original data."""
+    import shutil
+
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    vector_dir = tmp_path / "chroma"
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+    # Seed the collection with one document
+    indexer.collection.add(documents=["hello world"], metadatas=[{"project": "test"}], ids=["doc1"])
+    assert indexer.collection.count() == 1
+
+    # Force-flush by recreating the client so all WAL data is checkpointed
+    del indexer.chroma_client
+    SharedSystemClient.clear_system_cache()
+    client = chromadb.PersistentClient(path=str(vector_dir))
+    assert client.get_or_create_collection("holoviz_docs").count() == 1
+    del client
+    SharedSystemClient.clear_system_cache()
+
+    # Create a backup (simulating what index_documentation does)
+    backup_path = indexer._backup_path
+    shutil.copytree(vector_dir, backup_path, dirs_exist_ok=True)
+
+    # Recreate indexer to get fresh client after backup
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=vector_dir)
+
+    # Now corrupt the live database by clearing and adding a bad doc
+    indexer.collection.delete(ids=["doc1"])
+    indexer.collection.add(documents=["corrupted"], metadatas=[{"project": "bad"}], ids=["bad1"])
+    assert indexer.collection.count() == 1
+
+    # Restore from backup
+    await indexer._restore_from_backup()
+
+    # After restore, should have the original document back
+    assert indexer.collection.count() == 1
+    result = indexer.collection.get(ids=["doc1"])
+    assert result["ids"] == ["doc1"]
+    assert result["documents"] == ["hello world"]
+
+
+# --- chunk_document tests ---
+
+
+def _make_doc(**overrides: Any) -> dict[str, Any]:
+    """Create a minimal document dict for testing chunk_document()."""
+    doc: dict[str, Any] = {
+        "id": "test___doc_md",
+        "title": "Test Doc",
+        "url": "https://example.com/doc.html",
+        "project": "test-project",
+        "source_path": "doc/test.md",
+        "source_path_stem": "test",
+        "source_url": "https://github.com/org/repo/blob/main/doc/test.md",
+        "description": "A test document.",
+        "is_reference": False,
+        "content": "Hello world",
+    }
+    doc.update(overrides)
+    return doc
+
+
+def test_chunk_document_no_headers():
+    """Document without headers -> single chunk with chunk_index=0."""
+    doc = _make_doc(content="No headers here, just plain text that is long enough to survive filtering.")
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["chunk_index"] == 0
+    assert chunks[0]["parent_id"] == doc["id"]
+    assert "No headers here" in chunks[0]["content"]
+
+
+def test_chunk_document_single_h1():
+    """Document with one H1 -> preamble + 1 section (2 chunks)."""
+    preamble = "This is the preamble with enough text to pass the minimum character threshold for chunking. Adding more text to exceed 100 characters."
+    section = "This is section one content with enough text to pass the minimum character threshold. Adding more text to exceed 100 characters."
+    content = f"{preamble}\n# Section One\n{section}"
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    assert len(chunks) == 2
+    assert "preamble" in chunks[0]["content"]
+    assert "# Section One" in chunks[1]["content"]
+
+
+def test_chunk_document_multiple_h2():
+    """Multiple H2 headers -> correct number of chunks."""
+    filler = " Extra filler text to ensure each section is well over the one hundred character minimum threshold."
+    content = (
+        f"Preamble text that is definitely long enough to pass the minimum character threshold for this test.{filler}\n"
+        f"## Section A\nContent A with enough text to pass the minimum character threshold for chunking.{filler}\n"
+        f"## Section B\nContent B with enough text to pass the minimum character threshold for chunking.{filler}\n"
+        f"## Section C\nContent C with enough text to pass the minimum character threshold for chunking.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    assert len(chunks) == 4  # preamble + 3 sections
+    assert "## Section A" in chunks[1]["content"]
+    assert "## Section B" in chunks[2]["content"]
+    assert "## Section C" in chunks[3]["content"]
+
+
+def test_chunk_document_metadata_preserved():
+    """All parent metadata (url, project, etc.) copied to each chunk."""
+    filler = " Extra filler text to ensure each section is over the minimum threshold."
+    content = (
+        f"Preamble text long enough to survive the minimum character threshold easily.{filler}"
+        f"\n# Section\nSection content long enough to survive the minimum character threshold easily.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    assert len(chunks) == 2
+
+    for chunk in chunks:
+        assert chunk["title"] == doc["title"]
+        assert chunk["url"] == doc["url"]
+        assert chunk["project"] == doc["project"]
+        assert chunk["source_path"] == doc["source_path"]
+        assert chunk["source_path_stem"] == doc["source_path_stem"]
+        assert chunk["source_url"] == doc["source_url"]
+        assert chunk["description"] == doc["description"]
+        assert chunk["is_reference"] == doc["is_reference"]
+
+
+def test_chunk_document_ids():
+    """Chunk IDs follow {parent_id}___chunk_{N} pattern."""
+    filler = " Extra filler text to ensure each section is over the minimum threshold."
+    content = (
+        f"Preamble with enough text for minimum character threshold easily cleared.{filler}"
+        f"\n# Section\nSection with enough text for minimum character threshold easily cleared.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    for idx, chunk in enumerate(chunks):
+        assert chunk["id"] == f"{doc['id']}___chunk_{idx}"
+
+
+def test_chunk_document_parent_id():
+    """parent_id field set correctly on every chunk."""
+    filler = " Extra filler text to ensure each section is over the minimum threshold."
+    content = (
+        f"Long enough preamble text for the minimum character threshold requirement.{filler}"
+        f"\n## H2\nLong enough section text for the minimum character threshold requirement.{filler}"
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    for chunk in chunks:
+        assert chunk["parent_id"] == doc["id"]
+
+
+def test_chunk_document_skips_tiny_chunks():
+    """Chunks under min_chunk_chars are skipped."""
+    content = (
+        "Preamble text that is definitely long enough to survive filtering at any threshold."
+        "\n# A\nTiny\n# B\nThis section has enough content to survive the minimum character threshold."
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc, min_chunk_chars=50)
+    # "# A\nTiny" should be skipped (only ~10 chars)
+    for chunk in chunks:
+        assert len(chunk["content"].strip()) >= 50
+
+
+def test_chunk_document_empty_content():
+    """Empty content -> single chunk."""
+    doc = _make_doc(content="")
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["chunk_index"] == 0
+    # Context prefix + title prefix is prepended even for empty content
+    assert chunks[0]["content"] == "test-project\nTest Doc\n\n"
+    assert chunks[0]["raw_content"] == ""
+
+
+def test_chunk_document_h3_no_split():
+    """H3/H4 headers do NOT cause splitting."""
+    content = "Preamble long enough text to pass any threshold we need for this test to work properly.\n### H3 Header\nH3 content\n#### H4 Header\nH4 content"
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    # H3/H4 should not split, so only 1 chunk
+    assert len(chunks) == 1
+    assert "### H3 Header" in chunks[0]["content"]
+    assert "#### H4 Header" in chunks[0]["content"]
+
+
+def test_chunk_document_code_block_comments_not_split():
+    """Python comments and decorative lines inside code blocks do NOT cause splitting."""
+    content = (
+        "# Real Header\n\n"
+        "Some intro text that is long enough to exceed the minimum character threshold for chunking.\n\n"
+        "```python\n"
+        "# This is a Python comment that should NOT split\n"
+        "x = 1\n"
+        "# ========================================\n"
+        "# Another decorative divider in code\n"
+        "y = 2\n"
+        "```\n\n"
+        "## Second Header\n\n"
+        "More content here that is long enough to exceed the minimum character threshold for chunking."
+    )
+    doc = _make_doc(content=content)
+    chunks = chunk_document(doc)
+    # Should only split at the two real markdown headers, not at Python comments
+    assert len(chunks) == 2
+    assert "# Real Header" in chunks[0]["content"]
+    assert "# This is a Python comment" in chunks[0]["content"]
+    assert "# ========" in chunks[0]["content"]
+    assert "## Second Header" in chunks[1]["content"]
+
+
+# --- Search content mode tests ---
+
+# Multi-section document for content mode testing
+MULTI_SECTION_CONTENT = (
+    "This is the preamble of the test document. It contains general information about the document. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters. "
+    "Adding more text to make sure this preamble section is substantial enough for proper chunking.\n"
+    "## Section Alpha\n"
+    "This is the first section about alpha topics. It discusses alpha-related features and functionality. "
+    "The alpha section contains information about configuration, setup, and basic usage patterns. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Section Beta\n"
+    "This is the second section about beta features. Beta features include advanced formatting options. "
+    "The beta section covers formatters, editors, and other display customization possibilities. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Section Gamma\n"
+    "This is the third section covering gamma capabilities. Gamma includes pagination and data loading. "
+    "The gamma section explains page_size, local vs remote pagination, and streaming data updates. "
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters."
+)
+
+
+TECH_TERMS_CONTENT = (
+    "# Tabulator Reference Guide\n"
+    "The Tabulator widget provides a feature-rich table component for displaying and editing data.\n"
+    "It supports a wide range of configuration options for columns, filtering, and pagination.\n"
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Editors\n"
+    "The SelectEditor allows choosing values from a dropdown list of options.\n"
+    "The CheckboxEditor provides a boolean toggle for true/false columns.\n"
+    "Use add_filter to apply programmatic filters to the table data.\n"
+    "The NumberEditor supports min, max, and step constraints for numeric input.\n"
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+    "## Formatters\n"
+    "The NumberFormatter controls how numeric values are displayed in table cells.\n"
+    "Use param.watch to respond to value changes and trigger callbacks.\n"
+    "The BooleanFormatter renders checkmarks for true values and crosses for false values.\n"
+    "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters."
+)
+
+
+@pytest.fixture
+def populated_indexer(tmp_path):
+    """Create an indexer with a multi-chunk test document for content mode testing."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+
+    indexer = DocumentationIndexer(
+        data_dir=tmp_path,
+        repos_dir=tmp_path / "repos",
+        vector_dir=tmp_path / "chroma",
+    )
+
+    # Document 1: multi-section document for content mode tests
+    doc = _make_doc(content=MULTI_SECTION_CONTENT, title="Test Document")
+    chunks = chunk_document(doc)
+    assert len(chunks) >= 3, f"Expected at least 3 chunks, got {len(chunks)}"
+
+    # Document 2: technical terms document for keyword pre-filter tests
+    tech_doc = _make_doc(
+        id="tabulator___ref_md",
+        content=TECH_TERMS_CONTENT,
+        title="Tabulator Reference Guide",
+        source_path="doc/reference/Tabulator.md",
+        source_path_stem="Tabulator",
+        is_reference=True,
+    )
+    tech_chunks = chunk_document(tech_doc)
+
+    # Document 3: Scatter reference guide for metadata boost tests
+    scatter_content = (
+        "# Scatter\n"
+        "A Scatter element visualizes data as a collection of point glyphs in a 2D space.\n"
+        "Scatter is useful for exploring relationships between two continuous variables.\n"
+        "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters.\n"
+        "## Options\n"
+        "Scatter supports color, size, and marker options for customizing the appearance.\n"
+        "You can also use hover tools to display additional information about each point.\n"
+        "This text should be long enough to exceed the minimum chunk character threshold of one hundred characters."
+    )
+    scatter_doc = _make_doc(
+        id="scatter___ref_ipynb",
+        content=scatter_content,
+        title="Scatter",
+        source_path="examples/reference/elements/Scatter.ipynb",
+        source_path_stem="Scatter",
+        is_reference=True,
+    )
+    scatter_chunks = chunk_document(scatter_doc)
+
+    all_chunks = chunks + tech_chunks + scatter_chunks
+
+    indexer.collection.add(
+        documents=[c["content"] for c in all_chunks],
+        metadatas=[
+            {
+                "title": c["title"],
+                "url": c["url"],
+                "project": c["project"],
+                "source_path": c["source_path"],
+                "source_path_stem": c["source_path_stem"],
+                "source_url": c["source_url"],
+                "description": c["description"],
+                "is_reference": c["is_reference"],
+                "chunk_index": c["chunk_index"],
+                "parent_id": c["parent_id"],
+            }
+            for c in all_chunks
+        ],
+        ids=[c["id"] for c in all_chunks],
+    )
+
+    return indexer
+
+
+@pytest.mark.asyncio
+async def test_search_content_chunk_returns_single_chunk(populated_indexer):
+    """content='chunk' returns only the best-matching chunk, not the full document."""
+    results = await populated_indexer.search("alpha", content="chunk", max_results=1)
+    assert len(results) == 1
+    doc = results[0]
+    assert doc.content is not None
+    # Should contain the alpha section
+    assert "alpha" in doc.content.lower()
+    # Should NOT contain the full document (just a single chunk)
+    full_doc = await populated_indexer.get_document(doc.source_path, doc.project)
+    assert len(doc.content) < len(full_doc.content)
+
+
+@pytest.mark.asyncio
+async def test_search_content_truncated_returns_full_doc_truncated(populated_indexer):
+    """content='truncated' returns truncated full document content."""
+    results = await populated_indexer.search("alpha", content="truncated", max_results=1, max_content_chars=300)
+    assert len(results) == 1
+    doc = results[0]
+    assert doc.content is not None
+    # Should be truncated — the full doc is much longer than 300 chars
+    full_doc = await populated_indexer.get_document(doc.source_path, doc.project)
+    assert len(doc.content) < len(full_doc.content)
+
+
+@pytest.mark.asyncio
+async def test_search_content_full_returns_complete_document(populated_indexer):
+    """content='full' returns the complete untruncated document."""
+    results = await populated_indexer.search("alpha", content="full", max_results=1)
+    assert len(results) == 1
+    doc = results[0]
+    assert doc.content is not None
+    # Should contain ALL sections
+    assert "alpha" in doc.content.lower()
+    assert "beta" in doc.content.lower()
+    assert "gamma" in doc.content.lower()
+    # Should match get_document() output
+    full_doc = await populated_indexer.get_document(doc.source_path, doc.project)
+    assert doc.content == full_doc.content
+
+
+@pytest.mark.asyncio
+async def test_search_content_false_returns_no_content(populated_indexer):
+    """content=False returns None for content."""
+    results = await populated_indexer.search("alpha", content=False, max_results=1)
+    assert len(results) == 1
+    assert results[0].content is None
+
+
+@pytest.mark.asyncio
+async def test_search_content_true_backward_compat(populated_indexer):
+    """content=True behaves like 'truncated' (backward compatibility)."""
+    results_true = await populated_indexer.search("alpha", content=True, max_results=1)
+    results_truncated = await populated_indexer.search("alpha", content="truncated", max_results=1)
+    assert len(results_true) == 1
+    assert len(results_truncated) == 1
+    # Both should have content
+    assert results_true[0].content is not None
+    assert results_truncated[0].content is not None
+    # Content should be the same
+    assert results_true[0].content == results_truncated[0].content
+
+
+# --- extract_tech_terms tests ---
+
+
+def test_extract_tech_terms_camelcase():
+    """Compound CamelCase identifiers are extracted."""
+    terms = extract_tech_terms("CheckboxEditor SelectEditor")
+    assert "CheckboxEditor" in terms
+    assert "SelectEditor" in terms
+
+
+def test_extract_tech_terms_snake_case():
+    """snake_case identifiers are extracted."""
+    terms = extract_tech_terms("add_filter page_size")
+    assert "add_filter" in terms
+    assert "page_size" in terms
+
+
+def test_extract_tech_terms_dot_separated():
+    """Dot-separated qualified names are extracted."""
+    terms = extract_tech_terms("param.watch pn.widgets.Button")
+    assert "param.watch" in terms
+    assert "pn.widgets.Button" in terms
+
+
+def test_extract_tech_terms_mixed():
+    """All three categories extracted from a mixed query."""
+    terms = extract_tech_terms("SelectEditor add_filter param.watch")
+    assert "SelectEditor" in terms
+    assert "add_filter" in terms
+    assert "param.watch" in terms
+
+
+def test_extract_tech_terms_natural_language():
+    """Pure natural language returns empty list."""
+    terms = extract_tech_terms("how to create a dashboard with buttons")
+    assert terms == []
+
+
+def test_extract_tech_terms_single_pascal_not_extracted():
+    """Single-word PascalCase (Button, Panel, Python) is NOT extracted."""
+    terms = extract_tech_terms("Button Panel Python")
+    assert terms == []
+
+
+def test_extract_tech_terms_abbreviations_excluded():
+    """Common abbreviations like e.g and i.e are excluded."""
+    terms = extract_tech_terms("e.g. this is i.e. an example")
+    assert terms == []
+
+
+def test_extract_tech_terms_deduplication():
+    """Duplicate terms are deduplicated."""
+    terms = extract_tech_terms("SelectEditor SelectEditor add_filter add_filter")
+    assert terms.count("SelectEditor") == 1
+    assert terms.count("add_filter") == 1
+
+
+def test_extract_tech_terms_case_preserved():
+    """Original case is preserved."""
+    terms = extract_tech_terms("ReactiveHTML")
+    assert "ReactiveHTML" in terms
+
+
+def test_extract_tech_terms_short_dot_excluded():
+    """Short dot-separated terms (<=3 chars) are excluded."""
+    terms = extract_tech_terms("a.b")
+    assert terms == []
+
+
+def test_extract_tech_terms_real_world_query():
+    """Real-world technical query extracts expected terms."""
+    terms = extract_tech_terms("Tabulator CheckboxEditor SelectEditor add_filter page_size param.watch")
+    assert "CheckboxEditor" in terms
+    assert "SelectEditor" in terms
+    assert "add_filter" in terms
+    assert "page_size" in terms
+    assert "param.watch" in terms
+    # Tabulator is single PascalCase — should NOT be extracted
+    assert "Tabulator" not in terms
+
+
+# --- _build_where_document_clause tests ---
+
+
+def test_build_where_document_clause_empty():
+    """Empty list returns None."""
+    assert _build_where_document_clause([]) is None
+
+
+def test_build_where_document_clause_single():
+    """Single term returns simple $contains."""
+    result = _build_where_document_clause(["SelectEditor"])
+    assert result == {"$contains": "SelectEditor"}
+
+
+def test_build_where_document_clause_multiple():
+    """Multiple terms return $or clause."""
+    result = _build_where_document_clause(["SelectEditor", "add_filter"])
+    assert result == {"$or": [{"$contains": "SelectEditor"}, {"$contains": "add_filter"}]}
+
+
+# --- Keyword pre-filter search tests ---
+
+
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_camelcase(populated_indexer):
+    """CamelCase query prioritizes document containing that term."""
+    results = await populated_indexer.search("CheckboxEditor SelectEditor", content=False, max_results=5)
+    assert len(results) >= 1
+    # Tabulator document should appear in results
+    source_paths = [r.source_path for r in results]
+    assert "doc/reference/Tabulator.md" in source_paths
+
+
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_snake_case(populated_indexer):
+    """snake_case query prioritizes document containing that term."""
+    results = await populated_indexer.search("add_filter programmatic", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "doc/reference/Tabulator.md" in source_paths
+
+
+@pytest.mark.asyncio
+async def test_search_keyword_prefilter_dot_separated(populated_indexer):
+    """Dot-separated query prioritizes document containing that term."""
+    results = await populated_indexer.search("param.watch value changes", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "doc/reference/Tabulator.md" in source_paths
+
+
+@pytest.mark.asyncio
+async def test_search_natural_language_unchanged(populated_indexer):
+    """Natural language query without tech terms still works (no keyword pre-filter)."""
+    results = await populated_indexer.search("preamble general information document", content=False, max_results=5)
+    assert len(results) >= 1
+    # The original test document should still be found via pure semantic search
+    source_paths = [r.source_path for r in results]
+    assert "doc/test.md" in source_paths
+
+
+# --- _extract_reference_category tests ---
+
+
+def test_extract_reference_category_panel_widget():
+    """Panel widget reference path returns 'widgets'."""
+    assert _extract_reference_category("examples/reference/widgets/Tabulator.ipynb", True) == "widgets"
+
+
+def test_extract_reference_category_holoviews_element():
+    """HoloViews element reference path returns 'elements'."""
+    assert _extract_reference_category("examples/reference/elements/bokeh/Scatter.ipynb", True) == "elements"
+
+
+def test_extract_reference_category_param():
+    """Param reference path returns 'param'."""
+    assert _extract_reference_category("doc/reference/param/Parameter.md", True) == "param"
+
+
+def test_extract_reference_category_file_under_reference():
+    """File directly under reference/ returns None (no category directory)."""
+    assert _extract_reference_category("docs/reference/guide.md", True) is None
+
+
+def test_extract_reference_category_not_reference():
+    """Non-reference document always returns None."""
+    assert _extract_reference_category("doc/how_to/callbacks/foo.md", False) is None
+
+
+# --- _build_context_prefix tests ---
+
+
+def test_build_context_prefix_reference_with_category():
+    """Reference with category returns 'project category\\n'."""
+    assert _build_context_prefix("panel", "examples/reference/widgets/Tabulator.ipynb", True) == "panel widgets\n"
+
+
+def test_build_context_prefix_non_reference_with_project():
+    """Non-reference with project returns 'project\\n'."""
+    assert _build_context_prefix("panel", "doc/how_to/callbacks/foo.md", False) == "panel\n"
+
+
+def test_build_context_prefix_empty_project():
+    """Empty project returns empty string."""
+    assert _build_context_prefix("", "doc/test.md", False) == ""
+
+
+def test_build_context_prefix_reference_no_reference_in_path():
+    """Reference flag set but 'reference' not in path returns just project."""
+    assert _build_context_prefix("panel", "doc/guide.md", True) == "panel\n"
+
+
+# --- chunk_document context prefix tests ---
+
+
+def test_chunk_document_context_prefix_non_reference():
+    """Non-reference doc chunks get 'project\\ntitle\\n\\n...' prefix."""
+    doc = _make_doc(content="Plain text long enough to survive filtering. Adding filler to reach the threshold.")
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["content"].startswith("test-project\nTest Doc\n\n")
+
+
+def test_chunk_document_context_prefix_reference():
+    """Reference doc chunks get 'project category\\ntitle\\n\\n...' prefix."""
+    content = "Widget docs long enough to survive filtering. Adding filler to reach the threshold."
+    doc = _make_doc(
+        content=content,
+        project="panel",
+        source_path="examples/reference/widgets/Button.ipynb",
+        is_reference=True,
+    )
+    chunks = chunk_document(doc)
+    assert len(chunks) == 1
+    assert chunks[0]["content"].startswith("panel widgets\nTest Doc\n\n")
+    # raw_content should NOT have the prefix
+    assert chunks[0]["raw_content"] == content
+
+
+# --- Project-name tech term filtering tests ---
+
+
+def test_search_filters_project_name_tech_terms(populated_indexer):
+    """Tech terms matching the project name are dropped when project filter is active."""
+    # "TestProject" is a compound CamelCase term that extract_tech_terms would extract.
+    # When searching within project "test-project", the term should be filtered out.
+    terms = extract_tech_terms("TestProject")
+    assert "TestProject" in terms  # Would normally be extracted
+
+    # Simulate the filtering logic from search()
+    project = "test-project"
+    project_lower = project.lower().replace("-", "")
+    filtered = [t for t in terms if t.lower().replace("-", "") != project_lower]
+    assert filtered == []  # "TestProject" matches "test-project" after normalization
+
+
+# --- extract_pascal_terms tests ---
+
+
+def test_extract_pascal_terms_component_names():
+    """Component names like Scatter, Button, Tabulator are extracted."""
+    terms = extract_pascal_terms("Scatter Button Tabulator")
+    assert "Scatter" in terms
+    assert "Button" in terms
+    assert "Tabulator" in terms
+
+
+def test_extract_pascal_terms_stopwords_excluded():
+    """Common English words in PascalCase are excluded."""
+    terms = extract_pascal_terms("The Create Using About")
+    assert terms == []
+
+
+def test_extract_pascal_terms_mixed():
+    """Mixed query extracts only non-stopword PascalCase terms."""
+    terms = extract_pascal_terms("How to use Scatter in Panel")
+    assert "Scatter" in terms
+    assert "Panel" in terms
+    assert "How" not in terms
+
+
+def test_extract_pascal_terms_lowercase_ignored():
+    """Lowercase words are not extracted."""
+    terms = extract_pascal_terms("scatter button")
+    assert terms == []
+
+
+def test_extract_pascal_terms_allcaps_ignored():
+    """ALL_CAPS words are not extracted (regex requires lowercase after initial upper)."""
+    terms = extract_pascal_terms("HTML CSS API")
+    assert terms == []
+
+
+def test_extract_pascal_terms_compound_camelcase():
+    """Compound CamelCase words are also captured."""
+    terms = extract_pascal_terms("SelectEditor")
+    assert "SelectEditor" in terms
+
+
+def test_extract_pascal_terms_deduplication():
+    """Duplicate terms appear only once."""
+    terms = extract_pascal_terms("Scatter Scatter")
+    assert terms.count("Scatter") == 1
+
+
+def test_extract_pascal_terms_project_name_filtering():
+    """Project-name filtering can remove pascal terms matching the project."""
+    terms = extract_pascal_terms("HoloViews Scatter")
+    assert "HoloViews" in terms
+    assert "Scatter" in terms
+
+    # Simulate project-name filtering from search()
+    project = "holoviews"
+    project_lower = project.lower().replace("-", "")
+    filtered = [t for t in terms if t.lower().replace("-", "") != project_lower]
+    assert "HoloViews" not in filtered
+    assert "Scatter" in filtered
+
+
+# --- _build_stem_boost_clause tests ---
+
+
+def test_build_stem_boost_clause_empty():
+    """Empty list returns None."""
+    assert _build_stem_boost_clause([], None) is None
+
+
+def test_build_stem_boost_clause_single_no_project():
+    """Single term without project returns simple metadata filter."""
+    result = _build_stem_boost_clause(["Scatter"], None)
+    assert result == {"source_path_stem": "Scatter"}
+
+
+def test_build_stem_boost_clause_single_with_project():
+    """Single term with project returns $and clause."""
+    result = _build_stem_boost_clause(["Scatter"], "holoviews")
+    assert result == {"$and": [{"source_path_stem": "Scatter"}, {"project": "holoviews"}]}
+
+
+def test_build_stem_boost_clause_multiple_no_project():
+    """Multiple terms without project return $or clause for stems."""
+    result = _build_stem_boost_clause(["Scatter", "Curve"], None)
+    assert result == {"$or": [{"source_path_stem": "Scatter"}, {"source_path_stem": "Curve"}]}
+
+
+def test_build_stem_boost_clause_multiple_with_project():
+    """Multiple terms with project return $and wrapping $or + project."""
+    result = _build_stem_boost_clause(["Scatter", "Curve"], "holoviews")
+    assert result == {"$and": [{"$or": [{"source_path_stem": "Scatter"}, {"source_path_stem": "Curve"}]}, {"project": "holoviews"}]}
+
+
+# --- Metadata boost search integration tests ---
+
+
+@pytest.mark.asyncio
+async def test_search_metadata_boost_finds_scatter(populated_indexer):
+    """Searching 'Scatter' finds the Scatter reference guide via metadata boost."""
+    results = await populated_indexer.search("Scatter", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "examples/reference/elements/Scatter.ipynb" in source_paths
+    # Scatter should be the first result due to metadata boost
+    assert results[0].source_path == "examples/reference/elements/Scatter.ipynb"
+
+
+@pytest.mark.asyncio
+async def test_search_metadata_boost_with_project_name_filtered(populated_indexer):
+    """Searching 'TestProject Scatter' with project filter finds Scatter via metadata boost."""
+    results = await populated_indexer.search("TestProject Scatter", project="test-project", content=False, max_results=5)
+    assert len(results) >= 1
+    source_paths = [r.source_path for r in results]
+    assert "examples/reference/elements/Scatter.ipynb" in source_paths
+
+
+# --- Thread-local nb_exporter tests ---
+
+
+def test_thread_local_nb_exporter_isolation(tmp_path):
+    """Each thread gets a different MarkdownExporter instance."""
+    import threading
+
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    exporters: dict[int, object] = {}
+    barrier = threading.Barrier(3)
+
+    def get_exporter(thread_id):
+        barrier.wait()  # Ensure threads overlap
+        exporters[thread_id] = indexer._get_nb_exporter()
+
+    threads = [threading.Thread(target=get_exporter, args=(i,)) for i in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # All 3 threads should have gotten distinct instances
+    instances = list(exporters.values())
+    assert len(instances) == 3
+    assert len(set(id(e) for e in instances)) == 3
+
+
+def test_get_nb_exporter_returns_same_instance_per_thread(tmp_path):
+    """Same thread calling _get_nb_exporter twice gets the same instance."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    first = indexer._get_nb_exporter()
+    second = indexer._get_nb_exporter()
+    assert first is second
+
+
+def test_clone_and_extract_sync_handles_clone_failure(tmp_path):
+    """Bad repo URL returns empty list, does not raise."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    bad_config = GitRepository(
+        url=AnyHttpUrl("https://github.com/nonexistent-org-12345/nonexistent-repo-99999.git"),
+        base_url=AnyHttpUrl("https://example.com/"),
+    )
+
+    result = indexer._clone_and_extract_repo_sync("bad-repo", bad_config)
+    assert result == {"docs": [], "skipped_hashes": {}}
+
+
+@pytest.mark.asyncio
+async def test_parallel_index_documentation_processes_all_repos(tmp_path):
+    """index_documentation processes repositories in parallel and collects all docs."""
+
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Create two fake repo directories with markdown files
+    for repo_name in ["repo-a", "repo-b"]:
+        repo_dir = tmp_path / "repos" / repo_name / "doc"
+        repo_dir.mkdir(parents=True)
+        md_file = repo_dir / "test.md"
+        md_file.write_text(f"# {repo_name} Title\n\nThis is the {repo_name} documentation content that is long enough to pass chunking thresholds.")
+        # Initialize as a git repo so git.Repo doesn't fail
+        import git
+
+        repo = git.Repo.init(tmp_path / "repos" / repo_name)
+        repo.index.add([str(md_file)])
+        repo.index.commit("initial")
+
+    # Patch the config to use our fake repos
+    from unittest.mock import patch
+
+    fake_repos = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+        "repo-b": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-b.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+
+    # Mock _clone_or_update_repo_sync to just return the existing path
+    original_clone = indexer._clone_or_update_repo_sync
+
+    def mock_clone(repo_name, repo_config):
+        repo_path = tmp_path / "repos" / repo_name
+        if repo_path.exists():
+            return repo_path
+        return original_clone(repo_name, repo_config)
+
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", fake_repos):
+            await indexer.index_documentation()
+
+    # Both repos should have contributed documents
+    assert indexer.collection.count() > 0
+    results = indexer.collection.get(include=["metadatas"])
+    projects = {m["project"] for m in results["metadatas"]}
+    assert "repo-a" in projects
+    assert "repo-b" in projects
+
+
+# --- Incremental indexing tests ---
+
+
+def _make_fake_repo(tmp_path, repo_name, files: dict[str, str]):
+    """Helper: create a fake git repo with the given files.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Root temp directory.
+    repo_name : str
+        Name of the repo.
+    files : dict[str, str]
+        Mapping of relative path (under doc/) -> file content.
+
+    Returns
+    -------
+    Path
+        Path to the repo root.
+    """
+    import git
+
+    repo_root = tmp_path / "repos" / repo_name
+    for rel_path, content in files.items():
+        file_path = repo_root / "doc" / rel_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content)
+
+    repo = git.Repo.init(repo_root)
+    repo.index.add([str(repo_root / "doc" / p) for p in files])
+    repo.index.commit("initial")
+    return repo_root
+
+
+def _make_indexer_with_repos(tmp_path, repo_configs):
+    """Helper: create an indexer with fake repo configs and a mock clone."""
+
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    def mock_clone(repo_name, repo_config):
+        repo_path = tmp_path / "repos" / repo_name
+        return repo_path if repo_path.exists() else None
+
+    return indexer, repo_configs, mock_clone
+
+
+def test_compute_file_hash(tmp_path):
+    """SHA-256 of known content matches expected hex digest."""
+    import hashlib
+
+    test_file = tmp_path / "test.md"
+    content = b"# Hello World\n\nSome content here."
+    test_file.write_bytes(content)
+
+    expected = hashlib.sha256(content).hexdigest()
+    result = DocumentationIndexer._compute_file_hash(test_file)
+    assert result == expected
+    assert len(result) == 64  # SHA-256 hex digest length
+
+
+def test_load_hashes_missing_file(tmp_path):
+    """Returns empty dict when hash file doesn't exist."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    assert indexer._load_hashes() == {}
+
+
+def test_load_hashes_corrupt_file(tmp_path):
+    """Returns empty dict on invalid JSON, logs warning."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Write corrupt JSON
+    indexer._hash_file_path.parent.mkdir(parents=True, exist_ok=True)
+    indexer._hash_file_path.write_text("{invalid json!!!")
+
+    assert indexer._load_hashes() == {}
+
+
+def test_save_and_load_hashes_roundtrip(tmp_path):
+    """Save then load preserves all entries."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    hashes = {"doc1___file_md": "abc123", "doc2___file_md": "def456"}
+    indexer._save_hashes(hashes)
+    loaded = indexer._load_hashes()
+    assert loaded == hashes
+
+
+def test_delete_doc_chunks(tmp_path):
+    """_delete_doc_chunks removes all chunks for a given parent_id."""
+    from chromadb.api.shared_system_client import SharedSystemClient
+
+    SharedSystemClient.clear_system_cache()
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    # Manually add chunks with a known parent_id
+    indexer.collection.add(
+        documents=["chunk 0 content", "chunk 1 content", "chunk 2 content"],
+        metadatas=[
+            {
+                "parent_id": "test___doc",
+                "title": "Test",
+                "url": "",
+                "project": "test",
+                "source_path": "doc.md",
+                "source_path_stem": "doc",
+                "source_url": "",
+                "description": "",
+                "is_reference": False,
+                "chunk_index": 0,
+            },
+            {
+                "parent_id": "test___doc",
+                "title": "Test",
+                "url": "",
+                "project": "test",
+                "source_path": "doc.md",
+                "source_path_stem": "doc",
+                "source_url": "",
+                "description": "",
+                "is_reference": False,
+                "chunk_index": 1,
+            },
+            {
+                "parent_id": "other___doc",
+                "title": "Other",
+                "url": "",
+                "project": "other",
+                "source_path": "doc.md",
+                "source_path_stem": "doc",
+                "source_url": "",
+                "description": "",
+                "is_reference": False,
+                "chunk_index": 0,
+            },
+        ],
+        ids=["test___doc___chunk_0", "test___doc___chunk_1", "other___doc___chunk_0"],
+    )
+    assert indexer.collection.count() == 3
+
+    deleted = indexer._delete_doc_chunks("test___doc")
+    assert deleted == 2
+    assert indexer.collection.count() == 1
+
+    # The remaining chunk should be from the "other" doc
+    remaining = indexer.collection.get()
+    assert remaining["ids"] == ["other___doc___chunk_0"]
+
+
+@pytest.mark.asyncio
+async def test_incremental_skip_unchanged(tmp_path):
+    """Second index_documentation call with no file changes skips re-embedding."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Test Title\n\nSome test documentation content that is long enough."})
+
+    indexer, repo_configs, mock_clone = _make_indexer_with_repos(
+        tmp_path,
+        {
+            "repo-a": GitRepository(
+                url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+                base_url=AnyHttpUrl("https://example.com/"),
+                folders=["doc"],
+            ),
+        },
+    )
+
+    # First run: full index
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_after_first = indexer.collection.count()
+    assert count_after_first > 0
+    assert indexer._hash_file_path.exists()
+
+    # Second run: nothing changed — should exit early
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    assert indexer.collection.count() == count_after_first
+
+
+@pytest.mark.asyncio
+async def test_incremental_detects_changed_file(tmp_path):
+    """Modifying a file causes only that doc to be re-indexed."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Original Title\n\nOriginal content that is sufficient."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Modify the file
+    (tmp_path / "repos" / "repo-a" / "doc" / "test.md").write_text("# Updated Title\n\nUpdated content that is different now.")
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Should still have chunks, and the title should be updated
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "Updated Title" in titles
+    assert "Original Title" not in titles
+
+
+@pytest.mark.asyncio
+async def test_incremental_detects_deleted_file(tmp_path):
+    """Removing a file causes its chunks to be deleted from ChromaDB."""
+    from unittest.mock import patch
+
+    _make_fake_repo(
+        tmp_path,
+        "repo-a",
+        {
+            "keep.md": "# Keep Title\n\nThis file should be kept in the index.",
+            "remove.md": "# Remove Title\n\nThis file will be removed.",
+        },
+    )
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_before = indexer.collection.count()
+    assert count_before > 0
+
+    # Delete one file
+    (tmp_path / "repos" / "repo-a" / "doc" / "remove.md").unlink()
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # The deleted file's chunks should be gone
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "Keep Title" in titles
+    assert "Remove Title" not in titles
+    assert indexer.collection.count() < count_before
+
+
+@pytest.mark.asyncio
+async def test_incremental_detects_new_file(tmp_path):
+    """Adding a new file causes it to be indexed."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"existing.md": "# Existing Title\n\nExisting content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_before = indexer.collection.count()
+
+    # Add a new file
+    new_file = tmp_path / "repos" / "repo-a" / "doc" / "new_file.md"
+    new_file.write_text("# New File Title\n\nNew file content here.")
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # New file should be in the index
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "New File Title" in titles
+    assert indexer.collection.count() > count_before
+
+
+@pytest.mark.asyncio
+async def test_incremental_orphan_cleanup(tmp_path):
+    """Changing a doc that produces fewer chunks removes the extra chunks."""
+    from unittest.mock import patch
+
+    # Start with content that has multiple H2 sections → multiple chunks
+    multi_section = "# Doc Title\n\nIntro.\n\n## Section A\n\nContent A.\n\n## Section B\n\nContent B.\n\n## Section C\n\nContent C."
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": multi_section})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_before = indexer.collection.count()
+
+    # Replace with fewer sections
+    (tmp_path / "repos" / "repo-a" / "doc" / "test.md").write_text("# Doc Title\n\nSimple content, no extra sections.")
+
+    # Second run
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Should have fewer chunks now (orphans cleaned up)
+    assert indexer.collection.count() <= count_before
+
+
+@pytest.mark.asyncio
+async def test_full_rebuild_ignores_hashes(tmp_path):
+    """full_rebuild=True re-indexes everything regardless of hashes."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Test Title\n\nSome test content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run: creates hashes
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    assert indexer._hash_file_path.exists()
+    count_after_first = indexer.collection.count()
+
+    # Second run with full_rebuild: should re-index everything
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation(full_rebuild=True)
+
+    # Same count (all docs re-indexed, not doubled)
+    assert indexer.collection.count() == count_after_first
+
+
+@pytest.mark.asyncio
+async def test_projects_filter_scopes_repos(tmp_path):
+    """projects=['repo-a'] only processes repo-a, leaves repo-b unchanged."""
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Repo A Title\n\nRepo A content here."})
+    _make_fake_repo(tmp_path, "repo-b", {"test.md": "# Repo B Title\n\nRepo B content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+        "repo-b": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-b.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run: index both repos
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Modify repo-a only
+    (tmp_path / "repos" / "repo-a" / "doc" / "test.md").write_text("# Repo A Updated\n\nUpdated content here.")
+
+    # Re-index only repo-a
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation(projects=["repo-a"])
+
+    # repo-a should have updated title, repo-b should still exist
+    results = indexer.collection.get(include=["metadatas"])
+    titles = {m["title"] for m in results["metadatas"]}
+    assert "Repo A Updated" in titles
+    assert "Repo B Title" in titles  # repo-b unchanged
+
+
+@pytest.mark.asyncio
+async def test_projects_filter_invalid_name(tmp_path):
+    """projects=['nonexistent'] raises ValueError with helpful message."""
+    from unittest.mock import patch
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    with patch.object(indexer.config, "repositories", repo_configs):
+        with pytest.raises(ValueError, match="nonexistent"):
+            await indexer.index_documentation(projects=["nonexistent"])

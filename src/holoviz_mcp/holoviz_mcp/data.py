@@ -1,9 +1,15 @@
 """Data handling for the HoloViz Documentation MCP server."""
 
 import asyncio
+import hashlib
+import json
 import logging
 import os
 import re
+import shutil
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -12,6 +18,7 @@ from typing import Optional
 import chromadb
 import git
 from chromadb.api.collection_configuration import CreateCollectionConfiguration
+from chromadb.api.shared_system_client import SharedSystemClient
 from fastmcp import Context
 from nbconvert import MarkdownExporter
 from nbformat import read as nbread
@@ -60,6 +67,366 @@ async def log_exception(message: str, ctx: Context | None = None):
     else:
         logger.error(message)
         raise Exception(message)
+
+
+def extract_tech_terms(query: str) -> list[str]:
+    """Extract technical identifiers from a search query.
+
+    Identifies three categories of terms that benefit from exact substring
+    matching rather than pure semantic similarity:
+
+    - **Compound CamelCase** (requires internal case transition):
+      ``SelectEditor``, ``ReactiveHTML``, ``TextInput`` — but NOT
+      single-word PascalCase like ``Button``, ``Panel``, ``Python``.
+    - **snake_case**: ``add_filter``, ``page_size``
+    - **Dot-separated qualified names**: ``param.watch``,
+      ``pn.widgets.Button`` — excludes common abbreviations like
+      ``e.g``, ``i.e`` via a blocklist and minimum length filter.
+
+    Parameters
+    ----------
+    query : str
+        Search query string.
+
+    Returns
+    -------
+    list[str]
+        Deduplicated list of technical terms preserving original case
+        and discovery order.  Empty list when no technical terms are found.
+    """
+    terms: list[str] = []
+    seen: set[str] = set()
+
+    # Compound CamelCase: requires an internal lower→upper transition
+    # e.g. SelectEditor, ReactiveHTML, TextInput — NOT Button, Panel
+    for m in re.finditer(r"\b[A-Z][a-z]+[A-Z][a-zA-Z]*\b", query):
+        t = m.group()
+        if t not in seen:
+            terms.append(t)
+            seen.add(t)
+
+    # snake_case identifiers
+    for m in re.finditer(r"\b[a-z][a-z0-9]*_[a-z][a-z0-9_]*\b", query):
+        t = m.group()
+        if t not in seen:
+            terms.append(t)
+            seen.add(t)
+
+    # Dot-separated qualified names (param.watch, pn.widgets.Button)
+    dot_blocklist = {"e.g", "i.e", "vs.", "etc."}
+    for m in re.finditer(r"\b[a-z][a-z0-9]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)+\b", query):
+        t = m.group()
+        if len(t) > 3 and t not in dot_blocklist and t not in seen:
+            terms.append(t)
+            seen.add(t)
+
+    return terms
+
+
+_PASCAL_STOPWORDS: set[str] = {
+    # Determiners, pronouns, articles
+    "The",
+    "This",
+    "That",
+    "These",
+    "Those",
+    "Each",
+    "Every",
+    "Some",
+    "Any",
+    "All",
+    "Both",
+    "Few",
+    "Many",
+    "Much",
+    "Most",
+    "Other",
+    "Another",
+    "Such",
+    "My",
+    "Your",
+    "His",
+    "Her",
+    "Its",
+    "Our",
+    "Their",
+    "One",
+    "An",
+    "No",
+    # Short prepositions / conjunctions (sentence-initial)
+    "In",
+    "At",
+    "To",
+    "If",
+    "Or",
+    "So",
+    "As",
+    "By",
+    "Up",
+    "On",
+    # Interrogatives / relatives
+    "Who",
+    "What",
+    "Which",
+    "Where",
+    "When",
+    "Why",
+    "How",
+    "Whom",
+    "Whose",
+    # Personal pronouns
+    "He",
+    "She",
+    "It",
+    "We",
+    "They",
+    # Auxiliary / modal verbs
+    "Is",
+    "Are",
+    "Was",
+    "Were",
+    "Be",
+    "Been",
+    "Being",
+    "Has",
+    "Have",
+    "Had",
+    "Do",
+    "Does",
+    "Did",
+    "Will",
+    "Would",
+    "Could",
+    "Should",
+    "Can",
+    "May",
+    "Might",
+    "Must",
+    "Shall",
+    # Common verbs (sentence-initial in docs)
+    "Get",
+    "Set",
+    "Let",
+    "Make",
+    "Take",
+    "Give",
+    "Put",
+    "Run",
+    "See",
+    "Find",
+    "Use",
+    "Try",
+    "Add",
+    "Go",
+    "Come",
+    "Keep",
+    "Show",
+    "Tell",
+    "Say",
+    "Ask",
+    "Help",
+    "Start",
+    "Stop",
+    "Open",
+    "Close",
+    "Read",
+    "Write",
+    "New",
+    "Old",
+    "Create",
+    "Build",
+    "Deploy",
+    "Install",
+    "Update",
+    "Remove",
+    "Delete",
+    "Enable",
+    "Disable",
+    "Configure",
+    "Define",
+    "Return",
+    "Check",
+    "Pass",
+    "Call",
+    "Load",
+    "Save",
+    "Send",
+    "Move",
+    # Adjectives / adverbs
+    "Not",
+    "Also",
+    "Just",
+    "Only",
+    "Very",
+    "Too",
+    "More",
+    "Less",
+    "First",
+    "Last",
+    "Next",
+    "Best",
+    "Good",
+    "Bad",
+    # Python builtins
+    "True",
+    "False",
+    "None",
+    # Conjunctions / prepositions
+    "And",
+    "But",
+    "For",
+    "Nor",
+    "Yet",
+    "With",
+    "From",
+    "Into",
+    "About",
+    "After",
+    "Before",
+    "Between",
+    "Through",
+    "During",
+    "Without",
+    "Within",
+    "Along",
+    "Above",
+    "Below",
+    # Generic tech words (too broad to be component names)
+    "Data",
+    "Code",
+    "Style",
+    "Type",
+    "Name",
+    "Value",
+    "Event",
+    "Class",
+    "Object",
+    "Method",
+    "Function",
+    "Module",
+    "Package",
+    "File",
+    "Path",
+    "String",
+    "Number",
+    "Integer",
+    "Float",
+    "List",
+    "Dict",
+    "Tuple",
+    "Array",
+    "Index",
+    "Key",
+    "Error",
+    "Warning",
+    "Info",
+    "Debug",
+    "Log",
+    # Common sentence starters / discourse markers
+    "Here",
+    "There",
+    "Then",
+    "Now",
+    "However",
+    "Therefore",
+    "Furthermore",
+    "Moreover",
+    "Although",
+    "Because",
+    "Since",
+    "While",
+    "Until",
+    "Unless",
+    "Whether",
+    "Though",
+    # Documentation filler
+    "Note",
+    "Tip",
+    "Using",
+    "Like",
+}
+# Common English words that can appear PascalCase but are NOT component names.
+
+
+def extract_pascal_terms(query: str) -> list[str]:
+    """Extract single PascalCase words from a query, excluding stopwords.
+
+    Captures words like Scatter, Button, Tabulator that start with an
+    uppercase letter followed by at least one lowercase letter.  Compound
+    CamelCase words (SelectEditor) are also captured — they overlap with
+    :func:`extract_tech_terms` and deduplication happens at the call site.
+
+    Parameters
+    ----------
+    query : str
+        Search query string.
+
+    Returns
+    -------
+    list[str]
+        Deduplicated list of PascalCase terms preserving discovery order.
+        Empty list when no terms are found.
+    """
+    terms: list[str] = []
+    seen: set[str] = set()
+    for m in re.finditer(r"\b[A-Z][a-z][a-zA-Z]*\b", query):
+        t = m.group()
+        if t not in seen and t not in _PASCAL_STOPWORDS:
+            terms.append(t)
+            seen.add(t)
+    return terms
+
+
+def _build_where_document_clause(terms: list[str]) -> dict[str, Any] | None:
+    """Build a ChromaDB ``where_document`` clause for keyword pre-filtering.
+
+    Parameters
+    ----------
+    terms : list[str]
+        Technical terms extracted by :func:`extract_tech_terms`.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        ``None`` when *terms* is empty, a single ``{"$contains": term}``
+        dict for one term, or ``{"$or": [...]}`` for multiple terms.
+    """
+    if not terms:
+        return None
+    if len(terms) == 1:
+        return {"$contains": terms[0]}
+    return {"$or": [{"$contains": t} for t in terms]}
+
+
+def _build_stem_boost_clause(pascal_terms: list[str], project: str | None) -> dict[str, Any] | None:
+    """Build a ChromaDB ``where`` clause matching ``source_path_stem`` metadata.
+
+    Used to boost results whose filename stem exactly matches a PascalCase
+    term from the query (e.g. ``Scatter`` → ``Scatter.ipynb``).
+
+    Parameters
+    ----------
+    pascal_terms : list[str]
+        PascalCase terms extracted by :func:`extract_pascal_terms`.
+    project : str | None
+        Optional project filter.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        ``None`` when *pascal_terms* is empty, otherwise a ``where``
+        clause suitable for ``collection.query(where=...)``.
+    """
+    if not pascal_terms:
+        return None
+    filters: list[dict[str, Any]] = []
+    if len(pascal_terms) == 1:
+        filters.append({"source_path_stem": pascal_terms[0]})
+    else:
+        filters.append({"$or": [{"source_path_stem": t} for t in pascal_terms]})
+    if project:
+        filters.append({"project": str(project)})
+    return filters[0] if len(filters) == 1 else {"$and": filters}
 
 
 def extract_keywords(query: str) -> list[str]:
@@ -179,7 +546,7 @@ def build_excerpts(content: str, matches: list[tuple[int, int, str]], max_chars:
         last_space = truncated.rfind(" ")
         if last_space > max_chars * 0.8:
             truncated = truncated[:last_space]
-        return truncated + "\n\n[... content truncated, use get_document() for full content ...]"
+        return truncated + "\n\n[... content truncated, use content='full' for complete content ...]"
 
     # Cluster nearby matches
     clusters = []
@@ -321,7 +688,232 @@ def truncate_content(content: str | None, max_chars: int | None, query: str | No
         truncated = truncated[:last_space]
 
     # Add indicator
-    return truncated + "\n\n[... content truncated, use get_document() for full content ...]"
+    return truncated + "\n\n[... content truncated, use content='full' for complete content ...]"
+
+
+def _find_markdown_header_lines(content: str) -> list[int]:
+    """Find line indices of H1/H2 markdown headers that are outside code fences.
+
+    Skips headers inside fenced code blocks (``` ... ```) so that Python
+    comments like ``# setup code`` or decorative lines like
+    ``# ========`` are never treated as split points.
+
+    Parameters
+    ----------
+    content : str
+        Full markdown content.
+
+    Returns
+    -------
+    list[int]
+        Sorted line indices (0-based) where H1/H2 headers appear.
+    """
+    header_lines: list[int] = []
+    in_code_block = False
+
+    for i, line in enumerate(content.split("\n")):
+        if line.strip().startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if not in_code_block and re.match(r"^#{1,2} ", line):
+            header_lines.append(i)
+
+    return header_lines
+
+
+def chunk_document(doc: dict[str, Any], min_chunk_chars: int = 100) -> list[dict[str, Any]]:
+    r"""Split a document into chunks at H1/H2 markdown headers.
+
+    Only headers **outside** fenced code blocks are used as split points,
+    so Python comments (``# ...``) and decorative dividers inside code
+    blocks are left intact.
+
+    Each chunk stores two content fields:
+
+    - ``content``: the document title prepended to the raw section text
+      (``"Title\\n\\n## Section ..."``) so that ChromaDB's embedding model
+      associates every chunk with its parent document context.
+    - ``raw_content``: the original section text without the title prefix,
+      used by ``get_document()`` and ``search_get_reference_guide()`` to
+      reconstruct the full document without duplicating the title.
+
+    Parameters
+    ----------
+    doc : dict[str, Any]
+        Document dict with at least 'id', 'title', and 'content' keys,
+        plus other metadata fields.
+    min_chunk_chars : int
+        Minimum character count for a chunk to be kept. Chunks below this
+        threshold are discarded (e.g. empty sections). Default: 100.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        List of chunk dicts. If no H1/H2 headers are found, returns a single
+        chunk with chunk_index=0.
+    """
+    content = doc.get("content", "") or ""
+    parent_id = doc["id"]
+    title = doc.get("title", "")
+
+    # Find H1/H2 header lines that are outside code fences
+    lines = content.split("\n")
+    header_indices = _find_markdown_header_lines(content)
+
+    # Build text parts by splitting at header boundaries
+    if header_indices:
+        parts: list[str] = []
+        prev = 0
+        for idx in header_indices:
+            if idx > prev:
+                parts.append("\n".join(lines[prev:idx]))
+            prev = idx
+        # Last chunk: from last header to end
+        parts.append("\n".join(lines[prev:]))
+    else:
+        parts = [content]
+
+    # Filter out tiny/empty chunks
+    parts = [p for p in parts if len(p.strip()) >= min_chunk_chars]
+
+    # If nothing survived filtering, keep the whole content as one chunk
+    if not parts:
+        parts = [content]
+
+    # Metadata keys to copy from the parent document to each chunk
+    metadata_keys = ("title", "url", "project", "source_path", "source_path_stem", "source_url", "description", "is_reference")
+
+    chunks: list[dict[str, Any]] = []
+    for idx, part in enumerate(parts):
+        chunk: dict[str, Any] = {}
+        for key in metadata_keys:
+            if key in doc:
+                chunk[key] = doc[key]
+        chunk["id"] = f"{parent_id}___chunk_{idx}"
+        chunk["chunk_index"] = idx
+        chunk["parent_id"] = parent_id
+        # raw_content: original section text for faithful document reconstruction
+        chunk["raw_content"] = part
+        # content: context-prefixed text stored in ChromaDB for better embeddings
+        context_prefix = _build_context_prefix(doc.get("project", ""), doc.get("source_path", ""), doc.get("is_reference", False))
+        if title:
+            chunk["content"] = f"{context_prefix}{title}\n\n{part}"
+        elif context_prefix:
+            chunk["content"] = f"{context_prefix}{part}"
+        else:
+            chunk["content"] = part
+        chunks.append(chunk)
+
+    return chunks
+
+
+def _strip_title_prefix(
+    content: str,
+    title: str,
+    project: str = "",
+    source_path: str = "",
+    is_reference: bool = False,
+) -> str:
+    r"""Remove the title prefix that chunk_document() prepends for embedding.
+
+    Handles both the new format (with context prefix) and the old format
+    (title only) for backward compatibility with existing indexes.
+
+    Parameters
+    ----------
+    content : str
+        Chunk content, possibly prefixed with context + title.
+    title : str
+        The document title to strip.
+    project : str
+        Project name (used to compute context prefix).
+    source_path : str
+        Relative source path (used to compute context prefix).
+    is_reference : bool
+        Whether the document is a reference guide.
+
+    Returns
+    -------
+    str
+        Content with the title prefix removed if present, otherwise unchanged.
+    """
+    # Try new format: context_prefix + title
+    context_prefix = _build_context_prefix(project, source_path, is_reference)
+    new_prefix = f"{context_prefix}{title}\n\n"
+    if title and content.startswith(new_prefix):
+        return content[len(new_prefix) :]
+    # Backward compat: old format (title only, no context prefix)
+    old_prefix = f"{title}\n\n"
+    if title and content.startswith(old_prefix):
+        return content[len(old_prefix) :]
+    return content
+
+
+def _extract_reference_category(source_path: str, is_reference: bool) -> str | None:
+    """Extract the component category from a reference guide's source path.
+
+    Finds ``"reference"`` in the path parts and returns the next non-filename
+    part (i.e. the directory immediately below ``reference/``).
+
+    Parameters
+    ----------
+    source_path : str
+        Relative source path of the document.
+    is_reference : bool
+        Whether this document is a reference guide.
+
+    Returns
+    -------
+    str | None
+        Category name (e.g. ``"widgets"``, ``"elements"``, ``"panes"``),
+        or ``None`` if not a reference doc or no category directory exists.
+    """
+    if not is_reference:
+        return None
+    parts = source_path.split("/")
+    try:
+        ref_idx = parts.index("reference")
+    except ValueError:
+        return None
+    # Category is next part after "reference", if it's not a filename
+    if ref_idx + 1 < len(parts):
+        candidate = parts[ref_idx + 1]
+        if "." not in candidate:  # skip filenames like "guide.md"
+            return candidate
+    return None
+
+
+def _build_context_prefix(project: str, source_path: str, is_reference: bool) -> str:
+    r"""Build a context line prepended before the title in chunk content.
+
+    The prefix enriches the embedding with project and reference-category
+    context so that queries like "HoloViews Scatter" are closer in vector
+    space to the Scatter reference guide chunk.
+
+    Parameters
+    ----------
+    project : str
+        Project name (e.g. ``"panel"``, ``"holoviews"``).
+    source_path : str
+        Relative source path of the document.
+    is_reference : bool
+        Whether this document is a reference guide.
+
+    Returns
+    -------
+    str
+        A context line ending with ``"\n"`` (e.g. ``"panel widgets\n"``),
+        or ``""`` when no context is available.
+    """
+    parts: list[str] = []
+    if project:
+        parts.append(project)
+    category = _extract_reference_category(source_path, is_reference)
+    if category:
+        parts.append(category)
+    if parts:
+        return " ".join(parts) + "\n"
+    return ""
 
 
 def get_skill(name: str) -> str:
@@ -490,16 +1082,26 @@ class DocumentationIndexer:
         if not config.server.anonymized_telemetry:
             os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
-        # Initialize ChromaDB
-        self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
-
-        self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+        # Initialize ChromaDB with health check
+        try:
+            self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+            self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+            self.collection.count()  # Probe read to verify health
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:
+            logger.error("ChromaDB initialization failed (%s: %s). Wiping and reinitializing.", type(e).__name__, e)
+            shutil.rmtree(self._vector_db_path, ignore_errors=True)
+            self._vector_db_path.mkdir(parents=True, exist_ok=True)
+            SharedSystemClient.clear_system_cache()
+            self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+            self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
 
         # Lazy-initialized async lock for database operations to prevent corruption from concurrent access
         self._db_lock: Optional[asyncio.Lock] = None
 
-        # Initialize notebook converter
-        self.nb_exporter = MarkdownExporter()
+        # Thread-local storage for MarkdownExporter (not thread-safe due to Jinja2)
+        self._thread_local = threading.local()
 
         # Load documentation config from the centralized config system
         self.config = get_config().docs
@@ -517,6 +1119,16 @@ class DocumentationIndexer:
             self.index_documentation = _locked_index_documentation  # type: ignore[method-assign]
             self._index_documentation_wrapped = True
 
+    def _get_nb_exporter(self) -> MarkdownExporter:
+        """Get or create a thread-local MarkdownExporter instance.
+
+        MarkdownExporter uses Jinja2 templates internally which are not
+        thread-safe, so each thread gets its own instance.
+        """
+        if not hasattr(self._thread_local, "nb_exporter"):
+            self._thread_local.nb_exporter = MarkdownExporter()
+        return self._thread_local.nb_exporter
+
     @property
     def db_lock(self) -> asyncio.Lock:
         """Lazy-initialize and return the database lock.
@@ -527,12 +1139,100 @@ class DocumentationIndexer:
             self._db_lock = asyncio.Lock()
         return self._db_lock
 
+    @property
+    def _backup_path(self) -> Path:
+        """Path to the backup copy of the vector database directory."""
+        return Path(str(self._vector_db_path) + ".bak")
+
+    @property
+    def _hash_file_path(self) -> Path:
+        """Path to the hash sidecar file for incremental indexing."""
+        return self._vector_db_path.parent / "index_hashes.json"
+
+    async def _restore_from_backup(self, ctx: Context | None = None) -> None:
+        """Restore vector database from backup after a write failure."""
+        backup_path = self._backup_path
+        if not backup_path.exists():
+            await log_warning("No backup found to restore from.", ctx)
+            return
+        try:
+            shutil.rmtree(self._vector_db_path, ignore_errors=True)
+            shutil.copytree(backup_path, self._vector_db_path)
+            SharedSystemClient.clear_system_cache()
+            self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
+            self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+            # Restore hash file if backup exists
+            hash_bak = backup_path.parent / "index_hashes.json.bak"
+            if hash_bak.exists():
+                shutil.copy2(hash_bak, self._hash_file_path)
+            await log_info("Restored vector database from backup.", ctx)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:
+            logger.error("Failed to restore from backup (%s: %s). Database may be degraded.", type(e).__name__, e)
+
+    def _load_hashes(self) -> dict[str, str]:
+        """Load document hashes from the sidecar file.
+
+        Returns
+        -------
+        dict[str, str]
+            Mapping of doc_id -> SHA-256 hex digest. Empty dict if file
+            doesn't exist or is corrupt.
+        """
+        path = self._hash_file_path
+        if not path.exists():
+            return {}
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+            return {}
+        except (json.JSONDecodeError, OSError):
+            logger.warning("Failed to load hash file %s, starting fresh", path)
+            return {}
+
+    def _save_hashes(self, hashes: dict[str, str]) -> None:
+        """Save document hashes to the sidecar file."""
+        path = self._hash_file_path
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(hashes, f, indent=2)
+
+    @staticmethod
+    def _compute_file_hash(file_path: Path) -> str:
+        """Compute SHA-256 hash of a file's contents."""
+        return hashlib.sha256(file_path.read_bytes()).hexdigest()
+
+    def _delete_doc_chunks(self, doc_id: str) -> int:
+        """Delete all chunks for a document from ChromaDB.
+
+        Parameters
+        ----------
+        doc_id : str
+            The parent document ID (chunks have parent_id metadata matching this).
+
+        Returns
+        -------
+        int
+            Number of chunks deleted.
+        """
+        results = self.collection.get(
+            where={"parent_id": doc_id},
+            include=[],  # only need IDs
+        )
+        if results["ids"]:
+            self.collection.delete(ids=results["ids"])
+        return len(results["ids"]) if results["ids"] else 0
+
     def is_indexed(self) -> bool:
         """Check if documentation index exists and is valid."""
         try:
             count = self.collection.count()
             return count > 0
-        except Exception:
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
             return False
 
     async def ensure_indexed(self, ctx: Context | None = None):
@@ -542,27 +1242,34 @@ class DocumentationIndexer:
             await self.index_documentation()
 
     async def clone_or_update_repo(self, repo_name: str, repo_config: "GitRepository", ctx: Context | None = None) -> Optional[Path]:
-        """Clone or update a single repository."""
+        """Clone or update a single repository.
+
+        Delegates to the synchronous implementation via run_in_executor.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._clone_or_update_repo_sync, repo_name, repo_config)
+
+    def _clone_or_update_repo_sync(self, repo_name: str, repo_config: "GitRepository") -> Optional[Path]:
+        """Clone or update a single repository (synchronous, for thread pool).
+
+        Same logic as clone_or_update_repo but uses logger instead of async ctx.
+        """
         repo_path = self.repos_dir / repo_name
 
         try:
             if repo_path.exists():
-                # Update existing repository
-                await log_info(f"Updating {repo_name} repository at {repo_path}...", ctx)
+                logger.info(f"Updating {repo_name} repository at {repo_path}...")
                 repo = git.Repo(repo_path)
                 repo.remotes.origin.pull()
             else:
-                # Clone new repository
-                await log_info(f"Cloning {repo_name} repository to {repo_path}...", ctx)
-                clone_kwargs: dict[str, Any] = {"depth": 1}  # Shallow clone for efficiency
+                logger.info(f"Cloning {repo_name} repository to {repo_path}...")
+                clone_kwargs: dict[str, Any] = {"depth": 1}
 
-                # Add branch, tag, or commit if specified
                 if repo_config.branch:
                     clone_kwargs["branch"] = repo_config.branch
                 elif repo_config.tag:
                     clone_kwargs["branch"] = repo_config.tag
                 elif repo_config.commit:
-                    # For specific commits, we need to clone and then checkout
                     git.Repo.clone_from(str(repo_config.url), repo_path, **clone_kwargs)
                     repo = git.Repo(repo_path)
                     repo.git.checkout(repo_config.commit)
@@ -572,9 +1279,84 @@ class DocumentationIndexer:
 
             return repo_path
         except Exception as e:
-            msg = f"Failed to clone/update {repo_name}: {e}"
-            await log_warning(msg, ctx)  # Changed from log_exception to log_warning so it doesn't raise
+            logger.warning(f"Failed to clone/update {repo_name}: {e}")
             return None
+
+    def _extract_docs_from_repo_sync(self, repo_path: Path, project: str, old_hashes: dict[str, str] | None = None) -> dict[str, Any]:
+        """Extract documentation files from a repository (synchronous, for thread pool).
+
+        When old_hashes is provided, files whose hash matches are skipped (not
+        read or converted), making incremental runs much faster.
+
+        Returns
+        -------
+        dict
+            ``{"docs": [...], "skipped_hashes": {doc_id: hash, ...}}``
+            where ``docs`` contains only new/changed documents and
+            ``skipped_hashes`` maps unchanged doc_ids to their hashes.
+        """
+        docs = []
+        skipped_hashes: dict[str, str] = {}
+        repo_config = self.config.repositories[project]
+
+        if isinstance(repo_config.folders, dict):
+            folders = repo_config.folders
+        else:
+            folders = {name: FolderConfig() for name in repo_config.folders}
+
+        files: set = set()
+        logger.info(f"Processing {project} documentation files in {','.join(folders.keys())}")
+
+        for folder_name in folders.keys():
+            docs_folder: Path = repo_path / folder_name
+            if docs_folder.exists():
+                for pattern in self.config.index_patterns:
+                    files.update(docs_folder.glob(pattern))
+
+        skipped_count = 0
+        for file in files:
+            if file.exists() and not file.is_dir():
+                # Early hash check: skip unchanged files before expensive content extraction
+                if old_hashes:
+                    relative_path = file.relative_to(repo_path)
+                    doc_id = self._generate_doc_id(project, relative_path)
+                    file_hash = self._compute_file_hash(file)
+                    if old_hashes.get(doc_id) == file_hash:
+                        skipped_hashes[doc_id] = file_hash
+                        skipped_count += 1
+                        continue
+
+                folder_name = ""
+                for fname in folders.keys():
+                    folder_path = repo_path / fname
+                    try:
+                        file.relative_to(folder_path)
+                        folder_name = fname
+                        break
+                    except ValueError:
+                        continue
+
+                doc_data = self.process_file(file, project, repo_config, folder_name)
+                if doc_data:
+                    docs.append(doc_data)
+
+        reference_count = sum(1 for doc in docs if doc["is_reference"])
+        regular_count = len(docs) - reference_count
+        if skipped_count:
+            logger.info(f"  {project}: {len(docs)} changed + {skipped_count} unchanged " f"({regular_count} regular, {reference_count} reference guides)")
+        else:
+            logger.info(f"  {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)")
+        return {"docs": docs, "skipped_hashes": skipped_hashes}
+
+    def _clone_and_extract_repo_sync(self, repo_name: str, repo_config: "GitRepository", old_hashes: dict[str, str] | None = None) -> dict[str, Any]:
+        """Clone/update a repo and extract its documents (single unit of work for thread pool)."""
+        t0 = time.monotonic()
+        repo_path = self._clone_or_update_repo_sync(repo_name, repo_config)
+        if not repo_path:
+            return {"docs": [], "skipped_hashes": {}}
+        result = self._extract_docs_from_repo_sync(repo_path, repo_name, old_hashes)
+        logger.info(f"Completed {repo_name}: {len(result['docs'])} docs in {time.monotonic() - t0:.1f}s")
+        return result
 
     def _is_reference_document(self, file_path: Path, project: str, folder_name: str = "") -> bool:
         """Check if the document is a reference document using configurable patterns.
@@ -748,7 +1530,7 @@ class DocumentationIndexer:
             with open(notebook_path, "r", encoding="utf-8") as f:
                 notebook = nbread(f, as_version=4)
 
-            (body, resources) = self.nb_exporter.from_notebook_node(notebook)
+            (body, resources) = self._get_nb_exporter().from_notebook_node(notebook)
             return body
         except Exception as e:
             logger.error(f"Failed to convert notebook {notebook_path}: {e}")
@@ -815,123 +1597,230 @@ class DocumentationIndexer:
                 "description": description,
                 "content": content,
                 "is_reference": is_reference,
+                "file_hash": self._compute_file_hash(file_path),
             }
         except Exception as e:
             logger.error(f"Failed to process file {file_path}: {e}")
             return None
 
-    async def extract_docs_from_repo(self, repo_path: Path, project: str, ctx: Context | None = None) -> list[dict[str, Any]]:
-        """Extract documentation files from a repository."""
-        docs = []
-        repo_config = self.config.repositories[project]
+    async def extract_docs_from_repo(self, repo_path: Path, project: str, ctx: Context | None = None) -> dict[str, Any]:
+        """Extract documentation files from a repository.
 
-        # Use the new folder structure with URL path mapping
-        if isinstance(repo_config.folders, dict):
-            folders = repo_config.folders
-        else:
-            # Convert list to dict with default FolderConfig
-            folders = {name: FolderConfig() for name in repo_config.folders}
+        Delegates to the synchronous implementation via run_in_executor.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._extract_docs_from_repo_sync, repo_path, project)
 
-        files: set = set()
-        await log_info(f"Processing {project} documentation files in {','.join(folders.keys())}", ctx)
+    async def index_documentation(
+        self,
+        ctx: Context | None = None,
+        projects: list[str] | None = None,
+        full_rebuild: bool = False,
+    ) -> None:
+        """Index documentation, incrementally when possible.
 
-        for folder_name in folders.keys():
-            docs_folder: Path = repo_path / folder_name
-            if docs_folder.exists():
-                # Use index patterns from config
-                for pattern in self.config.index_patterns:
-                    files.update(docs_folder.glob(pattern))
-
-        for file in files:
-            if file.exists() and not file.is_dir():
-                # Determine which folder this file belongs to
-                folder_name = ""
-                for fname in folders.keys():
-                    folder_path = repo_path / fname
-                    try:
-                        file.relative_to(folder_path)
-                        folder_name = fname
-                        break
-                    except ValueError:
-                        continue
-
-                doc_data = self.process_file(file, project, repo_config, folder_name)
-                if doc_data:
-                    docs.append(doc_data)
-
-        # Count reference vs regular documents
-        reference_count = sum(1 for doc in docs if doc["is_reference"])
-        regular_count = len(docs) - reference_count
-
-        await log_info(f"  📄 {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)", ctx)
-        return docs
-
-    async def index_documentation(self, ctx: Context | None = None):
-        """Indexes all documentation."""
+        Parameters
+        ----------
+        ctx : Context | None
+            FastMCP context for logging.
+        projects : list[str] | None
+            Only process these projects. None means all.
+        full_rebuild : bool
+            Force full rebuild, ignoring cached hashes.
+        """
+        overall_t0 = time.monotonic()
         await log_info("Starting documentation indexing...", ctx)
 
-        all_docs = []
+        # Validate project names
+        if projects:
+            available = set(self.config.repositories.keys())
+            invalid = [p for p in projects if p not in available]
+            if invalid:
+                raise ValueError(f"Unknown project(s): {', '.join(invalid)}. Available: {', '.join(sorted(available))}")
 
-        # Clone/update repositories and extract documentation
-        for repo_name, repo_config in self.config.repositories.items():
-            await log_info(f"Processing {repo_name}...", ctx)
-            repo_path = await self.clone_or_update_repo(repo_name, repo_config)
-            if repo_path:
-                docs = await self.extract_docs_from_repo(repo_path, repo_name, ctx)
-                all_docs.extend(docs)
+        # Determine target repos
+        if projects:
+            target_repos = {name: cfg for name, cfg in self.config.repositories.items() if name in projects}
+        else:
+            target_repos = dict(self.config.repositories.items())
 
-        if not all_docs:
-            await log_warning("No documentation found to index", ctx)
-            return
+        # Load existing hashes BEFORE extraction so workers can skip unchanged files
+        old_hashes = self._load_hashes()
+        is_full_rebuild = full_rebuild or not old_hashes
+        worker_hashes = {} if is_full_rebuild else old_hashes
 
-        # Validate for duplicate IDs and log details
-        await self._validate_unique_ids(all_docs)
+        all_docs: list[dict[str, Any]] = []
+        all_skipped_hashes: dict[str, str] = {}
 
-        # Clear existing collection
-        await log_info("Clearing existing index...", ctx)
+        # Clone/update repositories and extract documentation in parallel
+        # Workers receive old_hashes so they can skip unchanged files early
+        # (avoiding expensive notebook conversion for files whose hash matches)
+        num_repos = len(target_repos)
+        if num_repos > 0:
+            max_workers = min(4, num_repos)
+            await log_info(f"Processing {num_repos} repositories with {max_workers} workers...", ctx)
 
-        # Only delete if collection has data
-        try:
-            count = self.collection.count()
-            if count > 0:
-                # Delete all documents by getting all IDs first
-                results = self.collection.get()
-                if results["ids"]:
-                    self.collection.delete(ids=results["ids"])
-        except Exception as e:
-            logger.warning(f"Failed to clear existing collection: {e}")
-            # If clearing fails, recreate the collection
-            try:
-                self.chroma_client.delete_collection("holoviz_docs")
-                self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
-            except Exception as e2:
-                await log_exception(f"Failed to recreate collection: {e2}", ctx)
-                raise
-
-        # Add documents to ChromaDB
-        await log_info(f"Adding {len(all_docs)} documents to index...", ctx)
-
-        self.collection.add(
-            documents=[doc["content"] for doc in all_docs],
-            metadatas=[
-                {
-                    "title": doc["title"],
-                    "url": doc["url"],
-                    "project": doc["project"],
-                    "source_path": doc["source_path"],
-                    "source_path_stem": doc["source_path_stem"],
-                    "source_url": doc["source_url"],
-                    "description": doc["description"],
-                    "is_reference": doc["is_reference"],
+            loop = asyncio.get_running_loop()
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    loop.run_in_executor(executor, self._clone_and_extract_repo_sync, repo_name, repo_config, worker_hashes): repo_name
+                    for repo_name, repo_config in target_repos.items()
                 }
-                for doc in all_docs
-            ],
-            ids=[doc["id"] for doc in all_docs],
+                gather_results = await asyncio.gather(*futures.keys(), return_exceptions=True)
+                for result, repo_name in zip(gather_results, futures.values(), strict=False):
+                    if isinstance(result, BaseException):
+                        await log_warning(f"Repository {repo_name} failed: {result}", ctx)
+                    elif isinstance(result, dict):
+                        all_docs.extend(result["docs"])
+                        all_skipped_hashes.update(result["skipped_hashes"])
+
+        clone_extract_elapsed = time.monotonic() - overall_t0
+        await log_info(
+            f"Clone + extract completed in {clone_extract_elapsed:.1f}s " f"({len(all_docs)} to index, {len(all_skipped_hashes)} unchanged)",
+            ctx,
         )
 
-        await log_info(f"✅ Successfully indexed {len(all_docs)} documents", ctx)
-        await log_info(f"📊 Vector database stored at: {self._vector_db_path}", ctx)
-        await log_info(f"🔍 Index contains {self.collection.count()} total documents", ctx)
+        # Detect deleted docs: in old hashes for target projects but not extracted or skipped
+        target_project_names = set(target_repos.keys())
+        all_known_ids = {doc["id"] for doc in all_docs} | set(all_skipped_hashes.keys())
+        deleted_doc_ids: list[str] = [
+            doc_id for doc_id in old_hashes if doc_id not in all_known_ids and any(doc_id.startswith(f"{proj}___") for proj in target_project_names)
+        ]
+
+        changed_docs: list[dict[str, Any]] = []
+
+        if is_full_rebuild:
+            if not all_docs:
+                await log_warning("No documentation found to index", ctx)
+                return
+            docs_to_index = all_docs
+            await log_info(f"Full rebuild: indexing all {len(docs_to_index)} documents", ctx)
+        else:
+            # Incremental: all_docs contains only new/changed files (skipped were filtered by workers)
+            new_docs = [doc for doc in all_docs if doc["id"] not in old_hashes]
+            changed_docs = [doc for doc in all_docs if doc["id"] in old_hashes]
+
+            docs_to_index = all_docs  # all are new or changed (unchanged were skipped by workers)
+            await log_info(
+                f"Incremental: {len(new_docs)} new, {len(changed_docs)} changed, " f"{len(all_skipped_hashes)} unchanged, {len(deleted_doc_ids)} deleted",
+                ctx,
+            )
+
+            if not docs_to_index and not deleted_doc_ids:
+                total_elapsed = time.monotonic() - overall_t0
+                await log_info(f"Index up to date, nothing to do ({total_elapsed:.1f}s)", ctx)
+                # Still save hashes (preserves skipped + old non-target hashes)
+                new_hashes = dict(old_hashes)
+                for doc_id in deleted_doc_ids:
+                    new_hashes.pop(doc_id, None)
+                self._save_hashes(new_hashes)
+                return
+
+        if docs_to_index:
+            # Validate for duplicate IDs and log details
+            await self._validate_unique_ids(docs_to_index)
+
+        # Split documents into chunks at H1/H2 headers for better embedding quality
+        all_chunks: list[dict[str, Any]] = []
+        for doc in docs_to_index:
+            all_chunks.extend(chunk_document(doc))
+        await log_info(f"Chunked {len(docs_to_index)} documents into {len(all_chunks)} chunks", ctx)
+
+        # Create pre-write backup of vector database and hash file
+        backup_path = self._backup_path
+        try:
+            if self._vector_db_path.exists():
+                t0 = time.monotonic()
+                shutil.copytree(self._vector_db_path, backup_path, dirs_exist_ok=True)
+                await log_info(f"Pre-write backup created at {backup_path} ({time.monotonic() - t0:.1f}s)", ctx)
+            hash_src = self._hash_file_path
+            if hash_src.exists():
+                shutil.copy2(hash_src, backup_path.parent / "index_hashes.json.bak")
+        except Exception as e:
+            await log_warning(f"Failed to create pre-write backup: {e}. Continuing without backup.", ctx)
+
+        if is_full_rebuild:
+            # Full rebuild: clear existing collection and re-add everything
+            await log_info("Clearing existing index...", ctx)
+            try:
+                count = self.collection.count()
+                if count > 0:
+                    results = self.collection.get()
+                    if results["ids"]:
+                        delete_batch_size = self.chroma_client.get_max_batch_size()
+                        for i in range(0, len(results["ids"]), delete_batch_size):
+                            self.collection.delete(ids=results["ids"][i : i + delete_batch_size])
+            except Exception as e:
+                logger.warning(f"Failed to clear existing collection: {e}")
+                try:
+                    self.chroma_client.delete_collection("holoviz_docs")
+                    self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
+                except Exception as e2:
+                    await log_exception(f"Failed to recreate collection: {e2}", ctx)
+                    raise
+        else:
+            # Incremental: delete chunks for changed and deleted docs
+            for doc_id in deleted_doc_ids:
+                deleted_count = self._delete_doc_chunks(doc_id)
+                if deleted_count > 0:
+                    logger.debug("Deleted %d chunks for removed doc %s", deleted_count, doc_id)
+            for doc in changed_docs:
+                deleted_count = self._delete_doc_chunks(doc["id"])
+                if deleted_count > 0:
+                    logger.debug("Deleted %d old chunks for changed doc %s", deleted_count, doc["id"])
+
+        # Add chunks to ChromaDB in batches (ChromaDB enforces a max batch size)
+        if all_chunks:
+            batch_size = self.chroma_client.get_max_batch_size()
+            await log_info(f"Adding {len(all_chunks)} chunks from {len(docs_to_index)} documents to index (batch size {batch_size})...", ctx)
+
+            try:
+                for batch_start in range(0, len(all_chunks), batch_size):
+                    batch = all_chunks[batch_start : batch_start + batch_size]
+                    self.collection.add(
+                        documents=[doc["content"] for doc in batch],
+                        metadatas=[
+                            {
+                                "title": doc["title"],
+                                "url": doc["url"],
+                                "project": doc["project"],
+                                "source_path": doc["source_path"],
+                                "source_path_stem": doc["source_path_stem"],
+                                "source_url": doc["source_url"],
+                                "description": doc["description"],
+                                "is_reference": doc["is_reference"],
+                                "chunk_index": doc["chunk_index"],
+                                "parent_id": doc["parent_id"],
+                            }
+                            for doc in batch
+                        ],
+                        ids=[doc["id"] for doc in batch],
+                    )
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except BaseException as e:
+                logger.error("ChromaDB write failed (%s: %s). Attempting restore from backup.", type(e).__name__, e)
+                await self._restore_from_backup(ctx)
+                raise
+
+        # Save updated hashes (after successful ChromaDB write)
+        new_hashes = dict(old_hashes)  # start from existing (preserves non-target projects)
+        # Remove deleted docs
+        for doc_id in deleted_doc_ids:
+            new_hashes.pop(doc_id, None)
+        # Add/update hashes for indexed docs
+        for doc in docs_to_index:
+            file_hash = doc.get("file_hash")
+            if file_hash:
+                new_hashes[doc["id"]] = file_hash
+        # Include hashes for files that were skipped (unchanged)
+        new_hashes.update(all_skipped_hashes)
+        self._save_hashes(new_hashes)
+
+        total_elapsed = time.monotonic() - overall_t0
+        await log_info(f"Successfully indexed {len(all_chunks)} chunks from {len(docs_to_index)} documents in {total_elapsed:.1f}s", ctx)
+        await log_info(f"Vector database stored at: {self._vector_db_path}", ctx)
+        await log_info(f"Index contains {self.collection.count()} total documents", ctx)
 
         # Show detailed summary table
         await self._log_summary_table(ctx)
@@ -953,8 +1842,8 @@ class DocumentationIndexer:
                 )
 
                 await log_warning(f"DUPLICATE ID FOUND: {doc_id}", ctx)
-                await log_warning(f"  First document: {seen_ids[doc_id]['project']}/{seen_ids[doc_id]['path']} - {seen_ids[doc_id]['title']}", ctx)
-                await log_warning(f"  Duplicate document: {doc['project']}/{doc['path']} - {doc['title']}", ctx)
+                await log_warning(f"  First document: {seen_ids[doc_id]['project']}/{seen_ids[doc_id]['source_path']} - {seen_ids[doc_id]['title']}", ctx)
+                await log_warning(f"  Duplicate document: {doc['project']}/{doc['source_path']} - {doc['title']}", ctx)
             else:
                 seen_ids[doc_id] = {"project": doc["project"], "source_path": doc["source_path"], "title": doc["title"]}
 
@@ -965,7 +1854,7 @@ class DocumentationIndexer:
             # Log all duplicates for debugging
             for dup in duplicates:
                 await log_exception(
-                    f"Duplicate ID '{dup['id']}': {dup['first_doc']['project']}/{dup['first_doc']['path']} vs {dup['duplicate_doc']['project']}/{dup['duplicate_doc']['path']}",  # noqa: D401, E501
+                    f"Duplicate ID '{dup['id']}': {dup['first_doc']['project']}/{dup['first_doc']['source_path']} vs {dup['duplicate_doc']['project']}/{dup['duplicate_doc']['source_path']}",  # noqa: D401, E501
                     ctx,
                 )
 
@@ -990,49 +1879,310 @@ class DocumentationIndexer:
             filters.append({"is_reference": True})
             where_clause: dict[str, Any] = {"$and": filters} if len(filters) > 1 else filters[0]
 
-            all_results = []
-
             filename_results = self.collection.query(query_texts=[component], n_results=1000, where=where_clause)
+
+            # Group chunks by source_path, then merge content per document
+            grouped: dict[str, list[tuple[int, str, Any]]] = {}
             if filename_results["ids"] and filename_results["ids"][0]:
                 for i, _ in enumerate(filename_results["ids"][0]):
                     if filename_results["metadatas"] and filename_results["metadatas"][0]:
                         metadata = filename_results["metadatas"][0][i]
-                        # Include content if requested
-                        content_text = filename_results["documents"][0][i] if (content and filename_results["documents"]) else None
+                        source_path = str(metadata["source_path"])
 
-                        # Safe URL construction
-                        url_value = metadata.get("url", "https://example.com")
-                        if not url_value or url_value == "None" or not isinstance(url_value, str):
-                            url_value = "https://example.com"
-
-                        # Give exact filename matches a high relevance score
-                        relevance_score = 1.0  # Highest priority for exact filename matches
-
-                        document = Document(
-                            title=str(metadata["title"]),
-                            url=HttpUrl(url_value),
-                            project=str(metadata["project"]),
-                            source_path=str(metadata["source_path"]),
-                            source_url=HttpUrl(str(metadata.get("source_url", ""))),
-                            description=str(metadata["description"]),
-                            is_reference=bool(metadata["is_reference"]),
-                            content=content_text,
-                            relevance_score=relevance_score,
-                        )
-
-                        if project and document.project != project:
-                            await log_exception(f"Project mismatch for component '{component}': expected '{project}', got '{document.project}'", ctx)
-                        elif metadata["source_path_stem"] != component:
+                        # Validate filters
+                        if project and str(metadata["project"]) != project:
+                            await log_exception(f"Project mismatch for component '{component}': expected '{project}', got '{metadata['project']}'", ctx)
+                            continue
+                        if metadata["source_path_stem"] != component:
                             await log_exception(f"Path stem mismatch for component '{component}': expected '{component}', got '{metadata['source_path_stem']}'", ctx)
-                        else:
-                            all_results.append(document)
+                            continue
+
+                        content_text = filename_results["documents"][0][i] if (content and filename_results["documents"]) else None
+                        chunk_index = int(metadata.get("chunk_index", 0) or 0)
+
+                        if source_path not in grouped:
+                            grouped[source_path] = []
+                        grouped[source_path].append((chunk_index, content_text or "", metadata))
+
+            # Build one Document per unique source_path
+            all_results: list[Document] = []
+            for source_path, chunks in grouped.items():
+                chunks.sort(key=lambda c: c[0])
+                metadata = chunks[0][2]
+
+                doc_title = str(metadata["title"])
+
+                # Merge content from all chunks if content was requested.
+                # Strip the title prefix that chunk_document() prepends for embedding.
+                if content:
+                    merged_content: str | None = "\n".join(
+                        _strip_title_prefix(
+                            c[1],
+                            doc_title,
+                            project=str(metadata["project"]),
+                            source_path=source_path,
+                            is_reference=bool(metadata["is_reference"]),
+                        )
+                        for c in chunks
+                    )
+                else:
+                    merged_content = None
+
+                # Safe URL construction
+                url_value = metadata.get("url", "https://example.com")
+                if not url_value or url_value == "None" or not isinstance(url_value, str):
+                    url_value = "https://example.com"
+
+                document = Document(
+                    title=doc_title,
+                    url=HttpUrl(url_value),
+                    project=str(metadata["project"]),
+                    source_path=source_path,
+                    source_url=HttpUrl(str(metadata.get("source_url", ""))),
+                    description=str(metadata["description"]),
+                    is_reference=bool(metadata["is_reference"]),
+                    content=merged_content,
+                    relevance_score=1.0,
+                )
+                all_results.append(document)
+
             return all_results
+
+    def _reconstruct_document_content(self, source_path: str, project: str) -> str:
+        """Reconstruct full document content from its chunks in ChromaDB.
+
+        Uses collection.get() (metadata filter, no embedding computation)
+        to fetch all chunks for a document, sorts by chunk_index, strips
+        title prefixes, and joins into a single string.
+
+        Must be called while holding db_lock.
+
+        Parameters
+        ----------
+        source_path : str
+            The source path of the document.
+        project : str
+            The project name.
+
+        Returns
+        -------
+        str
+            The reconstructed document content, or empty string if not found.
+        """
+        results = self.collection.get(
+            where={"$and": [{"project": project}, {"source_path": source_path}]},
+            include=["documents", "metadatas"],
+        )
+        if not results["ids"]:
+            return ""
+
+        chunks: list[tuple[int, str, str]] = []
+        for i, _ in enumerate(results["ids"]):
+            metadata = results["metadatas"][i] if results["metadatas"] else {}
+            content_text = results["documents"][i] if results["documents"] else ""
+            chunk_index = int(metadata.get("chunk_index", 0) or 0)
+            title = str(metadata.get("title", ""))
+            chunks.append((chunk_index, content_text or "", title))
+
+        chunks.sort(key=lambda c: c[0])
+        title = chunks[0][2]
+        is_ref = bool(results["metadatas"][0].get("is_reference", False)) if results["metadatas"] else False
+        return "\n".join(_strip_title_prefix(c[1], title, project=project, source_path=source_path, is_reference=is_ref) for c in chunks)
+
+    def _extract_documents_from_results(
+        self,
+        results: dict[str, Any],
+        documents: list[Document],
+        seen_paths: set[str],
+        max_results: int,
+        content_mode: str | None,
+        max_content_chars: int | None,
+        query: str,
+    ) -> None:
+        """Extract :class:`Document` objects from a ChromaDB query result.
+
+        Appends to *documents* in place, deduplicating by ``source_path``
+        via the shared *seen_paths* set.  Stops once *documents* reaches
+        *max_results*.
+
+        Must be called while holding ``db_lock``.
+
+        Parameters
+        ----------
+        results : dict[str, Any]
+            Raw ChromaDB ``collection.query()`` return value.
+        documents : list[Document]
+            Accumulator list — new documents are appended here.
+        seen_paths : set[str]
+            Already-seen ``source_path`` values for deduplication.
+        max_results : int
+            Stop after this many documents have been collected.
+        content_mode : str | None
+            One of ``"chunk"``, ``"truncated"``, ``"full"``, or ``None``.
+        max_content_chars : int | None
+            Passed through to :func:`truncate_content`.
+        query : str
+            Original search query (used for context-aware truncation).
+        """
+        if not (results["ids"] and results["ids"][0]):
+            return
+
+        for i, _ in enumerate(results["ids"][0]):
+            if len(documents) >= max_results:
+                break
+
+            if not (results["metadatas"] and results["metadatas"][0]):
+                continue
+
+            metadata = results["metadatas"][0][i]
+
+            # Deduplicate by source_path — keep only the best-scoring chunk per document
+            source_path = str(metadata["source_path"])
+            if source_path in seen_paths:
+                continue
+            seen_paths.add(source_path)
+
+            # Resolve content based on content mode
+            if content_mode is None:
+                content_text = None
+            elif content_mode == "chunk":
+                content_text = results["documents"][0][i] if results["documents"] else None
+                if content_text:
+                    content_text = _strip_title_prefix(
+                        content_text,
+                        str(metadata["title"]),
+                        project=str(metadata.get("project", "")),
+                        source_path=source_path,
+                        is_reference=bool(metadata.get("is_reference", False)),
+                    )
+                content_text = truncate_content(content_text, max_content_chars, query=query)
+            else:
+                # "truncated", "full", or unknown mode — reconstruct full document
+                content_text = self._reconstruct_document_content(source_path, str(metadata["project"]))
+                if content_mode != "full":
+                    content_text = truncate_content(content_text, max_content_chars, query=query)
+
+            # Safe URL construction
+            url_value = metadata.get("url", "https://example.com")
+            if not url_value or url_value == "None" or not isinstance(url_value, str):
+                url_value = "https://example.com"
+
+            # Safe relevance score calculation
+            relevance_score = None
+            if (
+                results.get("distances")
+                and isinstance(results["distances"], list)
+                and len(results["distances"]) > 0
+                and isinstance(results["distances"][0], list)
+                and len(results["distances"][0]) > i
+            ):
+                try:
+                    relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
+                except (ValueError, TypeError):
+                    relevance_score = None
+
+            document = Document(
+                title=str(metadata["title"]),
+                url=HttpUrl(url_value),
+                project=str(metadata["project"]),
+                source_path=source_path,
+                source_url=HttpUrl(str(metadata.get("source_url", ""))),
+                description=str(metadata["description"]),
+                is_reference=bool(metadata["is_reference"]),
+                content=content_text,
+                relevance_score=relevance_score,
+            )
+            documents.append(document)
+
+    def _merge_search_results(
+        self,
+        metadata_results: dict[str, Any] | None,
+        keyword_results: dict[str, Any] | None,
+        semantic_results: dict[str, Any],
+        max_results: int,
+        content_mode: str | None,
+        max_content_chars: int | None,
+        query: str,
+    ) -> list[Document]:
+        """Merge metadata-boosted, keyword-filtered and semantic search results.
+
+        Results are merged in priority order: metadata boost (exact stem
+        match) > keyword pre-filter (content ``$contains``) > pure semantic
+        similarity.  Deduplication by ``source_path`` is maintained across
+        all passes.
+
+        Must be called while holding ``db_lock``.
+
+        Parameters
+        ----------
+        metadata_results : dict[str, Any] | None
+            ChromaDB query result with ``source_path_stem`` metadata filter,
+            or ``None`` when no PascalCase terms were found.
+        keyword_results : dict[str, Any] | None
+            ChromaDB query result with ``where_document`` pre-filter, or
+            ``None`` when no technical terms were found.
+        semantic_results : dict[str, Any]
+            ChromaDB query result from pure semantic similarity.
+        max_results : int
+            Maximum number of documents to return.
+        content_mode : str | None
+            Content resolution mode.
+        max_content_chars : int | None
+            Maximum content characters.
+        query : str
+            Original search query.
+
+        Returns
+        -------
+        list[Document]
+            Merged, deduplicated document list.
+        """
+        documents: list[Document] = []
+        seen_paths: set[str] = set()
+
+        # Pass 0: metadata-boosted results (exact stem match)
+        if metadata_results is not None:
+            self._extract_documents_from_results(
+                metadata_results,
+                documents,
+                seen_paths,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
+
+        # Pass 1: keyword-filtered results (content $contains)
+        if keyword_results is not None and len(documents) < max_results:
+            self._extract_documents_from_results(
+                keyword_results,
+                documents,
+                seen_paths,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
+
+        # Pass 2: fill remaining slots from semantic results
+        if len(documents) < max_results:
+            self._extract_documents_from_results(
+                semantic_results,
+                documents,
+                seen_paths,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
+
+        return documents
 
     async def search(
         self,
         query: str,
         project: str | None = None,
-        content: bool = True,
+        content: str | bool = "truncated",
         max_results: int = 5,
         max_content_chars: int | None = 10000,
         ctx: Context | None = None,
@@ -1041,114 +2191,106 @@ class DocumentationIndexer:
         async with self.db_lock:
             await self.ensure_indexed(ctx=ctx)
 
+            # Normalize content parameter for backward compatibility
+            if content is True:
+                content_mode = "truncated"
+            elif content is False or content is None:
+                content_mode = None
+            else:
+                content_mode = str(content)
+
             # Build where clause for filtering
             where_clause = {"project": str(project)} if project else None
 
-            # Perform vector similarity search
-            results = self.collection.query(query_texts=[query], n_results=max_results, where=where_clause)  # type: ignore[arg-type]
+            # Over-query to allow deduplication across chunks of the same document
+            n_results = max_results * 3
 
-            documents = []
-            if results["ids"] and results["ids"][0]:
-                for i, _ in enumerate(results["ids"][0]):
-                    if results["metadatas"] and results["metadatas"][0]:
-                        metadata = results["metadatas"][0][i]
+            # Extract technical terms for keyword pre-filtering
+            tech_terms = extract_tech_terms(query)
+            # Extract PascalCase terms for metadata boost + content matching
+            pascal_terms = extract_pascal_terms(query)
 
-                        # Include content if requested
-                        content_text = results["documents"][0][i] if (content and results["documents"]) else None
-                        # Apply smart truncation with query context
-                        content_text = truncate_content(content_text, max_content_chars, query=query)
+            # When a project filter is active, drop terms that match the
+            # project name itself — every document in the project trivially
+            # contains the project name, so the pre-filter adds no selectivity
+            # and fills merge slots with irrelevant docs.
+            if project and (tech_terms or pascal_terms):
+                project_lower = project.lower().replace("-", "")
+                tech_terms = [t for t in tech_terms if t.lower().replace("-", "") != project_lower]
+                pascal_terms = [t for t in pascal_terms if t.lower().replace("-", "") != project_lower]
 
-                        # Safe URL construction
-                        url_value = metadata.get("url", "https://example.com")
-                        if not url_value or url_value == "None" or not isinstance(url_value, str):
-                            url_value = "https://example.com"
+            # Combine for content pre-filter: tech_terms + pascal_terms (deduplicated)
+            all_content_terms = list(dict.fromkeys(tech_terms + pascal_terms))
+            where_doc = _build_where_document_clause(all_content_terms)
 
-                        # Safe relevance score calculation
-                        relevance_score = None
-                        if (
-                            results.get("distances")
-                            and isinstance(results["distances"], list)
-                            and len(results["distances"]) > 0
-                            and isinstance(results["distances"][0], list)
-                            and len(results["distances"][0]) > i
-                        ):
-                            try:
-                                relevance_score = (2.0 - float(results["distances"][0][i])) / 2.0
-                            except (ValueError, TypeError):
-                                relevance_score = None
+            # Query 0: metadata boost on source_path_stem
+            metadata_results = None
+            if pascal_terms:
+                stem_clause = _build_stem_boost_clause(pascal_terms, project)
+                if stem_clause:
+                    metadata_results = self.collection.query(
+                        query_texts=[query],
+                        n_results=n_results,
+                        where=stem_clause,  # type: ignore[arg-type]
+                    )
 
-                        document = Document(
-                            title=str(metadata["title"]),
-                            url=HttpUrl(url_value),
-                            project=str(metadata["project"]),
-                            source_path=str(metadata["source_path"]),
-                            source_url=HttpUrl(str(metadata.get("source_url", ""))),
-                            description=str(metadata["description"]),
-                            is_reference=bool(metadata["is_reference"]),
-                            content=content_text,
-                            relevance_score=relevance_score,
-                        )
-                        documents.append(document)
-            return documents
+            # Query 1: keyword-filtered (only when content terms are found)
+            keyword_results = None
+            if where_doc:
+                keyword_results = self.collection.query(
+                    query_texts=[query],
+                    n_results=n_results,
+                    where=where_clause,
+                    where_document=where_doc,  # type: ignore[arg-type]
+                )
+
+            # Query 2: pure semantic similarity (always)
+            semantic_results = self.collection.query(query_texts=[query], n_results=n_results, where=where_clause)  # type: ignore[arg-type]
+
+            return self._merge_search_results(
+                metadata_results,
+                keyword_results,
+                semantic_results,
+                max_results,
+                content_mode,
+                max_content_chars,
+                query,
+            )
 
     async def get_document(self, path: str, project: str, ctx: Context | None = None) -> Document:
-        """Get a specific document."""
+        """Get a specific document, reconstructing from chunks if needed."""
         async with self.db_lock:
             await self.ensure_indexed(ctx=ctx)
 
-            # Build where clause for filtering
-            filters: list[dict[str, str]] = [{"project": str(project)}, {"source_path": str(path)}]
-            where_clause: dict[str, Any] = {"$and": filters}
-
-            # Perform vector similarity search
-            results = self.collection.query(query_texts=[""], n_results=3, where=where_clause)
-
-            documents = []
-            if results["ids"] and results["ids"][0]:
-                for i, _ in enumerate(results["ids"][0]):
-                    if results["metadatas"] and results["metadatas"][0]:
-                        metadata = results["metadatas"][0][i]
-
-                        # Include content if requested
-                        content_text = results["documents"][0][i] if results["documents"] else None
-
-                        # Safe URL construction
-                        url_value = metadata.get("url", "https://example.com")
-                        if not url_value or url_value == "None" or not isinstance(url_value, str):
-                            url_value = "https://example.com"
-
-                        # Safe relevance score calculation
-                        relevance_score = None
-                        if (
-                            results.get("distances")
-                            and isinstance(results["distances"], list)
-                            and len(results["distances"]) > 0
-                            and isinstance(results["distances"][0], list)
-                            and len(results["distances"][0]) > i
-                        ):
-                            try:
-                                relevance_score = 1.0 - float(results["distances"][0][i])
-                            except (ValueError, TypeError):
-                                relevance_score = None
-
-                        document = Document(
-                            title=str(metadata["title"]),
-                            url=HttpUrl(url_value),
-                            project=str(metadata["project"]),
-                            source_path=str(metadata["source_path"]),
-                            source_url=HttpUrl(str(metadata.get("source_url", ""))),
-                            description=str(metadata["description"]),
-                            is_reference=bool(metadata["is_reference"]),
-                            content=content_text,
-                            relevance_score=relevance_score,
-                        )
-                        documents.append(document)
-
-            if len(documents) > 1:
-                raise ValueError(f"Multiple documents found for path '{path}' in project '{project}'. Please ensure unique paths.")
-            elif len(documents) == 0:
+            # Reconstruct full content from chunks
+            merged_content = self._reconstruct_document_content(path, project)
+            if not merged_content:
                 raise ValueError(f"No document found for path '{path}' in project '{project}'.")
-            return documents[0]
+
+            # Get metadata from a single chunk (for Document fields)
+            results = self.collection.get(
+                where={"$and": [{"project": project}, {"source_path": path}]},
+                include=["metadatas"],
+                limit=1,
+            )
+            metadata = results["metadatas"][0] if results["metadatas"] else {}
+
+            # Safe URL construction
+            url_value = metadata.get("url", "https://example.com")
+            if not url_value or url_value == "None" or not isinstance(url_value, str):
+                url_value = "https://example.com"
+
+            return Document(
+                title=str(metadata.get("title", "")),
+                url=HttpUrl(url_value),
+                project=str(metadata.get("project", "")),
+                source_path=str(metadata.get("source_path", "")),
+                source_url=HttpUrl(str(metadata.get("source_url", ""))),
+                description=str(metadata.get("description", "")),
+                is_reference=bool(metadata.get("is_reference", False)),
+                content=merged_content,
+                relevance_score=None,
+            )
 
     async def list_projects(self) -> list[str]:
         """List all available projects with documentation in the index.
@@ -1194,11 +2336,22 @@ class DocumentationIndexer:
                 await log_info("No documents found in index", ctx)
                 return
 
-            # Count documents by project and type
+            # Count unique documents (not chunks) by project and type
             project_stats: dict[str, dict[str, int]] = {}
+            seen_docs: set[str] = set()
+            total_chunks = 0
+
             for metadata in results["metadatas"]:
+                total_chunks += 1
                 project = str(metadata.get("project", "unknown"))
+                source_path = str(metadata.get("source_path", ""))
                 is_reference = metadata.get("is_reference", False)
+
+                # Only count each unique document once (not each chunk)
+                doc_key = f"{project}::{source_path}"
+                if doc_key in seen_docs:
+                    continue
+                seen_docs.add(doc_key)
 
                 if project not in project_stats:
                     project_stats[project] = {"total": 0, "regular": 0, "reference": 0}
@@ -1230,41 +2383,55 @@ class DocumentationIndexer:
             await log_info("-" * 60, ctx)
             await log_info(f"{'TOTAL':<20} {total_docs:<8} {total_regular:<8} {total_reference:<10}", ctx)
             await log_info("=" * 60, ctx)
+            await log_info(f"Total chunks in vector database: {total_chunks}", ctx)
 
         except Exception as e:
             await log_warning(f"Failed to generate summary table: {e}", ctx)
 
-    def run(self):
-        """Update the DocumentationIndexer."""
+    def run(self, projects: list[str] | None = None, full_rebuild: bool = False):
+        """Update the DocumentationIndexer.
+
+        Parameters
+        ----------
+        projects : list[str] | None
+            Only process these projects. None means all.
+        full_rebuild : bool
+            Force full rebuild, ignoring cached hashes.
+        """
         # Configure logging for the CLI
         logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", handlers=[logging.StreamHandler()])
 
-        logger.info("🚀 HoloViz MCP Documentation Indexer")
+        logger.info("HoloViz MCP Documentation Indexer")
         logger.info("=" * 50)
 
         async def run_indexer(indexer=self):
-            logger.info(f"📦 Default config: {indexer._holoviz_mcp_config.config_file_path(location='default')}")
-            logger.info(f"🏠 User config: {indexer._holoviz_mcp_config.config_file_path(location='user')}")
-            logger.info(f"📁 Repository directory: {indexer.repos_dir}")
-            logger.info(f"💾 Vector database: {self._vector_db_path}")
-            logger.info(f"🔧 Configured repositories: {len(indexer.config.repositories)}")
+            logger.info(f"Default config: {indexer._holoviz_mcp_config.config_file_path(location='default')}")
+            logger.info(f"User config: {indexer._holoviz_mcp_config.config_file_path(location='user')}")
+            logger.info(f"Repository directory: {indexer.repos_dir}")
+            logger.info(f"Vector database: {self._vector_db_path}")
+            logger.info(f"Hash cache: {self._hash_file_path}")
+            logger.info(f"Configured repositories: {len(indexer.config.repositories)}")
+            if projects:
+                logger.info(f"Target projects: {', '.join(projects)}")
+            if full_rebuild:
+                logger.info("Mode: full rebuild (ignoring hashes)")
             logger.info("")
 
-            await indexer.index_documentation()
+            await indexer.index_documentation(projects=projects, full_rebuild=full_rebuild)
 
             # Final summary
             count = indexer.collection.count()
             logger.info("")
             logger.info("=" * 50)
-            logger.info("✅ Indexing completed successfully!")
-            logger.info(f"📊 Total documents in database: {count}")
+            logger.info("Indexing completed successfully!")
+            logger.info(f"Total documents in database: {count}")
             logger.info("=" * 50)
 
         asyncio.run(run_indexer())
 
 
 def main():
-    """Run the documentation indexer."""
+    """Run the documentation indexer (full rebuild, called from legacy entry points)."""
     DocumentationIndexer().run()
 
 

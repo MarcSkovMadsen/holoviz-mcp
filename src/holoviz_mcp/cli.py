@@ -6,6 +6,7 @@ This module provides a unified CLI using Typer for all HoloViz MCP commands.
 import shutil
 import subprocess
 import sys
+from typing import Optional
 
 import typer
 from typing_extensions import Annotated
@@ -60,15 +61,26 @@ def main(
 
 
 @update_app.command(name="index")
-def update_index() -> None:
+def update_index(
+    project: Annotated[
+        Optional[list[str]],
+        typer.Option("--project", "-p", help="Only update specific project(s). Can be repeated."),
+    ] = None,
+    full: Annotated[
+        bool,
+        typer.Option("--full", "-f", help="Force full rebuild, ignoring cached hashes."),
+    ] = False,
+) -> None:
     """Update the documentation index.
 
     This command clones/updates HoloViz repositories and builds the vector database
-    for documentation search. First run may take up to 10 minutes.
+    for documentation search. First run may take up to 10 minutes. Subsequent runs
+    are incremental and only re-index changed files.
     """
-    from holoviz_mcp.holoviz_mcp.data import main as update_main
+    from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
 
-    update_main()
+    indexer = DocumentationIndexer()
+    indexer.run(projects=project, full_rebuild=full)
 
 
 @install_app.command(name="copilot")
