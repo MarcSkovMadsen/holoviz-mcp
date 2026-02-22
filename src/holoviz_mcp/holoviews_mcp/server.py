@@ -30,7 +30,7 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool
+@mcp.tool()
 async def list_elements(ctx: Context) -> list[str]:
     """
     List all available HoloViews visualization elements.
@@ -50,7 +50,7 @@ async def list_elements(ctx: Context) -> list[str]:
     return sorted(elements_list)
 
 
-@mcp.tool
+@mcp.tool()
 async def get_docstring(ctx: Context, element: str, backend: Literal["matplotlib", "bokeh", "plotly"] = "bokeh") -> str:
     """
     Get the hvPlot docstring for a specific plot type, including available options and usage details.

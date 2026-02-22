@@ -126,7 +126,7 @@ async def _get_all_components(ctx: Context) -> list[ComponentDetails]:
     return COMPONENTS
 
 
-@mcp.tool
+@mcp.tool()
 async def list_packages(ctx: Context) -> list[str]:
     """
     List all installed packages that provide Panel UI components.
@@ -158,7 +158,7 @@ async def list_packages(ctx: Context) -> list[str]:
     return sorted(set(component.package for component in await _get_all_components(ctx)))
 
 
-@mcp.tool
+@mcp.tool()
 async def search_components(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
     """
     Search for Panel components by search query and optional package filter.
@@ -265,7 +265,7 @@ async def _get_component(ctx: Context, name: str | None = None, module_path: str
     return components_list
 
 
-@mcp.tool
+@mcp.tool()
 async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
     """
     Get a summary list of Panel components without detailed docstring and parameter information.
@@ -322,7 +322,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
     return components_list
 
 
-@mcp.tool
+@mcp.tool()
 async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
     """
     Get complete details about a single Panel component including docstring and parameters.
@@ -383,7 +383,7 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     return component
 
 
-@mcp.tool
+@mcp.tool()
 async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> dict[str, ParameterInfo]:
     """
     Get detailed parameter information for a single Panel component.

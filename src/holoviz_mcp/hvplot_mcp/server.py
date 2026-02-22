@@ -46,7 +46,7 @@ def _help(
     return doc, sig
 
 
-@mcp.tool
+@mcp.tool()
 async def list_plot_types(ctx: Context) -> list[str]:
     """
     List all available hvPlot plot types supported in the current environment.
@@ -75,7 +75,7 @@ async def list_plot_types(ctx: Context) -> list[str]:
     return sorted(HoloViewsConverter._kind_mapping)
 
 
-@mcp.tool
+@mcp.tool()
 async def get_docstring(
     ctx: Context, plot_type: str, docstring: bool = True, generic: bool = True, style: Union[Literal["matplotlib", "bokeh", "plotly"], bool] = True
 ) -> str:
@@ -111,7 +111,7 @@ async def get_docstring(
     return doc
 
 
-@mcp.tool
+@mcp.tool()
 async def get_signature(ctx: Context, plot_type: str, style: Union[Literal["matplotlib", "bokeh", "plotly"], bool] = True) -> str:
     """
     Get the function signature for a specific hvPlot plot type.
