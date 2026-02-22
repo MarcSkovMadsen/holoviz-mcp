@@ -2058,8 +2058,46 @@ class TestBranchHandling:
         _, kwargs = mock_clone_from.call_args
         assert kwargs.get("branch") == "v1.2.3"
 
+    def test_correct_tag_already_checked_out_returns_path(self, tmp_path):
+        """Existing repo already on the correct tag (detached HEAD): returns path, no re-clone, no pull."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            tag="v1.2.3",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        # Simulate detached HEAD: active_branch raises TypeError (real GitPython behaviour)
+        mock_commit = MagicMock()
+        mock_tag = MagicMock()
+        mock_tag.name = "v1.2.3"
+        mock_tag.commit = mock_commit
+
+        mock_repo = MagicMock()
+        mock_repo.tags = [mock_tag]
+        mock_repo.head.commit = mock_commit  # same object → already on correct tag
+
+        import git
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from") as mock_clone_from:
+                    result = indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        assert result == repo_dir
+        mock_rmtree.assert_not_called()
+        mock_clone_from.assert_not_called()
+        mock_repo.remotes.origin.pull.assert_not_called()
+
     def test_stale_tag_triggers_reclone(self, tmp_path):
-        """Existing repo on wrong tag: dir is deleted and re-cloned on the correct tag."""
+        """Existing repo on wrong tag (detached HEAD): dir is deleted and re-cloned on the correct tag."""
         from unittest.mock import MagicMock
         from unittest.mock import patch
 
@@ -2076,8 +2114,14 @@ class TestBranchHandling:
         repo_dir = tmp_path / "repos" / "repo"
         repo_dir.mkdir(parents=True)
 
+        # Simulate detached HEAD at a different tag — tag commit != HEAD commit
+        mock_tag = MagicMock()
+        mock_tag.name = "v1.2.3"
+        mock_tag.commit = MagicMock()  # tag points somewhere
+
         mock_repo = MagicMock()
-        mock_repo.active_branch.name = "v0.9.0"
+        mock_repo.tags = [mock_tag]
+        mock_repo.head.commit = MagicMock()  # HEAD is elsewhere → stale
 
         with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
             with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:

@@ -1259,16 +1259,24 @@ class DocumentationIndexer:
         try:
             if repo_path.exists():
                 repo = git.Repo(repo_path)
-                expected_ref = repo_config.branch or repo_config.tag
 
-                if expected_ref:
+                if repo_config.tag:
+                    # Tag checkouts leave the repo in detached HEAD; verify via tag→commit mapping.
+                    matching_tag = next((t for t in repo.tags if t.name == repo_config.tag), None)
+                    if matching_tag and matching_tag.commit == repo.head.commit:
+                        # Already on the correct tag — tags are immutable, nothing to pull.
+                        return repo_path
+                    logger.info(f"Stale checkout for {repo_name}: expected tag '{repo_config.tag}'. Deleting and re-cloning...")
+                    shutil.rmtree(repo_path)
+                    # Fall through to clone below
+                elif repo_config.branch:
                     try:
-                        current_ref = repo.active_branch.name
+                        current_branch = repo.active_branch.name
                     except TypeError:
-                        current_ref = None  # Detached HEAD (e.g. tag/commit checkout)
+                        current_branch = None  # Detached HEAD
 
-                    if current_ref != expected_ref:
-                        logger.info(f"Stale checkout for {repo_name}: on '{current_ref}', expected '{expected_ref}'. " "Deleting and re-cloning...")
+                    if current_branch != repo_config.branch:
+                        logger.info(f"Stale checkout for {repo_name}: on '{current_branch}', expected '{repo_config.branch}'. Deleting and re-cloning...")
                         shutil.rmtree(repo_path)
                         # Fall through to clone below
                     else:
