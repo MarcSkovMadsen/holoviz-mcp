@@ -147,7 +147,7 @@ docs:
       url: https://github.com/holoviz/lumen.git
       branch: main
       folders:
-        doc:
+        docs:
           url_path: ""
       base_url: https://lumen.holoviz.org
       reference_patterns:
