@@ -51,7 +51,7 @@ docs:
           url_path: ""
         examples/reference:
           url_path: "/reference"
-      base_url: https://panel-material-ui.holoviz.org/
+      base_url: https://panel-material-ui.holoviz.org
       reference_patterns:
         - "examples/reference/**/*.md"
         - "examples/reference/**/*.ipynb"
@@ -126,7 +126,7 @@ docs:
         doc:
           url_path: ""
         examples:
-          url_path: "/"
+          url_path: ""
       base_url: https://geoviews.org
       reference_patterns:
         - "doc/reference/**/*.md"
@@ -147,7 +147,7 @@ docs:
       url: https://github.com/holoviz/lumen.git
       branch: main
       folders:
-        doc:
+        docs:
           url_path: ""
       base_url: https://lumen.holoviz.org
       reference_patterns:
@@ -184,6 +184,15 @@ docs:
         docs:
           url_path: ""
       base_url: "https://panel-extensions.github.io/panel-reactflow"
+      reference_patterns: []
+    panel-graphic-walker:
+      url: "https://github.com/panel-extensions/panel-graphic-walker.git"
+      branch: main
+      url_transform: "plotly"
+      folders:
+        docs:
+          url_path: ""
+      base_url: "https://panel-extensions.github.io/panel-graphic-walker"
       reference_patterns: []
 
   index_patterns:
