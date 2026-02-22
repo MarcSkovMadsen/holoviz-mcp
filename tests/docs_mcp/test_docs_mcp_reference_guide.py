@@ -313,7 +313,7 @@ async def test_get_reference_guide_multiple_projects():
         assert len(projects_found) >= 1  # Should find at least one project with Button
 
         # Common projects that should have Button components
-        expected_projects = {"panel", "panel_material_ui"}
+        expected_projects = {"panel", "panel-material-ui"}
         assert len(projects_found.intersection(expected_projects)) > 0
 
 

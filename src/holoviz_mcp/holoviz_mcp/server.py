@@ -275,7 +275,7 @@ async def get_document(path: str, project: str, ctx: Context) -> Document:
 async def search(
     query: str,
     project: str | None = None,
-    content: bool = True,
+    content: str | bool = "truncated",
     max_results: int = 2,
     max_content_chars: int | None = 10000,
     ctx: Context | None = None,
@@ -290,7 +290,7 @@ async def search(
 
     BEST PRACTICES:
     - For initial exploration, use content=False to get an overview of available documents
-    - Use get_document() to retrieve full content of specific documents
+    - Use content="chunk" for quick snippets, content="full" for complete documents
     - Adjust max_content_chars if you need more or less content per result
     - Set max_content_chars=None to get untruncated content (use with caution for large docs)
 
@@ -317,8 +317,12 @@ async def search(
             Okay examples: "how to style Material UI components", "interactive plotting with widgets"
         project (str, optional): Optional project filter. Defaults to None.
             Examples: "panel", "hvplot", "my-custom-project""
-        content (bool, optional): Whether to include content. Defaults to True.
-            Set to False to only return metadata for faster responses.
+        content (str | bool, optional): Controls what content is returned. Defaults to "truncated".
+            - "truncated": Full document content, smart-truncated around query keywords (default)
+            - "chunk": Only the best-matching chunk from the document
+            - "full": Full document content with no truncation (can be very large)
+            - False: No content, metadata only (fastest)
+            For backward compat, True maps to "truncated".
         max_results (int, optional): Maximum number of results to return. Defaults to 2.
             Increase if you need more options, but be mindful of response size.
         max_content_chars (int | None, optional): Maximum characters of content per result.
@@ -338,6 +342,8 @@ async def search(
     >>> search("Param Parameter depends watch", content=False)  # Quick metadata search with specific terms
     >>> search("stream follow rollover patch", max_content_chars=5000)  # Streaming-specific methods
     >>> search("custom database connector SQL query", "my-custom-project")  # User project with specific terms
+    >>> search("Tabulator formatters", content="full")  # Full document content, no truncation
+    >>> search("Button widget", content="chunk")  # Only the best-matching chunk
     """
     indexer = get_indexer()
     return await indexer.search(query, project, content, max_results, max_content_chars, ctx=ctx)
