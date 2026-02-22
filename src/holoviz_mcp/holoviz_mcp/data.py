@@ -1258,25 +1258,51 @@ class DocumentationIndexer:
 
         try:
             if repo_path.exists():
-                logger.info(f"Updating {repo_name} repository at {repo_path}...")
                 repo = git.Repo(repo_path)
-                repo.remotes.origin.pull()
-            else:
-                logger.info(f"Cloning {repo_name} repository to {repo_path}...")
-                clone_kwargs: dict[str, Any] = {"depth": 1}
 
-                if repo_config.branch:
-                    clone_kwargs["branch"] = repo_config.branch
-                elif repo_config.tag:
-                    clone_kwargs["branch"] = repo_config.tag
-                elif repo_config.commit:
-                    git.Repo.clone_from(str(repo_config.url), repo_path, **clone_kwargs)
-                    repo = git.Repo(repo_path)
-                    repo.git.checkout(repo_config.commit)
+                if repo_config.tag:
+                    # Tag checkouts leave the repo in detached HEAD; verify via tag→commit mapping.
+                    matching_tag = next((t for t in repo.tags if t.name == repo_config.tag), None)
+                    if matching_tag and matching_tag.commit == repo.head.commit:
+                        # Already on the correct tag — tags are immutable, nothing to pull.
+                        return repo_path
+                    logger.info(f"Stale checkout for {repo_name}: expected tag '{repo_config.tag}'. Deleting and re-cloning...")
+                    shutil.rmtree(repo_path)
+                    # Fall through to clone below
+                elif repo_config.branch:
+                    try:
+                        current_branch = repo.active_branch.name
+                    except TypeError:
+                        current_branch = None  # Detached HEAD
+
+                    if current_branch != repo_config.branch:
+                        logger.info(f"Stale checkout for {repo_name}: on '{current_branch}', expected '{repo_config.branch}'. Deleting and re-cloning...")
+                        shutil.rmtree(repo_path)
+                        # Fall through to clone below
+                    else:
+                        logger.info(f"Updating {repo_name} repository at {repo_path}...")
+                        repo.remotes.origin.pull()
+                        return repo_path
+                else:
+                    logger.info(f"Updating {repo_name} repository at {repo_path}...")
+                    repo.remotes.origin.pull()
                     return repo_path
 
-                git.Repo.clone_from(str(repo_config.url), repo_path, **clone_kwargs)
+            # Repo does not exist (fresh or was just deleted above)
+            logger.info(f"Cloning {repo_name} repository to {repo_path}...")
+            clone_kwargs: dict[str, Any] = {"depth": 1}
 
+            if repo_config.branch:
+                clone_kwargs["branch"] = repo_config.branch
+            elif repo_config.tag:
+                clone_kwargs["branch"] = repo_config.tag
+            elif repo_config.commit:
+                git.Repo.clone_from(str(repo_config.url), repo_path, **clone_kwargs)
+                repo = git.Repo(repo_path)
+                repo.git.checkout(repo_config.commit)
+                return repo_path
+
+            git.Repo.clone_from(str(repo_config.url), repo_path, **clone_kwargs)
             return repo_path
         except Exception as e:
             logger.warning(f"Failed to clone/update {repo_name}: {e}")
@@ -1343,7 +1369,7 @@ class DocumentationIndexer:
         reference_count = sum(1 for doc in docs if doc["is_reference"])
         regular_count = len(docs) - reference_count
         if skipped_count:
-            logger.info(f"  {project}: {len(docs)} changed + {skipped_count} unchanged " f"({regular_count} regular, {reference_count} reference guides)")
+            logger.info(f"  {project}: {len(docs)} changed + {skipped_count} unchanged ({regular_count} regular, {reference_count} reference guides)")
         else:
             logger.info(f"  {project}: {len(docs)} total documents ({regular_count} regular, {reference_count} reference guides)")
         return {"docs": docs, "skipped_hashes": skipped_hashes}
@@ -1676,7 +1702,7 @@ class DocumentationIndexer:
 
         clone_extract_elapsed = time.monotonic() - overall_t0
         await log_info(
-            f"Clone + extract completed in {clone_extract_elapsed:.1f}s " f"({len(all_docs)} to index, {len(all_skipped_hashes)} unchanged)",
+            f"Clone + extract completed in {clone_extract_elapsed:.1f}s ({len(all_docs)} to index, {len(all_skipped_hashes)} unchanged)",
             ctx,
         )
 
@@ -1702,7 +1728,7 @@ class DocumentationIndexer:
 
             docs_to_index = all_docs  # all are new or changed (unchanged were skipped by workers)
             await log_info(
-                f"Incremental: {len(new_docs)} new, {len(changed_docs)} changed, " f"{len(all_skipped_hashes)} unchanged, {len(deleted_doc_ids)} deleted",
+                f"Incremental: {len(new_docs)} new, {len(changed_docs)} changed, {len(all_skipped_hashes)} unchanged, {len(deleted_doc_ids)} deleted",
                 ctx,
             )
 

@@ -1862,3 +1862,301 @@ async def test_projects_filter_invalid_name(tmp_path):
     with patch.object(indexer.config, "repositories", repo_configs):
         with pytest.raises(ValueError, match="nonexistent"):
             await indexer.index_documentation(projects=["nonexistent"])
+
+
+class TestBranchHandling:
+    """Tests verifying that the configured branch is respected during clone and update."""
+
+    def _make_indexer(self, tmp_path):
+        from chromadb.api.shared_system_client import SharedSystemClient
+
+        SharedSystemClient.clear_system_cache()
+        return DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+
+    def test_clone_passes_configured_branch_to_git(self, tmp_path):
+        """Fresh clone: configured branch is passed to git.Repo.clone_from."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/my-project.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/my-branch",
+            folders=["doc"],
+        )
+
+        with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+            indexer._clone_or_update_repo_sync("my-project", repo_config)
+
+        mock_clone_from.assert_called_once()
+        _, kwargs = mock_clone_from.call_args
+        assert kwargs.get("branch") == "feature/my-branch"
+
+    def test_clone_without_branch_config_uses_no_branch_kwarg(self, tmp_path):
+        """Fresh clone with no branch configured: no branch kwarg is passed."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        )
+
+        with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+            indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_clone_from.assert_called_once()
+        _, kwargs = mock_clone_from.call_args
+        assert "branch" not in kwargs
+
+    def test_source_url_uses_configured_branch(self):
+        """_to_source_url returns URL with the configured branch."""
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake-org/my-project.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/my-branch",
+            folders=["doc"],
+        )
+
+        url = DocumentationIndexer._to_source_url(Path("docs/guide.md"), repo_config)
+
+        assert url == "https://github.com/fake-org/my-project/blob/feature/my-branch/docs/guide.md"
+
+    def test_update_existing_repo_on_correct_branch_pulls(self, tmp_path):
+        """Existing repo on the correct branch: pull is called, no re-clone."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/my-branch",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        mock_repo = MagicMock()
+        mock_repo.active_branch.name = "feature/my-branch"
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch.object(git.Repo, "clone_from") as mock_clone_from:
+                indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_clone_from.assert_not_called()
+        mock_repo.remotes.origin.pull.assert_called_once()
+
+    def test_stale_branch_triggers_reclone(self, tmp_path):
+        """Existing repo on wrong branch: dir is deleted and re-cloned on the correct branch."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/my-branch",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        mock_repo = MagicMock()
+        mock_repo.active_branch.name = "main"
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+                    indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_rmtree.assert_called_once_with(repo_dir)
+        mock_clone_from.assert_called_once()
+        _, kwargs = mock_clone_from.call_args
+        assert kwargs.get("branch") == "feature/my-branch"
+
+    def test_update_repo_with_no_branch_config_just_pulls(self, tmp_path):
+        """Existing repo with no branch configured: pull is called, no re-clone, no rmtree."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        mock_repo = MagicMock()
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from") as mock_clone_from:
+                    indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_rmtree.assert_not_called()
+        mock_clone_from.assert_not_called()
+        mock_repo.remotes.origin.pull.assert_called_once()
+
+    def test_git_repo_constructor_failure_returns_none(self, tmp_path):
+        """If git.Repo() raises unexpectedly, the outer except catches it and None is returned."""
+        from unittest.mock import patch
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/my-branch",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", side_effect=RuntimeError("corrupted repo")):
+            result = indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        assert result is None
+
+    def test_tag_config_used_as_branch_kwarg_on_clone(self, tmp_path):
+        """Fresh clone with tag configured: tag is passed as branch kwarg to clone_from."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            tag="v1.2.3",
+            folders=["doc"],
+        )
+
+        with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+            indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_clone_from.assert_called_once()
+        _, kwargs = mock_clone_from.call_args
+        assert kwargs.get("branch") == "v1.2.3"
+
+    def test_correct_tag_already_checked_out_returns_path(self, tmp_path):
+        """Existing repo already on the correct tag (detached HEAD): returns path, no re-clone, no pull."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            tag="v1.2.3",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        # Simulate detached HEAD: active_branch raises TypeError (real GitPython behaviour)
+        mock_commit = MagicMock()
+        mock_tag = MagicMock()
+        mock_tag.name = "v1.2.3"
+        mock_tag.commit = mock_commit
+
+        mock_repo = MagicMock()
+        mock_repo.tags = [mock_tag]
+        mock_repo.head.commit = mock_commit  # same object → already on correct tag
+
+        import git
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from") as mock_clone_from:
+                    result = indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        assert result == repo_dir
+        mock_rmtree.assert_not_called()
+        mock_clone_from.assert_not_called()
+        mock_repo.remotes.origin.pull.assert_not_called()
+
+    def test_stale_tag_triggers_reclone(self, tmp_path):
+        """Existing repo on wrong tag (detached HEAD): dir is deleted and re-cloned on the correct tag."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            tag="v1.2.3",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        # Simulate detached HEAD at a different tag — tag commit != HEAD commit
+        mock_tag = MagicMock()
+        mock_tag.name = "v1.2.3"
+        mock_tag.commit = MagicMock()  # tag points somewhere
+
+        mock_repo = MagicMock()
+        mock_repo.tags = [mock_tag]
+        mock_repo.head.commit = MagicMock()  # HEAD is elsewhere → stale
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+                    indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_rmtree.assert_called_once_with(repo_dir)
+        mock_clone_from.assert_called_once()
+        _, kwargs = mock_clone_from.call_args
+        assert kwargs.get("branch") == "v1.2.3"
+
+    def test_rmtree_succeeds_but_clone_fails_returns_none(self, tmp_path):
+        """rmtree succeeds but clone_from raises: exception is caught and None is returned."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/my-branch",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        mock_repo = MagicMock()
+        mock_repo.active_branch.name = "main"
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree"):
+                with patch.object(git.Repo, "clone_from", side_effect=Exception("network error")):
+                    result = indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        assert result is None

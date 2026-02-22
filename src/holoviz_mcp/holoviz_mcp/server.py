@@ -156,7 +156,7 @@ mcp: FastMCP = FastMCP(
 )
 
 
-@mcp.tool
+@mcp.tool()
 def get_skill(name: str) -> str:
     """Get the specified skill for usage with LLMs.
 
@@ -181,7 +181,7 @@ def get_skill(name: str) -> str:
     return _get_skill(name)
 
 
-@mcp.tool
+@mcp.tool()
 def list_skills() -> list[str]:
     """List all available skills.
 
@@ -195,7 +195,7 @@ def list_skills() -> list[str]:
     return _list_skills()
 
 
-@mcp.tool
+@mcp.tool()
 async def get_reference_guide(
     component: str,
     project: str | None = None,
@@ -237,7 +237,7 @@ async def get_reference_guide(
     return await indexer.search_get_reference_guide(component, project, content, ctx=ctx)
 
 
-@mcp.tool
+@mcp.tool()
 async def list_projects() -> list[str]:
     """List all HoloViz and user-defined projects with indexed documentation.
 
@@ -253,7 +253,7 @@ async def list_projects() -> list[str]:
     return await indexer.list_projects()
 
 
-@mcp.tool
+@mcp.tool()
 async def get_document(path: str, project: str, ctx: Context) -> Document:
     """Retrieve a specific document by path and project.
 
@@ -271,7 +271,7 @@ async def get_document(path: str, project: str, ctx: Context) -> Document:
     return await indexer.get_document(path, project, ctx=ctx)
 
 
-@mcp.tool
+@mcp.tool()
 async def search(
     query: str,
     project: str | None = None,
@@ -349,7 +349,7 @@ async def search(
     return await indexer.search(query, project, content, max_results, max_content_chars, ctx=ctx)
 
 
-@mcp.tool(enabled=False)
+# @mcp.tool(enabled=False)
 async def update_index(ctx: Context) -> str:
     """Update the documentation index by re-cloning repositories and re-indexing content.
 
@@ -380,7 +380,7 @@ async def update_index(ctx: Context) -> str:
         return error_msg
 
 
-@mcp.tool
+@mcp.tool()
 async def display(
     code: str,
     name: str = "",
