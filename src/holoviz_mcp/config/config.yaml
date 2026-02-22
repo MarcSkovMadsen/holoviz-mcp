@@ -146,6 +146,7 @@ docs:
     lumen:
       url: https://github.com/holoviz/lumen.git
       branch: main
+      url_transform: "plotly"
       folders:
         docs:
           url_path: ""
