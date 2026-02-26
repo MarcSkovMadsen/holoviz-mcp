@@ -126,7 +126,7 @@ Open a chat with Claude Code and try these questions:
 What Panel components are available for user input?
 ```
 
-You should see it using the `panel_search_components` tool:
+You should see it using the `pn_search` tool:
 
 ![Claude Code](../assets/images/claude-code-panel-search-components.png)
 
@@ -165,7 +165,7 @@ Your dashboard will open in your default web browser!
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Claude:
 
 ```bash
-Use the holoviz_display tool to show me a simple hvplot visualization of random data.
+Use the show tool to show me a simple hvplot visualization of random data.
 ```
 
 Claude will use the display tool to generate and display the visualization. See the [Display System tutorial](display-system.md) for more details.

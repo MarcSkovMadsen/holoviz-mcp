@@ -32,12 +32,12 @@ By following this tutorial, you will:
 The Display System consists of two components:
 
 1. **Display Server**: A local web server that runs visualizations and provides a browser interface
-2. **holoviz_display tool**: An MCP tool that lets AI assistants create visualizations
+2. **show tool**: An MCP tool that lets AI assistants create visualizations
 
 You can use the Display System in two ways:
 
 - **Standalone**: Start the server manually and create visualizations via the web interface or REST API
-- **With AI**: The MCP server automatically starts the Display Server, and AI assistants use it via the `holoviz_display` tool
+- **With AI**: The MCP server automatically starts the Display Server, and AI assistants use it via the `show` tool
 
 ## Part 1: Using the Display Server Standalone
 
@@ -207,9 +207,9 @@ In your IDE, start the HoloViz MCP server. The Display Server will start automat
 
 Open your AI assistant and ask:
 
-> My dataset is penguins.csv. What is the distribution of the 'species' column? Use the #holoviz_display tool
+> My dataset is penguins.csv. What is the distribution of the 'species' column? Use the #show tool
 
-Your AI assistant will use the `holoviz_display` tool and respond with:
+Your AI assistant will use the `show` tool and respond with:
 
 ```bash
 ✓ Visualization created successfully!
@@ -224,7 +224,7 @@ Click the URL. You should see an interactive bar chart showing the count of each
     If you see the species distribution in your browser, you've successfully created your first AI-assisted visualization! The chart should be interactive - try hovering over the bars.
 
 !!! tip "VS Code Users"
-    If the AI doesn't use the `holoviz_display` tool automatically, include `#holoviz_display` in your prompt as shown above.
+    If the AI doesn't use the `show` tool automatically, include `#show` in your prompt as shown above.
 
 ### Step 3: Explore Relationships with Scatter Plots
 
@@ -241,7 +241,7 @@ The AI will create a new visualization with:
 ![Interactive Scatter Plot](../assets/images/display-tool-view2.png)
 
 !!! tip "What you're learning"
-    Each visualization gets its own unique URL. The `holoviz_display` tool handles different chart types automatically based on your natural language request.
+    Each visualization gets its own unique URL. The `show` tool handles different chart types automatically based on your natural language request.
 
 ### Step 4: Combine Multiple Analysis Steps
 

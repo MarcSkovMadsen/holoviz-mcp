@@ -6,16 +6,16 @@ The Display Server is a component of the HoloViz MCP that enables AI assistants 
 
 The Display System uses a decoupled architecture:
 
-1. **MCP Server** (your main process): Hosts the `holoviz_display` tool, connects via HTTP
+1. **MCP Server** (your main process): Hosts the `show` tool, connects via HTTP
 2. **Display Server** (independent process): Executes Python code and serves web pages
 3. **Browser** (user interface): Displays visualizations and management interfaces
 
-By default the MCP server starts the Display Server and connects to it via HTTP when you use the `holoviz_display` tool.
+By default the MCP server starts the Display Server and connects to it via HTTP when you use the `show` tool.
 
 !!! warning
     If the Display Server should be started automatically by the MCP server is under consideration. Please provide your feedback on Github.
 
-When you use the `holoviz_display` tool:
+When you use the `show` tool:
 
 1. AI sends code to the MCP server via the tool
 2. MCP server makes HTTP request to Display Server
@@ -31,9 +31,9 @@ This decoupled architecture means:
 - Multiple MCP servers can share one Display Server
 - Display Server can be developed and deployed independently
 
-## The `holoviz_display` Tool
+## The `show` Tool
 
-The `holoviz_display` MCP tool is the primary interface for creating visualizations. It accepts:
+The `show` MCP tool is the primary interface for creating visualizations. It accepts:
 
 - **app** (required): Python code to execute
 - **name** (optional): Human-readable title for the visualization

@@ -17,7 +17,7 @@ async def test_get_reference_guide_button_no_project():
     """Test get_reference_guide for Button component across all projects."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button"})
+        result = await client.call_tool("ref_get", {"component": "Button"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -40,7 +40,7 @@ async def test_get_reference_guide_button_panel_specific():
     """Test get_reference_guide finds the one and only Button reference guide in Panel project specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "panel"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
@@ -58,7 +58,7 @@ async def test_get_reference_guide_button_panel_material_ui_specific():
     """Test get_reference_guide finds the one and only Button reference guide in Panel Material UI project specifically."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel-material-ui"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "panel-material-ui"})
         assert isinstance(result.data, list)
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
@@ -76,7 +76,7 @@ async def test_get_reference_guide_textinput_material_ui():
     """Test get_reference_guide for TextInput component in Material UI project."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "TextInput", "project": "panel-material-ui"})
+        result = await client.call_tool("ref_get", {"component": "TextInput", "project": "panel-material-ui"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 1
@@ -93,7 +93,7 @@ async def test_get_reference_guide_bar_hvplot():
     """Test get_reference_guide for bar chart component in hvPlot project."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "bar", "project": "hvplot"})
+        result = await client.call_tool("ref_get", {"component": "bar", "project": "hvplot"})
         assert isinstance(result.data, list)
 
         # Skip detailed assertions if no results found (may happen if docs not indexed)
@@ -116,7 +116,7 @@ async def test_get_reference_guide_scatter_hvplot():
     """Test get_reference_guide for scatter plot component in hvPlot project."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "scatter", "project": "hvplot"})
+        result = await client.call_tool("ref_get", {"component": "scatter", "project": "hvplot"})
         assert isinstance(result.data, list)
 
         # Skip detailed assertions if no results found (may happen if docs not indexed)
@@ -136,7 +136,7 @@ async def test_get_reference_guide_audio_no_content():
     """Test get_reference_guide for Audio component with content=False for faster response."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Audio", "content": False})
+        result = await client.call_tool("ref_get", {"component": "Audio", "content": False})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -163,7 +163,7 @@ async def test_get_reference_guide_common_widgets():
         widgets = ["DiscreteSlider", "Select", "Checkbox", "Toggle", "DatePicker"]
 
         for widget in widgets:
-            result = await client.call_tool("get_reference_guide", {"component": widget, "project": "panel"})
+            result = await client.call_tool("ref_get", {"component": widget, "project": "panel"})
             assert result.data
             assert isinstance(result.data, list)
 
@@ -182,17 +182,17 @@ async def test_get_reference_guide_edge_cases():
     client = Client(mcp)
     async with client:
         # Test with non-existent component
-        result = await client.call_tool("get_reference_guide", {"component": "NonExistentWidget123"})
+        result = await client.call_tool("ref_get", {"component": "NonExistentWidget123"})
         # Should handle gracefully
         assert isinstance(result.data, list)
 
         # Test with empty component name
-        result = await client.call_tool("get_reference_guide", {"component": ""})
+        result = await client.call_tool("ref_get", {"component": ""})
         # Should handle gracefully
         assert isinstance(result.data, list)
 
         # Test with invalid project
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "nonexistent_project"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "nonexistent_project"})
         # Should handle gracefully and return empty results
         assert isinstance(result.data, list)
         assert len(result.data) == 0
@@ -203,7 +203,7 @@ async def test_get_reference_guide_relevance_scoring():
     """Test that get_reference_guide returns results with relevance scores."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -224,7 +224,7 @@ async def test_get_reference_guide_return_structure():
     """Test that get_reference_guide returns properly structured Documents."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -264,7 +264,7 @@ async def test_get_reference_guide_maximum_results():
     client = Client(mcp)
     async with client:
         result = await client.call_tool(
-            "get_reference_guide",
+            "ref_get",
             {
                 "component": "Button"  # Common component that should have many results
             },
@@ -281,7 +281,7 @@ async def test_get_reference_guide_no_duplicates():
     """Test that get_reference_guide doesn't return duplicate results."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -304,7 +304,7 @@ async def test_get_reference_guide_multiple_projects():
     client = Client(mcp)
     async with client:
         # Search for Button across all projects
-        result = await client.call_tool("get_reference_guide", {"component": "Button"})
+        result = await client.call_tool("ref_get", {"component": "Button"})
         assert result.data
         assert isinstance(result.data, list)
 
@@ -323,7 +323,7 @@ async def test_get_reference_guide_exact_filename_matching():
     client = Client(mcp)
     async with client:
         # Test that searching for "Button" finds files with "Button" in the filename
-        result = await client.call_tool("get_reference_guide", {"component": "ButtonIcon", "project": "panel"})
+        result = await client.call_tool("ref_get", {"component": "ButtonIcon", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 1

@@ -119,7 +119,7 @@ display:
   enabled: false
 ```
 
-The MCP server will not provide the `holoviz_display` tool.
+The MCP server will not provide the `show` tool.
 
 ### Custom Subprocess Configuration
 
@@ -200,7 +200,7 @@ Should return `{"status":"ok"}`.
 List available MCP tools
 ```
 
-You should see `holoviz_display` in the list.
+You should see `show` in the list.
 
 **Check Display Server health**:
 

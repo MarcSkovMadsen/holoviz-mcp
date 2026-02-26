@@ -8,28 +8,19 @@ Use this server to access:
 - Panel Components: Detailed information about specific Panel components like widgets (input), panes (output) and layouts.
 """
 
-import asyncio
-import atexit
-import json
 import logging
-from asyncio import sleep
-from datetime import datetime
-from importlib.metadata import distributions
-from pathlib import Path
-from uuid import uuid4
 
 from fastmcp import Context
 from fastmcp import FastMCP
-from fastmcp.utilities.types import Image
-from mcp.types import ImageContent
-from mcp.types import TextContent
 
-from holoviz_mcp.config.loader import get_config
-from holoviz_mcp.panel_mcp.data import get_components as _get_components_org
+from holoviz_mcp.core.pn import get_component as _get_component
+from holoviz_mcp.core.pn import get_component_parameters as _get_component_parameters
+from holoviz_mcp.core.pn import list_components as _list_components
+from holoviz_mcp.core.pn import list_packages as _list_packages
+from holoviz_mcp.core.pn import search_components as _search_components
 from holoviz_mcp.panel_mcp.models import ComponentDetails
 from holoviz_mcp.panel_mcp.models import ComponentSummary
 from holoviz_mcp.panel_mcp.models import ComponentSummarySearchResult
-from holoviz_mcp.panel_mcp.models import ConsoleLogEntry
 from holoviz_mcp.panel_mcp.models import ParameterInfo
 
 # Create the FastMCP server
@@ -45,94 +36,16 @@ mcp = FastMCP(
     """,
 )
 
-_config = get_config()
+logger = logging.getLogger(__name__)
 
 
-async def _list_packages_depending_on(target_package: str, ctx: Context) -> list[str]:
-    """
-    Find all installed packages that depend on a given package.
-
-    This is a helper function that searches through installed packages to find
-    those that have the target package as a dependency. Used to discover
-    Panel-related packages in the environment.
-
-    Parameters
-    ----------
-    target_package : str
-        The name of the package to search for dependencies on (e.g., 'panel').
-    ctx : Context
-        FastMCP context for logging and debugging.
-
-    Returns
-    -------
-    list[str]
-        Sorted list of package names that depend on the target package.
-    """
-    dependent_packages = []
-
-    for dist in distributions():
-        if dist.requires:
-            dist_name = dist.metadata["Name"]
-            await ctx.debug(f"Checking package: {dist_name} for dependencies on {target_package}")
-            for requirement_str in dist.requires:
-                if "extra ==" in requirement_str:
-                    continue
-                package_name = requirement_str.split()[0].split(";")[0].split(">=")[0].split("==")[0].split("!=")[0].split("<")[0].split(">")[0].split("~")[0]
-                if package_name.lower() == target_package.lower():
-                    dependent_packages.append(dist_name.replace("-", "_"))
-                    break
-
-    return sorted(set(dependent_packages))
-
-
-COMPONENTS: list[ComponentDetails] = []
-
-
-async def _get_all_components(ctx: Context) -> list[ComponentDetails]:
-    """
-    Get all available Panel components from discovered packages.
-
-    This function initializes and caches the global COMPONENTS list by:
-    1. Discovering all packages that depend on Panel
-    2. Importing those packages to register their components
-    3. Collecting detailed information about all Panel components
-
-    This is called lazily to populate the component cache when needed.
-
-    Parameters
-    ----------
-    ctx : Context
-        FastMCP context for logging and debugging.
-
-    Returns
-    -------
-    list[ComponentDetails]
-        Complete list of all discovered Panel components with detailed metadata.
-    """
-    global COMPONENTS
-    if not COMPONENTS:
-        packages_depending_on_panel = await _list_packages_depending_on("panel", ctx=ctx)
-
-        await ctx.info(f"Discovered {len(packages_depending_on_panel)} packages depending on Panel: {packages_depending_on_panel}")
-
-        for package in packages_depending_on_panel:
-            try:
-                __import__(package)
-            except ImportError as e:
-                await ctx.warning(f"Discovered but failed to import {package}: {e}")
-
-        COMPONENTS = _get_components_org()
-
-    return COMPONENTS
-
-
-@mcp.tool()
+@mcp.tool(name="packages")
 async def list_packages(ctx: Context) -> list[str]:
     """
     List all installed packages that provide Panel UI components.
 
     Use this tool to discover what Panel-related packages are available in your environment.
-    This helps you understand which packages you can use in the 'package' parameter of other tools.
+    The returned package names can be used in the 'package' parameter of: list, search, get, and params.
 
     Parameters
     ----------
@@ -155,10 +68,10 @@ async def list_packages(ctx: Context) -> list[str]:
     >>> list_components(package="panel_material_ui")
     >>> search("button", package="panel")
     """
-    return sorted(set(component.package for component in await _get_all_components(ctx)))
+    return _list_packages()
 
 
-@mcp.tool()
+@mcp.tool(name="search")
 async def search_components(ctx: Context, query: str, package: str | None = None, limit: int = 10) -> list[ComponentSummarySearchResult]:
     """
     Search for Panel components by search query and optional package filter.
@@ -199,73 +112,10 @@ async def search_components(ctx: Context, query: str, package: str | None = None
     >>> search_components("chart", limit=5)
     [ComponentSummarySearchResult(name="Bokeh", package="panel", ...)]
     """
-    query_lower = query.lower()
-
-    matches = []
-    for component in await _get_all_components(ctx=ctx):
-        score = 0
-        if package and component.package.lower() != package.lower():
-            continue
-
-        if component.name.lower() == query_lower or component.module_path.lower() == query_lower:
-            score = 100
-        elif query_lower in component.name.lower():
-            score = 80
-        elif query_lower in component.module_path.lower():
-            score = 60
-        elif query_lower in component.docstring.lower():
-            score = 40
-        elif any(word in component.docstring.lower() for word in query_lower.split()):
-            score = 20
-
-        if score > 0:
-            matches.append(ComponentSummarySearchResult.from_component(component=component, relevance_score=score))
-
-    matches.sort(key=lambda x: x.relevance_score, reverse=True)
-    if len(matches) > limit:
-        matches = matches[:limit]
-
-    return matches
+    return _search_components(query=query, package=package, limit=limit)
 
 
-async def _get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentDetails]:
-    """
-    Get component details based on filtering criteria.
-
-    This is an internal function used by the public component tools to filter
-    and retrieve components based on name, module path, and package criteria.
-
-    Parameters
-    ----------
-    ctx : Context
-        FastMCP context for logging and debugging.
-    name : str, optional
-        Component name to filter by (case-insensitive). If None, all components match.
-    module_path : str, optional
-        Module path prefix to filter by. If None, all components match.
-    package : str, optional
-        Package name to filter by. For example "panel" or "panel_material_ui". If None, all components match.
-
-    Returns
-    -------
-    list[ComponentDetails]
-        List of components matching the specified criteria.
-    """
-    components_list = []
-
-    for component in await _get_all_components(ctx=ctx):
-        if name and component.name.lower() != name.lower():
-            continue
-        if package and component.package != package:
-            continue
-        if module_path and not component.module_path.startswith(module_path):
-            continue
-        components_list.append(component)
-
-    return components_list
-
-
-@mcp.tool()
+@mcp.tool(name="list")
 async def list_components(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> list[ComponentSummary]:
     """
     Get a summary list of Panel components without detailed docstring and parameter information.
@@ -308,28 +158,19 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
     >>> list_components(name="Button")
     [ComponentSummary(name="Button", package="panel", ...), ComponentSummary(name="Button", package="panel_material_ui", ...)]
     """
-    components_list = []
-
-    for component in await _get_all_components(ctx=ctx):
-        if name and component.name.lower() != name.lower():
-            continue
-        if package and component.package != package:
-            continue
-        if module_path and not component.module_path.startswith(module_path):
-            continue
-        components_list.append(component.to_base())
-
-    return components_list
+    return _list_components(name=name, module_path=module_path, package=package)
 
 
-@mcp.tool()
+@mcp.tool(name="get")
 async def get_component(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> ComponentDetails:
     """
     Get complete details about a single Panel component including docstring and parameters.
 
     Use this tool when you need full information about a specific Panel component, including
-    its docstring, parameter specifications, and initialization signature. This is the most
-    comprehensive tool for component information.
+    its docstring, parameter specifications, and initialization signature.
+
+    Tip: If you only need parameter details and already know the component exists, use params instead
+    for a lighter response without the docstring.
 
     IMPORTANT: This tool returns exactly one component. If your criteria match multiple components,
     you'll get an error asking you to be more specific.
@@ -372,25 +213,17 @@ async def get_component(ctx: Context, name: str | None = None, module_path: str 
     >>> get_component(module_path="panel.widgets.button.Button")
     ComponentDetails(name="Button", module_path="panel.widgets.button.Button", ...)
     """
-    components_list = await _get_component(ctx, name, module_path, package)
-
-    if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
-    if len(components_list) > 1:
-        module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
-        raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
-    component = components_list[0]
-    return component
+    return _get_component(name=name, module_path=module_path, package=package)
 
 
-@mcp.tool()
+@mcp.tool(name="params")
 async def get_component_parameters(ctx: Context, name: str | None = None, module_path: str | None = None, package: str | None = None) -> dict[str, ParameterInfo]:
     """
-    Get detailed parameter information for a single Panel component.
+    Get detailed parameter information for a single Panel component (without the docstring).
 
-    Use this tool when you need to understand the parameters of a specific Panel component,
-    including their types, default values, documentation, and constraints. This is useful
-    for understanding how to properly initialize and configure a component.
+    Use this tool when you only need parameter details (types, defaults, constraints) and
+    already know the component exists. This is lighter than get which also includes the
+    full docstring.
 
     IMPORTANT: This tool returns parameters for exactly one component. If your criteria
     match multiple components, you'll get an error asking you to be more specific.
@@ -438,197 +271,11 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
     >>> get_component_parameters(module_path="panel.widgets.Slider")
     {"start": ParameterInfo(type="Number", default=0, bounds=(0, 100)), ...}
     """
-    components_list = await _get_component(ctx, name, module_path, package)
-
-    if not components_list:
-        raise ValueError(f"No components found matching criteria: '{name}', '{module_path}', '{package}'. Please check your inputs.")
-    if len(components_list) > 1:
-        module_paths = "'" + "','".join([component.module_path for component in components_list]) + "'"
-        raise ValueError(f"Multiple components found matching criteria: {module_paths}. Please refine your search.")
-
-    component = components_list[0]
-    return component.parameters
-
-
-logger = logging.getLogger(__name__)
-
-
-class PlaywrightManager:
-    """Persistent Playwright browser for fast repeated screenshots."""
-
-    def __init__(self):
-        self._playwright = None
-        self._browser = None
-        self._lock = asyncio.Lock()
-
-    async def get_browser(self):
-        """Get a connected Playwright browser instance, launching if necessary."""
-        async with self._lock:
-            if self._browser is not None and self._browser.is_connected():
-                return self._browser
-            await self._cleanup()
-            from playwright.async_api import async_playwright
-
-            self._playwright = await async_playwright().start()
-            self._browser = await self._playwright.chromium.launch(headless=True)
-            return self._browser
-
-    async def _cleanup(self):
-        if self._browser is not None:
-            try:
-                await self._browser.close()
-            except Exception:
-                pass
-            self._browser = None
-        if self._playwright is not None:
-            try:
-                await self._playwright.stop()
-            except Exception:
-                pass
-            self._playwright = None
-
-    async def close(self):
-        """Clean up Playwright resources."""
-        async with self._lock:
-            await self._cleanup()
-
-
-_playwright_manager: PlaywrightManager | None = None
-
-
-def _get_playwright_manager() -> PlaywrightManager:
-    global _playwright_manager
-    if _playwright_manager is None:
-        _playwright_manager = PlaywrightManager()
-        atexit.register(lambda: asyncio.run(_playwright_manager.close()) if _playwright_manager else None)
-    return _playwright_manager
-
-
-@mcp.tool()
-async def inspect_app(
-    url: str = "http://localhost:5006/",
-    width: int = 1920,
-    height: int = 1200,
-    full_page: bool = False,
-    delay: int = 2,
-    save_screenshot: bool | str = False,
-    screenshot: bool = True,
-    console_logs: bool = True,
-    log_level: str | None = None,
-) -> list[TextContent | ImageContent]:
-    """
-    Inspect a running Panel app by capturing a screenshot and/or browser console logs.
-
-    Panel apps (especially custom components) often have JavaScript errors that are
-    invisible to users and LLMs. This tool captures both a visual screenshot and the
-    browser console output in a single call, making it easy to diagnose rendering
-    issues, JS errors, and runtime warnings.
-
-    Arguments
-    ----------
-    url : str, default="http://localhost:5006/"
-        The URL of the page to inspect.
-    width : int, default=1920
-        The width of the browser viewport.
-    height : int, default=1200
-        The height of the browser viewport.
-    full_page : bool, default=False
-        Whether to capture the full scrollable page.
-    delay : int, default=2
-        Seconds to wait after page load before capturing, to allow dynamic content to render.
-    save_screenshot : bool | str, default=False
-        Whether and where to save the screenshot to disk:
-        - True: Save to default screenshots directory (~/.holoviz-mcp/screenshots/) with auto-generated filename
-        - False: Don't save screenshot to disk (only return to AI)
-        - str: Save to specified absolute path (raises ValueError if path is not absolute)
-    screenshot : bool, default=True
-        Whether to capture a screenshot of the page.
-    console_logs : bool, default=True
-        Whether to capture browser console log messages.
-    log_level : str | None, default=None
-        Filter console logs by level. If None, all levels are captured.
-        Common levels: 'log', 'info', 'warning', 'error', 'debug'.
-    """
-    if not screenshot and not console_logs:
-        raise ValueError("At least one of 'screenshot' or 'console_logs' must be True.")
-
-    manager = _get_playwright_manager()
-    browser = await manager.get_browser()
-    page = await browser.new_page(
-        ignore_https_errors=True,
-        viewport={"width": width, "height": height},
-    )
-
-    # Collect console log entries
-    collected_logs: list[ConsoleLogEntry] = []
-
-    if console_logs:
-
-        def _on_console(msg):
-            collected_logs.append(
-                ConsoleLogEntry(
-                    level=msg.type,
-                    message=msg.text,
-                    timestamp=datetime.now().isoformat(),
-                )
-            )
-
-        page.on("console", _on_console)
-
-    try:
-        await page.goto(url, wait_until="networkidle")
-        await sleep(delay=delay)
-        buffer = await page.screenshot(type="png", full_page=full_page) if screenshot else None
-    finally:
-        await page.close()
-
-    result: list[TextContent | ImageContent] = []
-
-    # Handle screenshot saving and result
-    if screenshot and buffer is not None:
-        # Coerce string "false"/"true" to bool (MCP clients may serialize bools as strings)
-        save = save_screenshot
-        if isinstance(save, str) and save.lower() in ("true", "false"):
-            save = save.lower() == "true"
-
-        if save:
-            if isinstance(save, str):
-                # Custom path specified
-                save_path = Path(save)
-                if not save_path.is_absolute():
-                    raise ValueError(f"save_screenshot path must be absolute, got: {save_screenshot}")
-            else:
-                # Default path - use screenshots_dir from config
-                screenshots_dir = _config.server.screenshots_dir
-                screenshots_dir.mkdir(parents=True, exist_ok=True)
-
-                # Generate filename with timestamp and UUID
-                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                unique_id = str(uuid4())[:8]
-                filename = f"screenshot_{timestamp}_{unique_id}.png"
-                save_path = screenshots_dir / filename
-
-            # Ensure parent directory exists
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Write the screenshot to disk
-            save_path.write_bytes(buffer)
-            logger.info(f"Screenshot saved to: {save_path}")
-
-        image = Image(data=buffer, format="png")
-        result.append(image.to_image_content())
-
-    # Handle console logs result
-    if console_logs:
-        filtered_logs = collected_logs
-        if log_level is not None:
-            filtered_logs = [entry for entry in collected_logs if entry.level == log_level]
-
-        logs_json = json.dumps([entry.model_dump() for entry in filtered_logs], indent=2)
-        result.append(TextContent(type="text", text=logs_json))
-
-    return result
+    return _get_component_parameters(name=name, module_path=module_path, package=package)
 
 
 if __name__ == "__main__":
+    from holoviz_mcp.config.loader import get_config
+
+    _config = get_config()
     mcp.run(transport=_config.server.transport)

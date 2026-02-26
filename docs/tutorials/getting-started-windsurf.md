@@ -110,7 +110,7 @@ Your dashboard will open in your default web browser!
 
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Windsurf:
 
-    Use the holoviz_display tool to show me a simple hvplot visualization of random data.
+    Use the show tool to show me a simple hvplot visualization of random data.
 
 Windsurf will use the display tool to generate and display the visualization. See the [Display System tutorial](display-system.md) for more details.
 

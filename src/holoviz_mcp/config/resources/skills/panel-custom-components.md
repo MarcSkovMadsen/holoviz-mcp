@@ -1,3 +1,4 @@
+---
 name: panel-custom-components
 description: Build custom Panel components using JSComponent (vanilla JS, web components), ReactComponent (React/JSX), AnyWidgetComponent (AnyWidget spec for cross-platform), or MaterialUIComponent (Material UI themed). Use when wrapping JS libraries, creating interactive widgets, or building themed components. Includes decision guide, best practices, DOs/DON'Ts, and Playwright UI testing patterns.
 metadata:
@@ -5,6 +6,7 @@ metadata:
   author: holoviz
   category: web-development
   difficulty: advanced
+---
 
 # Panel Custom Components
 
@@ -1619,12 +1621,12 @@ export function render({ model, el }) {
 
 ### Finding Documentation
 
-Use the `holoviz_search` tool to find relevant documentation:
+Use the `search` tool to find relevant documentation:
 
 ```python
-holoviz_search("JSComponent lifecycle hooks", project="panel")
-holoviz_search("ReactComponent useState", project="panel")
-holoviz_search("AnyWidget model API", project="panel")
+search("JSComponent lifecycle hooks", project="panel")
+search("ReactComponent useState", project="panel")
+search("AnyWidget model API", project="panel")
 ```
 
 ### Official Documentation

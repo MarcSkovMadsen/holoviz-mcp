@@ -33,9 +33,9 @@ def _reset_server_indexer_after_module():
     """
     yield
 
-    import holoviz_mcp.holoviz_mcp.server as server_module
+    import holoviz_mcp.core.docs as docs_module
 
-    server_module._indexer = None
+    docs_module._indexer = None
 
 
 def is_reference_path(relative_path: Path) -> bool:
@@ -824,6 +824,9 @@ def populated_indexer(tmp_path):
         repos_dir=tmp_path / "repos",
         vector_dir=tmp_path / "chroma",
     )
+    # Override configured repositories so ensure_indexed() doesn't try to
+    # download real documentation when search() is called.
+    indexer.config.repositories = {}
 
     # Document 1: multi-section document for content mode tests
     doc = _make_doc(content=MULTI_SECTION_CONTENT, title="Test Document")
@@ -1804,6 +1807,52 @@ async def test_full_rebuild_ignores_hashes(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_incremental_forces_rebuild_when_db_empty_but_hashes_exist(tmp_path):
+    """If hash cache has entries but ChromaDB is empty, force full rebuild.
+
+    This can happen when ChromaDB is deleted/corrupted while the hash
+    sidecar file (index_hashes.json) survives.  Without the integrity
+    check the indexer would skip every file and leave the database empty.
+    """
+    from unittest.mock import patch
+
+    _make_fake_repo(tmp_path, "repo-a", {"test.md": "# Test Title\n\nSome test content here."})
+
+    repo_configs = {
+        "repo-a": GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo-a.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        ),
+    }
+    indexer, _, mock_clone = _make_indexer_with_repos(tmp_path, repo_configs)
+
+    # First run: populates both ChromaDB and hash cache
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    count_after_first = indexer.collection.count()
+    assert count_after_first > 0
+    assert indexer._hash_file_path.exists()
+    assert len(indexer._load_hashes()) > 0
+
+    # Simulate ChromaDB loss: wipe the collection but keep the hash file
+    ids = indexer.collection.get()["ids"]
+    if ids:
+        indexer.collection.delete(ids=ids)
+    assert indexer.collection.count() == 0
+
+    # Second run: should detect the desync and force a full rebuild
+    with patch.object(indexer, "_clone_or_update_repo_sync", side_effect=mock_clone):
+        with patch.object(indexer.config, "repositories", repo_configs):
+            await indexer.index_documentation()
+
+    # Database should be repopulated
+    assert indexer.collection.count() == count_after_first
+
+
+@pytest.mark.asyncio
 async def test_projects_filter_scopes_repos(tmp_path):
     """projects=['repo-a'] only processes repo-a, leaves repo-b unchanged."""
     from unittest.mock import patch
@@ -2160,3 +2209,64 @@ class TestBranchHandling:
                     result = indexer._clone_or_update_repo_sync("repo", repo_config)
 
         assert result is None
+
+    def test_pull_failure_on_branch_triggers_reclone(self, tmp_path):
+        """When pull fails (e.g. remote branch deleted), repo is deleted and re-cloned."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            branch="feature/deleted-branch",
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        mock_repo = MagicMock()
+        mock_repo.active_branch.name = "feature/deleted-branch"
+        mock_repo.remotes.origin.pull.side_effect = git.exc.GitCommandError("pull", "fatal: couldn't find remote ref")
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+                    result = indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        # Should delete old repo and re-clone
+        mock_rmtree.assert_called_once_with(repo_dir)
+        mock_clone_from.assert_called_once()
+        assert result is not None
+
+    def test_pull_failure_without_branch_triggers_reclone(self, tmp_path):
+        """When pull fails on a repo with no explicit branch, repo is deleted and re-cloned."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        import git
+
+        indexer = self._make_indexer(tmp_path)
+        repo_config = GitRepository(
+            url=AnyHttpUrl("https://github.com/fake/repo.git"),
+            base_url=AnyHttpUrl("https://example.com/"),
+            folders=["doc"],
+        )
+
+        repo_dir = tmp_path / "repos" / "repo"
+        repo_dir.mkdir(parents=True)
+
+        mock_repo = MagicMock()
+        mock_repo.remotes.origin.pull.side_effect = Exception("connection refused")
+
+        with patch("holoviz_mcp.holoviz_mcp.data.git.Repo", return_value=mock_repo):
+            with patch("holoviz_mcp.holoviz_mcp.data.shutil.rmtree") as mock_rmtree:
+                with patch.object(git.Repo, "clone_from", return_value=MagicMock()) as mock_clone_from:
+                    result = indexer._clone_or_update_repo_sync("repo", repo_config)
+
+        mock_rmtree.assert_called_once_with(repo_dir)
+        mock_clone_from.assert_called_once()
+        assert result is not None

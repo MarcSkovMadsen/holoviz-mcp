@@ -7,6 +7,7 @@ Use this server to search and access documentation for HoloViz libraries (Panel,
 """
 
 import atexit
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
@@ -15,32 +16,25 @@ from typing import Optional
 from fastmcp import Context
 from fastmcp import FastMCP
 from fastmcp.resources import FileResource
+from fastmcp.utilities.types import Image
+from mcp.types import ImageContent
+from mcp.types import TextContent
 
 from holoviz_mcp.config import logger
 from holoviz_mcp.config.loader import get_config
+from holoviz_mcp.core.docs import get_indexer
+from holoviz_mcp.core.inspect import inspect_app as _inspect_app
+from holoviz_mcp.core.skills import get_skill as _get_skill
+from holoviz_mcp.core.skills import list_skills as _list_skills
 from holoviz_mcp.display_mcp.client import DisplayClient
 from holoviz_mcp.display_mcp.manager import PanelServerManager
-from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
-from holoviz_mcp.holoviz_mcp.data import get_skill as _get_skill
-from holoviz_mcp.holoviz_mcp.data import list_skills as _list_skills
 from holoviz_mcp.holoviz_mcp.models import Document
-
-# Global indexer instance
-_indexer = None
 
 # Global display manager instance (lazy-loaded, subprocess mode only)
 _display_manager: Optional["PanelServerManager"] = None
 
 # Global display client instance (lazy-loaded)
 _display_client: Optional["DisplayClient"] = None
-
-
-def get_indexer() -> DocumentationIndexer:
-    """Get or create the global DocumentationIndexer instance."""
-    global _indexer
-    if _indexer is None:
-        _indexer = DocumentationIndexer()
-    return _indexer
 
 
 def _get_display_manager() -> Optional["PanelServerManager"]:
@@ -126,20 +120,18 @@ def _cleanup_display_client():
 # Create the lifespan context manager
 @asynccontextmanager
 async def app_lifespan(server: FastMCP):
-    """Lifespan context manager for HoloViz MCP server."""
-    # Initialize resources on startup
+    """Lifespan context manager for HoloViz MCP server.
+
+    The display server is NOT started here. It is lazy-started on first
+    use of the ``show`` tool via ``_get_display_manager()``.  Eagerly
+    starting it caused failures for demo apps and Client() usage that
+    never call ``show``.
+    """
     try:
-        config = get_config()
-        # Only start display manager if in subprocess mode
-        if config.display.enabled and config.display.mode == "subprocess":
-            _get_display_manager()  # Ensure display manager is started
         yield None
     except Exception as e:
         logger.error(f"Error during app lifespan: {e}")
         raise
-    finally:
-        # Clean up resources on shutdown
-        pass
 
 
 # The HoloViz MCP server instance
@@ -156,7 +148,7 @@ mcp: FastMCP = FastMCP(
 )
 
 
-@mcp.tool()
+@mcp.tool(name="skill_get")
 def get_skill(name: str) -> str:
     """Get the specified skill for usage with LLMs.
 
@@ -181,21 +173,21 @@ def get_skill(name: str) -> str:
     return _get_skill(name)
 
 
-@mcp.tool()
-def list_skills() -> list[str]:
-    """List all available skills.
+@mcp.tool(name="skill_list")
+def list_skills() -> list[dict[str, str]]:
+    """List all available skills with descriptions (~8 skills).
 
-    Use get_skill tool to retrieve a specific skill.
+    Use skill_get to retrieve the full content of a specific skill.
 
     Returns
     -------
-        list[str]: A list of the skills available.
-            Names are returned in hyphenated format (e.g., "panel-material-ui", "panel-custom-components" and "a-custom-skill").
+        list[dict[str, str]]: Skills with 'name' and 'description' keys.
+            Names are in hyphenated format (e.g., "panel-material-ui", "panel-custom-components").
     """
     return _list_skills()
 
 
-@mcp.tool()
+@mcp.tool(name="ref_get")
 async def get_reference_guide(
     component: str,
     project: str | None = None,
@@ -204,14 +196,15 @@ async def get_reference_guide(
 ) -> list[Document]:
     """Find reference guides for specific components in HoloViz or user-defined projects.
 
+    Use this when you know the exact component name and want its reference guide directly.
+    For fuzzy or semantic search, use the search tool instead.
+
     Reference guides are a subset of all documents that focus on specific UI components
     or plot types, such as:
 
     - `panel`: "Button", "TextInput", ...
     - `hvplot`: "bar", "scatter", ...
     - `my-custom-project`: custom components from your organization
-
-    DO use this tool to easily find reference guides for specific components in HoloViz libraries and your custom projects.
 
     Args:
         component (str): Name of the component (e.g., "Button", "TextInput", "bar", "scatter")
@@ -237,9 +230,9 @@ async def get_reference_guide(
     return await indexer.search_get_reference_guide(component, project, content, ctx=ctx)
 
 
-@mcp.tool()
+@mcp.tool(name="project_list")
 async def list_projects() -> list[str]:
-    """List all HoloViz and user-defined projects with indexed documentation.
+    """List all HoloViz and user-defined projects with indexed documentation (~20 projects).
 
     This includes both built-in HoloViz projects (panel, hvplot, etc.) and any custom/internal
     documentation projects you have configured.
@@ -253,7 +246,7 @@ async def list_projects() -> list[str]:
     return await indexer.list_projects()
 
 
-@mcp.tool()
+@mcp.tool(name="doc_get")
 async def get_document(path: str, project: str, ctx: Context) -> Document:
     """Retrieve a specific document by path and project.
 
@@ -286,7 +279,7 @@ async def search(
 
     DO use this tool to search the HoloViz project documentation
     DO use this tool to search any additional user-defined project documentation.
-    DO use the holoviz_list_projects tool to list the available projects.
+    DO use the project_list tool to list the available projects.
 
     BEST PRACTICES:
     - For initial exploration, use content=False to get an overview of available documents
@@ -380,7 +373,7 @@ async def update_index(ctx: Context) -> str:
         return error_msg
 
 
-@mcp.tool()
+@mcp.tool(name="show")
 async def display(
     code: str,
     name: str = "",
@@ -500,6 +493,81 @@ Visualization created with errors. View here {url}
             await ctx.error(f"Failed to create visualization: {e}")
 
         return f"Error: Failed to create visualization: {str(e)}"
+
+
+@mcp.tool()
+async def inspect(
+    url: str = "http://localhost:5006/",
+    width: int = 1920,
+    height: int = 1200,
+    full_page: bool = False,
+    delay: int = 2,
+    save_screenshot: bool | str = False,
+    screenshot: bool = True,
+    console_logs: bool = True,
+    log_level: str | None = None,
+) -> list[TextContent | ImageContent]:
+    """
+    Inspect a running web app by capturing a screenshot and/or browser console logs.
+
+    Web apps (especially custom components) often have JavaScript errors that are
+    invisible to users and LLMs. This tool captures both a visual screenshot and the
+    browser console output in a single call, making it easy to diagnose rendering
+    issues, JS errors, and runtime warnings.
+
+    Arguments
+    ----------
+    url : str, default="http://localhost:5006/"
+        The URL of the page to inspect.
+    width : int, default=1920
+        The width of the browser viewport.
+    height : int, default=1200
+        The height of the browser viewport.
+    full_page : bool, default=False
+        Whether to capture the full scrollable page.
+    delay : int, default=2
+        Seconds to wait after page load before capturing, to allow dynamic content to render.
+    save_screenshot : bool | str, default=False
+        Whether and where to save the screenshot to disk:
+        - True: Save to default screenshots directory (~/.holoviz-mcp/screenshots/) with auto-generated filename
+        - False: Don't save screenshot to disk (only return to AI)
+        - str: Save to specified absolute path (raises ValueError if path is not absolute)
+    screenshot : bool, default=True
+        Whether to capture a screenshot of the page.
+    console_logs : bool, default=True
+        Whether to capture browser console log messages.
+    log_level : str | None, default=None
+        Filter console logs by level. If None, all levels are captured.
+        Common levels: 'log', 'info', 'warning', 'error', 'debug'.
+    """
+    config = get_config()
+    screenshots_dir = config.server.screenshots_dir if save_screenshot is True else None
+
+    core_result = await _inspect_app(
+        url=url,
+        width=width,
+        height=height,
+        full_page=full_page,
+        delay=delay,
+        save_screenshot=save_screenshot,
+        screenshot=screenshot,
+        console_logs=console_logs,
+        log_level=log_level,
+        screenshots_dir=screenshots_dir,
+    )
+
+    # Convert core InspectResult to MCP content types
+    result: list[TextContent | ImageContent] = []
+
+    if core_result.screenshot is not None:
+        image = Image(data=core_result.screenshot, format="png")
+        result.append(image.to_image_content())
+
+    if console_logs:
+        logs_json = json.dumps([entry.model_dump() for entry in core_result.console_logs], indent=2)
+        result.append(TextContent(type="text", text=logs_json))
+
+    return result
 
 
 def _add_agent_resources():

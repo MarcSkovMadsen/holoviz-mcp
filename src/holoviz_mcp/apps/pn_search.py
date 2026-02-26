@@ -1,6 +1,6 @@
 """An app to search for Panel components and examples.
 
-An interactive version of the holoviz_mcp.panel_mcp.server.search tool.
+An interactive version of the holoviz_mcp.panel_mcp.server.pn_search tool.
 """
 
 import pandas as pd
@@ -19,7 +19,7 @@ ALL = "All Packages"
 ABOUT = """
 ## Panel Component Search Tool
 
-The `panel_search_components` tool provides an interactive interface for searching Panel components and discovering their capabilities.
+The `pn_search` tool provides an interactive interface for searching Panel components and discovering their capabilities.
 
 ### How to Use This Search Tool
 
@@ -72,7 +72,7 @@ class SearchConfiguration(param.Parameterized):
 
     async def _update_packages(self):
         """Update the available Panel packages."""
-        result = await call_tool("panel_list_packages", {})
+        result = await call_tool("pn_packages", {})
         packages = [p for p in result.data]
         self.param.package.objects = [ALL] + sorted(packages)
 
@@ -96,7 +96,7 @@ class SearchConfiguration(param.Parameterized):
             params["package"] = self.package
 
         try:
-            result = await call_tool("panel_search_components", params)
+            result = await call_tool("pn_search", params)
 
             if result and hasattr(result, "data"):
                 self.results = result.data if result.data else []
@@ -186,7 +186,7 @@ class SearchResultsViewer(pn.viewable.Viewer):
 class PanelSearchApp(pn.viewable.Viewer):
     """Main application for exploring Panel component search."""
 
-    title = param.String(default="HoloViz MCP - panel_search_components Tool Demo")
+    title = param.String(default="HoloViz MCP - pn_search Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)

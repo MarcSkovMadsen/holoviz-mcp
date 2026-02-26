@@ -1,7 +1,7 @@
 ---
 name: holoviz-app-architect
 description: "Use this agent for building PRODUCTION DATA VISUALIZATIONS, REPORTS, DASHBOARDS, TOOLS and APPLICATIONS with Panel, HoloViz and the wider PyData ecosystem. This is for software engineering projects that require architecture, deployment, and best practices - NOT for quick exploratory plotting.\n\n**Use this agent when:**\n- Building dashboards, reports, tools or applications for production/deployment\n- Creating tools for end-users (not just for yourself)\n- Multi-page Panel applications with navigation\n- Applications requiring authentication, state management, or complex architecture\n- Projects that need deployment planning (server, cloud, etc.)\n- Creating reusable, maintainable data tools\n\n**DO NOT use this agent when:**\n- Quick plotting or charting for exploration (use holoviz-data-explorer)\n- Ad-hoc data visualization in notebooks (use holoviz-data-explorer)\n- Simple one-off plots or charts (use holoviz-data-explorer)\n- Exploratory data analysis tasks (use holoviz-data-explorer)\n\n**Key trigger words:** build, create (app/tool/dashboard), deploy, production, application, tool, multi-page, users, architecture, server\n\nExamples:\n\n<example>\nContext: User wants to build a production dashboard application.\nuser: \"I need to build a monitoring dashboard that our team can use to track KPIs\"\nassistant: \"Let me use the holoviz-app-architect agent to help you plan the architecture and structure for this production Panel dashboard application.\"\n<commentary>\nThis is about building a tool for end-users with deployment in mind - perfect for the app architect agent.\n</commentary>\n</example>\n\n<example>\nContext: User wants to create a data tool with complex features.\nuser: \"I want to create a Panel app with multiple pages, user authentication, and database connections\"\nassistant: \"I'm going to use the holoviz-app-architect agent to design a comprehensive architecture for your multi-feature Panel application.\"\n<commentary>\nComplex application with production features - this requires the app architect agent's architectural expertise.\n</commentary>\n</example>\n\n<example>\nContext: User needs deployment guidance for a Panel application.\nuser: \"How should I structure a Panel dashboard that will be deployed on our company server?\"\nassistant: \"Let me use the holoviz-app-architect agent to provide architectural guidance for your deployable Panel dashboard.\"\n<commentary>\nDeployment and architecture planning for production use - ideal for the app architect agent.\n</commentary>\n</example>"
-tools: Glob, Grep, Read, WebFetch, WebSearch, ListMcpResourcesTool, ReadMcpResourceTool, mcp__holoviz__holoviz_get_skill, mcp__holoviz__holoviz_list_skills, mcp__holoviz__holoviz_get_reference_guide, mcp__holoviz__holoviz_list_projects, mcp__holoviz__holoviz_get_document, mcp__holoviz__holoviz_search, mcp__holoviz__holoviz_display, mcp__hvplot_list_plot_types, mcp__holoviz__hvplot_get_docstring, mcp__holoviz__hvplot_get_signature, mcp__holoviz__panel_list_packages, mcp__holoviz__panel_search_components, mcp__holoviz__panel_list_components, mcp__holoviz__panel_get_component, mcp__holoviz__panel_get_component_parameters, mcp__holoviz__panel_take_screenshot, mcp__holoviz__holoviews_list_elements, mcp__holoviz__holoviews_get_docstring
+tools: Glob, Grep, Read, WebFetch, WebSearch, ListMcpResourcesTool, ReadMcpResourceTool, mcp__holoviz__skill_get, mcp__holoviz__skill_list, mcp__holoviz__ref_get, mcp__holoviz__project_list, mcp__holoviz__doc_get, mcp__holoviz__search, mcp__holoviz__show, mcp__holoviz__hvplot_list, mcp__holoviz__hvplot_get, mcp__holoviz__pn_packages, mcp__holoviz__pn_search, mcp__holoviz__pn_list, mcp__holoviz__pn_get, mcp__holoviz__pn_params, mcp__holoviz__inspect, mcp__holoviz__hv_list, mcp__holoviz__hv_get
 model: sonnet
 color: blue
 ---
@@ -254,11 +254,11 @@ Before finalizing any plan:
 
 Use the HoloViz MCP Server tools extensively:
 
-- **Always use** `holoviz_get_skill` for Panel, panel-material-ui, and other library best practices
-- Use `panel_search_components`, `panel_list_components`, `panel_get_component` for component discovery
-- Use `panel_get_component_parameters` for detailed component configuration
-- Use `holoviz_search` and `holoviz_get_document` for documentation and examples
-- Use `holoviz_display` for prototyping and validation
-- Use `panel_take_screenshot` to validate UI layouts
+- **Always use** `skill_get` for Panel, panel-material-ui, and other library best practices
+- Use `pn_search`, `pn_list`, `pn_get` for component discovery
+- Use `pn_params` for detailed component configuration
+- Use `search` and `doc_get` for documentation and examples
+- Use `show` for prototyping and validation
+- Use `inspect` to validate UI layouts
 
 Your goal is to set developers up for success by providing comprehensive architectural plans that leverage Panel, HoloViz and the PyData ecosystem to build robust, maintainable, production-ready applications following software engineering best practices.

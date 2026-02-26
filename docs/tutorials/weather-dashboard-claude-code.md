@@ -125,10 +125,10 @@ Again, restart the server to see the improvements.
 
 ## Step 8: Use the Display Tool
 
-For quick iterations, you can also use the `holoviz_display` tool:
+For quick iterations, you can also use the `show` tool:
 
 ```text
-Create a simplified version of the weather dashboard and display it using the holoviz_display tool. Focus on just the temperature plot and year filter.
+Create a simplified version of the weather dashboard and display it using the show tool. Focus on just the temperature plot and year filter.
 ```
 
 Claude will use the display tool and provide a URL. This is faster for prototyping!

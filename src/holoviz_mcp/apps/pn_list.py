@@ -1,6 +1,6 @@
 """An app to list and filter Panel components.
 
-An interactive version of the holoviz_mcp.panel_mcp.server.list_components tool.
+An interactive version of the holoviz_mcp.panel_mcp.server.pn_list tool.
 """
 
 import pandas as pd
@@ -78,13 +78,13 @@ class ListComponentsConfiguration(param.Parameterized):
 
     async def _update_packages(self):
         """Update the available Panel packages."""
-        result = await call_tool("panel_list_packages", {})
+        result = await call_tool("pn_packages", {})
         packages = [p for p in result.data]
         self.param.package.objects = [ALL] + sorted(packages)
 
     @param.depends("list_components", watch=True)
     async def _update_results(self):
-        """Execute list_components and update results."""
+        """Execute pn_list and update results."""
         self.loading = True
         self.error_message = ""
         self.results = []
@@ -100,7 +100,7 @@ class ListComponentsConfiguration(param.Parameterized):
             params["package"] = self.package
 
         try:
-            result = await call_tool("panel_list_components", params)
+            result = await call_tool("pn_list", params)
 
             if result and hasattr(result, "data"):
                 self.results = result.data if result.data else []
@@ -191,7 +191,7 @@ class ComponentsListViewer(pn.viewable.Viewer):
 class PanelListComponentsApp(pn.viewable.Viewer):
     """Main application for listing and filtering Panel components."""
 
-    title = param.String(default="HoloViz MCP - panel_list_components Tool Demo")
+    title = param.String(default="HoloViz MCP - pn_list Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)

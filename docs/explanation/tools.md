@@ -6,7 +6,7 @@ HoloViz MCP provides several categories of tools that enable AI assistants to he
 
 Tools for discovering and working with Panel components.
 
-### panel_list_packages
+### pn_packages
 
 **Purpose**: List all installed packages that provide Panel UI components.
 
@@ -16,9 +16,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"What Panel packages are installed?"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/pn_packages](https://awesome-panel-holoviz-mcp-ui.hf.space/pn_packages)
 
-### panel_search_components
+### pn_search
 
 **Purpose**: Search for Panel components by name, module path, or description.
 
@@ -31,9 +31,9 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"Search for Panel input components"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_search_components](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_search_components)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/pn_search](https://awesome-panel-holoviz-mcp-ui.hf.space/pn_search)
 
-### panel_list_components
+### pn_list
 
 **Purpose**: Get a summary list of Panel components without detailed docstring and parameter information.
 
@@ -43,39 +43,41 @@ Tools for discovering and working with Panel components.
 
 **Example Query**: *"List all Panel components"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_list_packages)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/pn_list](https://awesome-panel-holoviz-mcp-ui.hf.space/pn_list)
 
-### panel_get_component
+### pn_get
 
 **Purpose**: Get complete details about a single Panel component including docstring and parameters.
 
 **Parameters**:
 - `module_path` (string): Full import path to the component
 
-**Use Case**: Understand a specific component in depth.
+**Use Case**: Understand a specific component in depth — full docstring, parameters, and signature.
+
+**Tip**: If you only need parameter details and already know the component exists, use `pn_params` instead for a lighter response.
 
 **Returns**: Complete component documentation, parameters, and metadata.
 
 **Example Query**: *"Tell me about Panel's TextInput component"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/pn_get](https://awesome-panel-holoviz-mcp-ui.hf.space/pn_get)
 
-### panel_get_component_parameters
+### pn_params
 
-**Purpose**: Get detailed parameter information for a single Panel component.
+**Purpose**: Get detailed parameter information for a single Panel component (without the docstring).
 
 **Parameters**:
 - `module_path` (string): Full import path to the component
 
-**Use Case**: Understand what parameters a component accepts.
+**Use Case**: When you only need parameter details (types, defaults, constraints) and already know the component exists. Lighter than `pn_get`.
 
 **Returns**: List of parameters with types, defaults, and descriptions.
 
 **Example Query**: *"What parameters does Panel's Button accept?"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters](https://awesome-panel-holoviz-mcp-ui.hf.space/panel_get_component_parameters)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/pn_params](https://awesome-panel-holoviz-mcp-ui.hf.space/pn_params)
 
-### panel_inspect_app
+### inspect
 
 **Purpose**: Inspect your (Panel) web app by capturing a screenshot and/or browser console logs.
 
@@ -110,9 +112,9 @@ Tools for discovering and working with Panel components.
 
 Tools for accessing HoloViews documentation.
 
-### holoviews_list_elements
+### hv_list
 
-**Purpose**: List all available HoloViews visualization elements.
+**Purpose**: List all available HoloViews visualization elements (~60 elements).
 
 **Use Case**: Discover what elements you can generate with HoloViews across supported backends.
 
@@ -120,7 +122,7 @@ Tools for accessing HoloViews documentation.
 
 **Example Query**: *"What HoloViews elements are available?"*
 
-### holoviews_get_docstring
+### hv_get
 
 **Purpose**: Get the docstring and options for a specific HoloViews element for a given backend.
 
@@ -138,7 +140,7 @@ Tools for accessing HoloViews documentation.
 
 Tools for searching and accessing HoloViz documentation.
 
-### holoviz_search
+### search
 
 **Purpose**: Search HoloViz documentation using semantic similarity.
 
@@ -153,40 +155,40 @@ Tools for searching and accessing HoloViz documentation.
 
 **Example Query**: *"How do I create a layout in Panel?"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_search](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_search)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/search](https://awesome-panel-holoviz-mcp-ui.hf.space/search)
 
-### holoviz_get_document
+### doc_get
 
 **Purpose**: Retrieve a specific document by path and project.
 
 **Parameters**:
-- `path` (string): Document path
+- `path` (string): Document path (use `search` with `content=False` to discover valid paths)
 - `project` (string): Project name
 
-**Use Case**: Access a specific documentation page.
+**Use Case**: Access a specific documentation page when you know the exact path.
 
 **Returns**: Complete document content.
 
-### holoviz_get_reference_guide
+### ref_get
 
 **Purpose**: Find reference guides for specific HoloViz components.
 
 **Parameters**:
 - `component` (string): Component name
 
-**Use Case**: Access API reference documentation.
+**Use Case**: When you know the exact component name and want its reference guide directly. For fuzzy or semantic search, use `search` instead.
 
 **Returns**: Reference guide content.
 
-### holoviz_list_skills
+### skill_list
 
-**Purpose**: List all available agent skills.
+**Purpose**: List all available agent skills with descriptions (~8 skills).
 
-**Use Case**: Discover available agent skills.
+**Use Case**: Discover available agent skills and their purpose before fetching full content.
 
-**Returns**: List of named skills.
+**Returns**: List of skills with name and description.
 
-### holoviz_get_skill
+### skill_get
 
 **Purpose**: Get skill for an agent
 
@@ -197,15 +199,15 @@ Tools for searching and accessing HoloViz documentation.
 
 **Returns**: Skill description in markdown format
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_skill](https://awesome-panel-holoviz-mcp-ui.hf.space/holoviz_get_skill)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/skill_get](https://awesome-panel-holoviz-mcp-ui.hf.space/skill_get)
 
 ## hvPlot Tools
 
 Tools for working with hvPlot plotting functionality.
 
-### hvplot_list_plot_types
+### hvplot_list
 
-**Purpose**: List all available hvPlot plot types.
+**Purpose**: List all available hvPlot plot types (~28 types).
 
 **Use Case**: Discover available plot types.
 
@@ -213,35 +215,24 @@ Tools for working with hvPlot plotting functionality.
 
 **Example Query**: *"What plot types does hvPlot support?"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_list_plot_types](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_list_plot_types)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_list](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_list)
 
-### hvplot_get_docstring
+### hvplot_get
 
-**Purpose**: Get the docstring for a specific hvPlot plot type.
+**Purpose**: Get the docstring and/or function signature for a specific hvPlot plot type.
 
 **Parameters**:
 - `plot_type` (string): Name of the plot type (e.g., "line", "scatter")
+- `generic` (bool, default=False): Include generic options shared by all plot types
+- `style` (str or bool, default=False): Include backend-specific style options
 
-**Use Case**: Understand how to use a specific plot type.
+**Use Case**: Understand how to use a specific plot type. Returns compact output by default (plot-specific params only). Set `generic=True` and/or `style=True` for the full docstring.
 
-**Returns**: Complete docstring with parameters and examples.
+**Returns**: Docstring with plot-specific parameters (compact by default).
 
 **Example Query**: *"How do I use hvPlot's scatter plot?"*
 
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_docstring](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_docstring)
-
-### hvplot_get_signature
-
-**Purpose**: Get the function signature for a specific hvPlot plot type.
-
-**Parameters**:
-- `plot_type` (string): Name of the plot type
-
-**Use Case**: Understand the parameters for a plot type.
-
-**Returns**: Function signature with parameter information.
-
-**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_signature](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get_signature)
+**Demo**: [https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get](https://awesome-panel-holoviz-mcp-ui.hf.space/hvplot_get)
 
 ## Tool Categories by Use Case
 
@@ -249,28 +240,27 @@ Tools for working with hvPlot plotting functionality.
 
 Find what's available:
 
-- `panel_list_packages`: Available Panel packages
-- `panel_list_components`: Available Panel components
-- `hvplot_list_plot_types`: Available hvPlot plots
+- `pn_packages`: Available Panel packages
+- `pn_list`: Available Panel components
+- `hvplot_list`: Available hvPlot plots
 
 ### Information
 
 Get detailed information:
 
-- `panel_get_component`: Complete component details
-- `panel_get_component_parameters`: Parameter information
-- `hvplot_get_docstring`: Plot type documentation
-- `hvplot_get_signature`: Function signatures
-- `holoviz_get_skill`: Agents skills
+- `pn_get`: Complete component details
+- `pn_params`: Parameter information
+- `hvplot_get`: Plot type documentation and function signatures
+- `skill_get`: Agents skills
 
 ### Search
 
 Find relevant information:
 
-- `panel_search` (Panel): Find components
-- `holoviz_search` (Documentation): Find documentation
-- `holoviz_get_reference_guide`: Find reference docs
-- `holoviz_get_document`: Get specific document
+- `pn_search` (Panel): Find components
+- `search` (Documentation): Find documentation
+- `ref_get`: Find reference docs
+- `doc_get`: Get specific document
 
 ## Tool Usage Patterns
 
@@ -330,6 +320,79 @@ Find relevant information:
 - Only detects installed packages
 - Component information reflects installed versions
 - Some dynamic components may not be fully captured
+
+## CLI Tool
+
+HoloViz MCP also provides a command-line interface for direct terminal use. The CLI mirrors the MCP tools above, so you can query Panel components, HoloViews elements, hvPlot plot types, and documentation from your shell.
+
+!!! tip "Alias for convenience"
+    Add this to your shell profile (`.bashrc`, `.zshrc`, etc.) for shorter commands:
+
+    ```bash
+    alias hv=holoviz-mcp
+    ```
+
+    Then use `hv search ...` instead of `holoviz-mcp search ...`.
+
+### Command Overview
+
+```
+holoviz-mcp                          # Start the MCP server (default)
+holoviz-mcp --version                # Show version
+
+# Search & inspect
+holoviz-mcp search Panel Tabulator   # Search documentation (no quotes needed)
+holoviz-mcp inspect http://localhost:5006/  # Screenshot and console logs
+
+# Panel components
+holoviz-mcp pn list                  # List all components
+holoviz-mcp pn get Button            # Full component details
+holoviz-mcp pn params Button         # Parameter info
+holoviz-mcp pn search input widget   # Search components (no quotes needed)
+holoviz-mcp pn packages              # Installed Panel packages
+
+# HoloViews elements
+holoviz-mcp hv list                  # List elements (~60)
+holoviz-mcp hv get Curve             # Element docstring and options
+
+# hvPlot plot types
+holoviz-mcp hvplot list              # List plot types (~28)
+holoviz-mcp hvplot get scatter       # Plot-specific params (compact)
+holoviz-mcp hvplot get scatter --generic  # Include generic options
+holoviz-mcp hvplot get scatter --style bokeh  # Include style options
+
+# Skills & documentation
+holoviz-mcp skill list               # List skills with descriptions
+holoviz-mcp skill get panel          # Get skill content
+holoviz-mcp doc get index.md panel   # Get a specific document
+holoviz-mcp project list             # List indexed projects (~20)
+holoviz-mcp ref get Button           # Find reference guides
+
+# Infrastructure
+holoviz-mcp update index             # Rebuild documentation index
+holoviz-mcp install copilot          # Install Copilot agent files
+holoviz-mcp install claude           # Install Claude Code agent files
+holoviz-mcp install chromium         # Install Chromium for screenshots
+holoviz-mcp serve                    # Serve Panel demo apps
+```
+
+### Output Formats
+
+All tool commands support three output formats via `-o`/`--output`:
+
+| Format | Flag | Use Case |
+|--------|------|----------|
+| `markdown` | `-o markdown` (default) | LLM-friendly, pipe to AI tools |
+| `json` | `-o json` | Scripting and automation |
+| `pretty` | `-o pretty` | Rich terminal rendering |
+
+**Examples:**
+
+```bash
+holoviz-mcp pn get Button -o pretty     # Rich terminal output
+holoviz-mcp pn list -o json | jq '.[]'  # Pipe JSON to jq
+holoviz-mcp hv get Curve                 # Default markdown
+```
 
 ## Related Documentation
 

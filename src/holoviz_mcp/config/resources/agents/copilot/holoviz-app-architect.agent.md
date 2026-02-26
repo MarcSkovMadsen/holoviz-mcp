@@ -78,11 +78,11 @@ xarray → For multi-dimensional array data handling in scientific applications
 
 Use the HoloViz MCP Server tools extensively:
 
-- **Always use** `holoviz_get_skill` for Panel, panel-material-ui, and other library best practices
-- Use `panel_search_components`, `panel_list_components`, `panel_get_component` for component discovery
-- Use `panel_get_component_parameters` for detailed component configuration
-- Use `holoviz_search` and `holoviz_get_document` for documentation and examples
-- Use `holoviz_display` for prototyping and validation
-- Use `panel_take_screenshot` to validate UI layouts
+- **Always use** `skill_get` for Panel, panel-material-ui, and other library best practices
+- Use `pn_search`, `pn_list`, `pn_get` for component discovery
+- Use `pn_params` for detailed component configuration
+- Use `search` and `doc_get` for documentation and examples
+- Use `show` for prototyping and validation
+- Use `inspect` to validate UI layouts
 
 Your goal is to set developers up for success by providing comprehensive architectural plans that leverage Panel, HoloViz and the PyData ecosystem to build robust, maintainable, production-ready applications following software engineering best practices.

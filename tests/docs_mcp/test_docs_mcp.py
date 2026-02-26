@@ -15,7 +15,7 @@ async def test_skills_resource():
     """Test the skills resource."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_skill", {"name": "panel"})
+        result = await client.call_tool("skill_get", {"name": "panel"})
         assert result.data
 
 
@@ -36,7 +36,7 @@ async def test_list_projects():
     """Test that all projects are listed correctly."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("list_projects")
+        result = await client.call_tool("project_list")
 
     assert len(result.data) > 0
     assert "panel" in result.data
@@ -170,7 +170,7 @@ async def test_search_with_project_filter():
     client = Client(mcp)
     async with client:
         # Test search with specific project filter
-        result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "hvplot"})
+        result = await client.call_tool("doc_get", {"path": "doc/index.md", "project": "hvplot"})
         assert result.data
         assert result.data.title == "hvPlot"
 
@@ -181,7 +181,7 @@ async def test_get_document_returns_full_content_after_chunking():
     """get_document() reconstructs full content from chunks."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_document", {"path": "doc/index.md", "project": "hvplot"})
+        result = await client.call_tool("doc_get", {"path": "doc/index.md", "project": "hvplot"})
         assert result.data
         # Content should be non-empty and substantial (reconstructed from all chunks)
         assert result.data.content is not None
@@ -211,7 +211,7 @@ async def test_reference_guide_content_complete_after_chunking():
     """Reference guide returns complete merged content from all chunks."""
     client = Client(mcp)
     async with client:
-        result = await client.call_tool("get_reference_guide", {"component": "Button", "project": "panel"})
+        result = await client.call_tool("ref_get", {"component": "Button", "project": "panel"})
         assert result.data
         assert isinstance(result.data, list)
         assert len(result.data) == 1
@@ -237,7 +237,7 @@ async def test_search_content_mode_chunk():
         assert doc.get("content") is not None
 
         # Chunk content should be no larger than full document content
-        full_result = await client.call_tool("get_document", {"path": doc["source_path"], "project": doc["project"]})
+        full_result = await client.call_tool("doc_get", {"path": doc["source_path"], "project": doc["project"]})
         assert full_result.data
         assert len(doc["content"]) <= len(full_result.data.content)
 
@@ -254,7 +254,7 @@ async def test_search_content_mode_full():
         search_doc = search_result.data[0]
 
         # Get the same document via get_document
-        full_doc = await client.call_tool("get_document", {"path": search_doc["source_path"], "project": search_doc["project"]})
+        full_doc = await client.call_tool("doc_get", {"path": search_doc["source_path"], "project": search_doc["project"]})
         assert full_doc.data
 
         # Content should match

@@ -35,11 +35,11 @@ async def extract_tools():
                 tool_data["parameters"].append({"name": param_name, "type": param_type, "required": required, "description": desc})
 
         # Categorize tools
-        if any(x in tool_name for x in ["docs", "get_skill", "get_reference_guide", "get_document", "update_docs"]) or (
+        if any(x in tool_name for x in ["docs", "skill_get", "skill_list", "ref_get", "doc_get", "project_list", "update_index"]) or (
             tool_name == "search" and "component" not in str(tool_info)
         ):
             holoviz_tools.append(tool_data)
-        elif any(x in tool_name for x in ["component", "packages"]) or "search" in tool_name:
+        elif any(x in tool_name for x in ["pn_", "packages"]) or tool_name == "pn_search":
             panel_tools.append(tool_data)
         else:
             utility_tools.append(tool_data)

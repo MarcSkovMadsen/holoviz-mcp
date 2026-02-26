@@ -1,4 +1,4 @@
-"""An app to demo the usage and responses of the panel_list_packages tool."""
+"""An app to demo the usage and responses of the pn_packages tool."""
 
 import panel as pn
 import panel_material_ui as pmui
@@ -8,7 +8,7 @@ from holoviz_mcp.client import call_tool
 ABOUT = """
 # Panel List Packages Tool
 
-The `panel_list_packages` tool lists all installed packages that provide Panel `Viewable` components.
+The `pn_packages` tool lists all installed packages that provide Panel `Viewable` components.
 
 ## Purpose
 
@@ -25,16 +25,16 @@ A list of package names that provide Panel components, sorted alphabetically.
 
 @pn.cache
 async def panel_list_packages() -> list[str]:
-    """Demo the usage and responses of the panel_list_packages tool."""
+    """Demo the usage and responses of the pn_packages tool."""
     response = await call_tool(
-        tool_name="panel_list_packages",
+        tool_name="pn_packages",
         parameters={},
     )
     return response.data
 
 
 def create_app():
-    """Create the Panel Material UI app for demoing the panel_list_packages tool."""
+    """Create the Panel Material UI app for demoing the pn_packages tool."""
     about_button = pmui.IconButton(
         label="About",
         icon="info",
@@ -61,7 +61,7 @@ def create_app():
     main = pmui.Container(about, pn.pane.JSON(panel_list_packages, theme="dark", depth=3, sizing_mode="stretch_width"))
 
     return pmui.Page(
-        title="HoloViz-MCP: panel_list_packages Tool Demo",
+        title="HoloViz-MCP: pn_packages Tool Demo",
         header=[pmui.Row(pn.HSpacer(), about_button, github_button, sizing_mode="stretch_width")],
         main=[main],
     )

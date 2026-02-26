@@ -5,6 +5,8 @@ startup, health checks, and shutdown.
 """
 
 import os
+import signal
+import socket
 import subprocess
 import sys
 import time
@@ -47,6 +49,106 @@ class PanelServerManager:
         self.process: Optional[subprocess.Popen] = None
         self.restart_count = 0
 
+    def _is_port_in_use(self) -> bool:
+        """Check if the configured port is already in use."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind((self.host, self.port))
+                return False
+            except OSError:
+                return True
+
+    def _try_recover_stale_server(self) -> bool:
+        """Try to recover from a stale server occupying the port.
+
+        If the port is in use, checks whether the existing server is healthy.
+        If healthy, adopts it. If unhealthy (zombie), finds and kills the
+        stale process.
+
+        Returns
+        -------
+        bool
+            True if a healthy server is available on the port, False otherwise.
+        """
+        # First check if the existing server responds to health checks
+        try:
+            response = requests.get(f"http://{self.host}:{self.port}/api/health", timeout=3)
+            if response.status_code == 200:
+                logger.info(f"Found healthy display server already running on port {self.port}")
+                return True
+        except requests.RequestException:
+            pass
+
+        # Port is occupied but server is unresponsive (zombie) — try to find and kill it
+        logger.warning(f"Port {self.port} is occupied by an unresponsive process, attempting cleanup")
+        stale_pid = self._find_pid_on_port()
+        if stale_pid:
+            logger.info(f"Killing stale display server process (PID {stale_pid})")
+            try:
+                os.kill(stale_pid, signal.SIGTERM)
+                # Give it a moment to release the port
+                for _ in range(10):
+                    time.sleep(0.5)
+                    if not self._is_port_in_use():
+                        logger.info(f"Stale process (PID {stale_pid}) cleaned up successfully")
+                        return False
+                # Still alive, force kill
+                os.kill(stale_pid, signal.SIGKILL)
+                time.sleep(1)
+            except ProcessLookupError:
+                pass  # Already dead
+            except PermissionError:
+                logger.error(f"No permission to kill stale process (PID {stale_pid})")
+                return False
+
+        if self._is_port_in_use():
+            logger.error(f"Cannot free port {self.port} — another process is using it")
+            return False
+
+        return False
+
+    def _find_pid_on_port(self) -> int | None:
+        """Find the PID of a process listening on the configured port.
+
+        Parses /proc/net/tcp on Linux to find the process.
+        """
+        port_hex = f"{self.port:04X}"
+        try:
+            with open("/proc/net/tcp") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) > 9 and parts[3] == "0A":  # LISTEN state
+                        local = parts[1]
+                        if local.split(":")[1].upper() == port_hex:
+                            inode = int(parts[9])
+                            return self._inode_to_pid(inode)
+        except (FileNotFoundError, PermissionError):
+            pass
+        return None
+
+    def _inode_to_pid(self, target_inode: int) -> int | None:
+        """Find the PID that owns a given socket inode."""
+        if target_inode == 0:
+            return None
+        try:
+            for entry in os.listdir("/proc"):
+                if not entry.isdigit():
+                    continue
+                fd_dir = f"/proc/{entry}/fd"
+                try:
+                    for fd in os.listdir(fd_dir):
+                        try:
+                            link = os.readlink(f"{fd_dir}/{fd}")
+                            if f"socket:[{target_inode}]" in link:
+                                return int(entry)
+                        except (OSError, ValueError):
+                            continue
+                except PermissionError:
+                    continue
+        except (FileNotFoundError, PermissionError):
+            pass
+        return None
+
     def start(self) -> bool:
         """Start the Panel server subprocess.
 
@@ -58,6 +160,16 @@ class PanelServerManager:
         if self.process and self.process.poll() is None:
             logger.info("Panel server is already running")
             return True
+
+        # Check if port is already in use (stale process from previous session)
+        if self._is_port_in_use():
+            if self._try_recover_stale_server():
+                # A healthy server is already running, adopt it
+                return True
+            # Stale server was cleaned up or port was freed, continue with startup
+            if self._is_port_in_use():
+                logger.error(f"Port {self.port} is still in use, cannot start display server")
+                return False
 
         try:
             # Get path to app.py

@@ -32,11 +32,11 @@ class TestClientSingleton:
 
         # Create multiple concurrent tasks that all call call_tool
         tasks = [
-            call_tool("panel_list_components", {}),
-            call_tool("panel_list_components", {}),
-            call_tool("panel_list_components", {}),
-            call_tool("panel_list_components", {}),
-            call_tool("panel_list_components", {}),
+            call_tool("pn_list", {}),
+            call_tool("pn_list", {}),
+            call_tool("pn_list", {}),
+            call_tool("pn_list", {}),
+            call_tool("pn_list", {}),
         ]
 
         # Run all tasks concurrently
@@ -53,11 +53,11 @@ class TestClientSingleton:
     async def test_client_reuse(self):
         """Test that the client is reused across multiple calls."""
         # First call
-        result1 = await call_tool("panel_list_components", {})
+        result1 = await call_tool("pn_list", {})
         assert result1 is not None
 
         # Second call should reuse the same client
-        result2 = await call_tool("panel_list_components", {})
+        result2 = await call_tool("pn_list", {})
         assert result2 is not None
 
         # Both should return valid data
@@ -69,9 +69,9 @@ class TestClientSingleton:
         """Test multiple concurrent tool calls using the singleton client."""
         # Create tasks that call different tools concurrently
         tasks = [
-            call_tool("panel_list_components", {}),
-            call_tool("panel_list_packages", {}),
-            call_tool("panel_list_components", {}),
+            call_tool("pn_list", {}),
+            call_tool("pn_packages", {}),
+            call_tool("pn_list", {}),
         ]
 
         # Run all tasks concurrently
