@@ -20,10 +20,9 @@ The recommended way to install is as a **uv tool**:
 
 This installs `holoviz-mcp` into an isolated environment. Since `uv tool` manages its own bin directory, users often make the CLI available under a shorter name via a shell alias or symlink:
 
-    alias hv='uvx holoviz-mcp'              # in .bashrc / .zshrc
-    alias holoviz-mcp='uvx holoviz-mcp'     # or keep the full name
+    alias hv='holoviz-mcp'              # in .bashrc / .zshrc
 
-If `hv` or `holoviz-mcp` is on your PATH, you can substitute it in all examples below (e.g., `hv search Panel Tabulator`, `hv pn get Button`).
+If `hv` is on your PATH, you can substitute it in all examples below (e.g., `hv search Panel Tabulator`, `hv pn get Button`).
 
 ## When to Use CLI vs MCP
 

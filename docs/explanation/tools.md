@@ -325,14 +325,14 @@ Find relevant information:
 
 HoloViz MCP also provides a command-line interface for direct terminal use. The CLI mirrors the MCP tools above, so you can query Panel components, HoloViews elements, hvPlot plot types, and documentation from your shell.
 
-!!! tip "Alias for convenience"
+!!! tip "Short alias: `hv`"
     Add this to your shell profile (`.bashrc`, `.zshrc`, etc.) for shorter commands:
 
     ```bash
-    alias hv=holoviz-mcp
+    alias hv='uvx holoviz-mcp'
     ```
 
-    Then use `hv search ...` instead of `holoviz-mcp search ...`.
+    Then use `hv search ...` instead of `uvx holoviz-mcp search ...`.
 
 ### Command Overview
 
