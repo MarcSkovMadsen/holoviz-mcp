@@ -58,7 +58,7 @@ def get_element(element: str, backend: Literal["matplotlib", "bokeh", "plotly"] 
         el_lower = element.lower()
         similar = [e for e in available if el_lower in e.lower() and e != element]
         hint = f" Did you mean: {', '.join(similar[:10])}?" if similar else ""
-        raise ValueError(f"Unknown element '{element}'.{hint} Use hv_list to see all {len(available)} available elements.")
+        raise ValueError(f"Unknown element '{element}'.{hint} Use list_elements() to see all {len(available)} available elements.")
 
     hv.extension(backend)
 

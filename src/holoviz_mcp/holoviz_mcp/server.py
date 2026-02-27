@@ -564,7 +564,7 @@ async def inspect(
         result.append(image.to_image_content())
 
     if console_logs:
-        logs_json = json.dumps([entry.model_dump() for entry in core_result.console_logs], indent=2)
+        logs_json = json.dumps([entry.asdict() for entry in core_result.console_logs], indent=2)
         result.append(TextContent(type="text", text=logs_json))
 
     return result

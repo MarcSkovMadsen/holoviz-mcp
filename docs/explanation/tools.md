@@ -325,14 +325,13 @@ Find relevant information:
 
 HoloViz MCP also provides a command-line interface for direct terminal use. The CLI mirrors the MCP tools above, so you can query Panel components, HoloViews elements, hvPlot plot types, and documentation from your shell.
 
-!!! tip "Short alias: `hv`"
-    Add this to your shell profile (`.bashrc`, `.zshrc`, etc.) for shorter commands:
+!!! tip "Short command: `hv`"
+    The package installs both `holoviz-mcp` and `hv` as commands. Use `hv` for shorter invocations:
 
     ```bash
-    alias hv='uvx holoviz-mcp'
+    hv search Panel Tabulator
+    hv pn get Button
     ```
-
-    Then use `hv search ...` instead of `uvx holoviz-mcp search ...`.
 
 ### Command Overview
 
@@ -382,16 +381,16 @@ All tool commands support three output formats via `-o`/`--output`:
 
 | Format | Flag | Use Case |
 |--------|------|----------|
-| `markdown` | `-o markdown` (default) | LLM-friendly, pipe to AI tools |
+| `pretty` | `-o pretty` (default) | Rich terminal rendering |
+| `markdown` | `-o markdown` | LLM-friendly, pipe to AI tools |
 | `json` | `-o json` | Scripting and automation |
-| `pretty` | `-o pretty` | Rich terminal rendering |
 
 **Examples:**
 
 ```bash
-holoviz-mcp pn get Button -o pretty     # Rich terminal output
+holoviz-mcp pn get Button               # Default pretty terminal output
 holoviz-mcp pn list -o json | jq '.[]'  # Pipe JSON to jq
-holoviz-mcp hv get Curve                 # Default markdown
+holoviz-mcp hv get Curve -o markdown     # LLM-friendly markdown
 ```
 
 ## Related Documentation

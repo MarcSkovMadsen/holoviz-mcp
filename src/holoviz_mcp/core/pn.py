@@ -207,7 +207,7 @@ def get_component(
         suggestions = _find_similar_names(name) if name else []
         if suggestions:
             suggestion_str = ", ".join(suggestions[:10])
-            raise ValueError(f"No exact match for '{name}'. Did you mean: {suggestion_str}? " f"Use pn_search('{name}') to explore all matches.")
+            raise ValueError(f"No exact match for '{name}'. Did you mean: {suggestion_str}? " f"Use search_components('{name}') to explore all matches.")
         parts = []
         if name:
             parts.append(f"name='{name}'")

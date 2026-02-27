@@ -419,7 +419,7 @@ If you experience memory issues, make sure to:
 ### Lookup additional information
 
 - If the HoloViz MCP server tools are available, DO use them to look up documentation and component details. Useful tools: `search` (documentation), `pn_search` (find components), `pn_get` (component details), `pn_params` (parameter info), `ref_get` (reference guides), `skill_get` (best-practice skills).
-- If MCP tools are not available but the `holoviz-mcp` CLI is installed (often aliased as `hv`), use the equivalent CLI commands: `holoviz-mcp search`, `holoviz-mcp pn search`, `holoviz-mcp pn get`, `holoviz-mcp pn params`, `holoviz-mcp ref get`, `holoviz-mcp skill get`.
+- If MCP tools are not available but the `holoviz-mcp` CLI is installed (also available as `hv`), use the equivalent CLI commands: `holoviz-mcp search`, `holoviz-mcp pn search`, `holoviz-mcp pn get`, `holoviz-mcp pn params`, `holoviz-mcp ref get`, `holoviz-mcp skill get`.
 - If neither is available, DO search the web. For example searching the Panel website for `Tabulator` related information via [https://panel.holoviz.org/search.html?q=Tabulator](https://panel.holoviz.org/search.html?q=Tabulator) url.
 
 ### Test the app with pytest

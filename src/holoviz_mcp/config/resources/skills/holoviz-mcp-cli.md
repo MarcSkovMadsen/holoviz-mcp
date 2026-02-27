@@ -18,25 +18,21 @@ The recommended way to install is as a **uv tool**:
 
     uv tool install holoviz-mcp
 
-This installs `holoviz-mcp` into an isolated environment. Since `uv tool` manages its own bin directory, users often make the CLI available under a shorter name via a shell alias or symlink:
-
-    alias hv='holoviz-mcp'              # in .bashrc / .zshrc
-
-If `hv` is on your PATH, you can substitute it in all examples below (e.g., `hv search Panel Tabulator`, `hv pn get Button`).
+This installs both `holoviz-mcp` and `hv` commands into an isolated environment. Use `hv` as a shorter alternative in all examples below (e.g., `hv search Panel Tabulator`, `hv pn get Button`).
 
 ## When to Use CLI vs MCP
 
 - **Prefer MCP tools** when the HoloViz MCP server is loaded — they return structured, typed data (including images) and integrate natively with LLM tool calling
-- **Use CLI** when MCP tools are not available but `holoviz-mcp` (or the `hv` alias) is installed and you have Bash/shell access
+- **Use CLI** when MCP tools are not available but `holoviz-mcp` (or `hv`) is installed and you have Bash/shell access
 - **Search the web** as a last resort when neither MCP tools nor CLI are available
 
 ## Output Formats
 
 All tool commands support three output formats via `--output` / `-o`:
 
-- `markdown` (default) — Markdown-formatted text, optimized for LLMs
+- `pretty` (default) — Rich terminal output with colors and tables, for humans
+- `markdown` — Markdown-formatted text, optimized for LLMs
 - `json` — Structured JSON, for scripts and programmatic use
-- `pretty` — Rich terminal output with colors and tables, for humans
 
 Setup commands (`serve`, `install`, `update`) output human-readable text by default.
 

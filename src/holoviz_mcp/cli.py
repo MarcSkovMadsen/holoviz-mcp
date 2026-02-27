@@ -2,8 +2,8 @@
 
 This module provides a unified CLI using Typer for all HoloViz MCP commands.
 
-Tool commands output Markdown by default (LLM-first). Use -o json for machine-readable
-output or -o pretty for rich terminal rendering.
+Tool commands output pretty (Rich) by default for terminal users. Use -o markdown for
+LLM-friendly output or -o json for machine-readable/scripting output.
 Infrastructure commands (serve, install, update) output human-readable text.
 """
 
@@ -73,7 +73,7 @@ class OutputFormat(str, Enum):
     pretty = "pretty"
 
 
-OutputFlag = Annotated[OutputFormat, typer.Option("--output", "-o", help="Output format: markdown (default, for LLMs), json (for scripts), pretty (rich terminal).")]
+OutputFlag = Annotated[OutputFormat, typer.Option("--output", "-o", help="Output format: pretty (default, rich terminal), markdown (for LLMs), json (for scripts).")]
 
 
 def _output_json(data: object) -> None:
@@ -161,7 +161,7 @@ def search(
     ] = "truncated",
     max_results: Annotated[int, typer.Option("--max-results", "-n", help="Maximum results.")] = 5,
     max_chars: Annotated[int, typer.Option("--max-chars", help="Max content chars per result.")] = 10000,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Search indexed documentation using semantic similarity."""
     from holoviz_mcp.core.docs import search as _search
@@ -201,7 +201,7 @@ def inspect(
     no_screenshot: Annotated[bool, typer.Option("--no-screenshot", help="Skip screenshot.")] = False,
     no_console_logs: Annotated[bool, typer.Option("--no-console-logs", help="Skip console logs.")] = False,
     log_level: Annotated[Optional[str], typer.Option("--log-level", help="Filter console logs by level.")] = None,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Inspect a web app by capturing screenshot and/or console logs."""
     from holoviz_mcp.core.inspect import inspect_app
@@ -272,7 +272,7 @@ def pn_list_cmd(
     name: Annotated[Optional[str], typer.Option("--name", "-n", help="Filter by component name.")] = None,
     module: Annotated[Optional[str], typer.Option("--module", "-m", help="Filter by module path prefix.")] = None,
     package: Annotated[Optional[str], typer.Option("--package", "-P", help="Filter by package.")] = None,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """List Panel components (summary without parameter details)."""
     from holoviz_mcp.core.pn import list_components
@@ -297,7 +297,7 @@ def pn_get_cmd(
     name: Annotated[str, typer.Argument(help="Component name (e.g., 'Button').")],
     package: Annotated[Optional[str], typer.Option("--package", "-P", help="Package name.")] = None,
     module: Annotated[Optional[str], typer.Option("--module", "-m", help="Module path.")] = None,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Get full details for a single Panel component."""
     from holoviz_mcp.core.pn import get_component
@@ -325,7 +325,7 @@ def pn_params_cmd(
     name: Annotated[str, typer.Argument(help="Component name (e.g., 'Button').")],
     package: Annotated[Optional[str], typer.Option("--package", "-P", help="Package name.")] = None,
     module: Annotated[Optional[str], typer.Option("--module", "-m", help="Module path.")] = None,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Get parameter details for a single Panel component."""
     from holoviz_mcp.core.pn import get_component_parameters
@@ -355,7 +355,7 @@ def pn_search_cmd(
     query: Annotated[list[str], typer.Argument(help="Search terms (space-separated, no quotes needed).")],
     package: Annotated[Optional[str], typer.Option("--package", "-P", help="Filter by package.")] = None,
     limit: Annotated[int, typer.Option("--limit", "-l", help="Maximum results.")] = 10,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Search Panel components by keyword."""
     from holoviz_mcp.core.pn import search_components
@@ -413,7 +413,7 @@ def hv_list_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
 def hv_get_cmd(
     element: Annotated[str, typer.Argument(help="Element name (e.g., 'Curve', 'Scatter').")],
     backend: Annotated[str, typer.Option("--backend", "-b", help="Plotting backend.")] = "bokeh",
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Get element docstring, parameters, style and plot options."""
     from holoviz_mcp.core.hv import get_element
@@ -456,7 +456,7 @@ def hvplot_get_cmd(
     signature: Annotated[bool, typer.Option("--signature", "-s", help="Show signature instead of docstring.")] = False,
     generic: Annotated[bool, typer.Option("--generic/--no-generic", help="Include generic options shared by all plot types.")] = False,
     style: Annotated[Optional[str], typer.Option("--style", help="Backend for style options (matplotlib, bokeh, plotly).")] = None,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Get docstring or signature for an hvPlot plot type."""
     from holoviz_mcp.core.hvplot import get_plot_type
@@ -498,7 +498,7 @@ def skill_list_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
 @skill_app.command("get")
 def skill_get_cmd(
     name: Annotated[str, typer.Argument(help="Skill name (e.g., 'panel', 'hvplot').")],
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Get skill content (always Markdown)."""
     from holoviz_mcp.core.skills import get_skill
@@ -520,7 +520,7 @@ def skill_get_cmd(
 def doc_get_cmd(
     path: Annotated[str, typer.Argument(help="Document path (e.g., 'index.md').")],
     project: Annotated[str, typer.Argument(help="Project name (e.g., 'panel').")],
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Retrieve a specific document by path and project."""
     from holoviz_mcp.core.docs import get_document
@@ -574,7 +574,7 @@ def ref_get_cmd(
     component: Annotated[str, typer.Argument(help="Component name (e.g., 'Button', 'scatter').")],
     project: Annotated[Optional[str], typer.Option("--project", "-p", help="Project name.")] = None,
     no_content: Annotated[bool, typer.Option("--no-content", help="Metadata only.")] = False,
-    output: OutputFlag = OutputFormat.markdown,
+    output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Find reference guides for a specific component."""
     from holoviz_mcp.core.docs import get_reference_guide
@@ -626,8 +626,12 @@ def update_index(
 
 
 @install_app.command(name="copilot")
-def install_copilot(agents: bool = True, skills: bool = False) -> None:
-    """Copy HoloViz MCP resources to .github/ folders.
+def install_copilot(
+    agents: bool = True,
+    skills: bool = False,
+    scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .github/, 'user' for ~/.copilot/")] = "project",
+) -> None:
+    """Install HoloViz MCP resources for GitHub Copilot.
 
     \f
 
@@ -637,6 +641,8 @@ def install_copilot(agents: bool = True, skills: bool = False) -> None:
         Install agent files.
     skills : bool, default=False
         Install skill files.
+    scope : str, default="project"
+        Installation scope: 'project' for .github/, 'user' for ~/.copilot/.
     """  # noqa: D301
     from pathlib import Path
 
@@ -650,30 +656,51 @@ def install_copilot(agents: bool = True, skills: bool = False) -> None:
 
     if agents:
         source = config.agents_dir("default", tool="copilot")
-        target = Path.cwd() / ".github" / "agents"
+
+        if scope == "user":
+            target = Path.home() / ".copilot" / "agents"
+        else:
+            target = Path.cwd() / ".github" / "agents"
+
         target.mkdir(parents=True, exist_ok=True)
 
         for file in source.glob("*.agent.md"):
-            relative_path = (target / file.name).relative_to(Path.cwd())
-            typer.echo(f"Updated: {relative_path}")
+            if scope == "user":
+                display_path = Path("~") / ".copilot" / "agents" / file.name
+            else:
+                display_path = (target / file.name).relative_to(Path.cwd())
+
+            typer.echo(f"Installed: {display_path}")
             shutil.copy(file, target / file.name)
 
     if skills:
         source = config.skills_dir("default")
-        target = Path.cwd() / ".github" / "skills"
+
+        if scope == "user":
+            target = Path.home() / ".copilot" / "skills"
+        else:
+            target = Path.cwd() / ".github" / "skills"
+
         target.mkdir(parents=True, exist_ok=True)
 
         for file in source.glob("*.md"):
-            relative_path = (target / file.name / "SKILL.md").relative_to(Path.cwd())
-            typer.echo(f"Updated: {relative_path}")
-            shutil.copy(file, target / file.name)
+            skill_dir = target / file.stem
+            skill_dir.mkdir(exist_ok=True)
+
+            if scope == "user":
+                display_path = Path("~") / ".copilot" / "skills" / file.stem / "SKILL.md"
+            else:
+                display_path = (skill_dir / "SKILL.md").relative_to(Path.cwd())
+
+            typer.echo(f"Installed: {display_path}")
+            shutil.copy(file, skill_dir / "SKILL.md")
 
 
 @install_app.command(name="claude")
 def install_claude(
     agents: bool = True,
     skills: bool = False,
-    scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/")] = "user",
+    scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/")] = "project",
 ) -> None:
     """Install HoloViz MCP resources for Claude Code.
 
@@ -685,7 +712,7 @@ def install_claude(
         Install agent files.
     skills : bool, default=False
         Install skill files.
-    scope : str, default="user"
+    scope : str, default="project"
         Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/.
     """  # noqa: D301
     from pathlib import Path

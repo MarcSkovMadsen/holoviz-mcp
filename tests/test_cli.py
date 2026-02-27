@@ -61,7 +61,7 @@ class TestCLI:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Copy HoloViz MCP resources" in result.stdout
+        assert "Install HoloViz MCP resources" in result.stdout
 
     def test_cli_install_claude_help(self):
         result = subprocess.run(
@@ -164,7 +164,7 @@ class TestCLIEntryPoint:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Copy HoloViz MCP resources" in result.stdout
+        assert "Install HoloViz MCP resources" in result.stdout
 
     def test_entry_point_install_claude(self):
         result = subprocess.run(
@@ -356,7 +356,7 @@ class TestPnCommands:
         assert "panel" in result.output
 
     def test_pn_packages_markdown(self):
-        result = runner.invoke(app, ["pn", "packages"])
+        result = runner.invoke(app, ["pn", "packages", "-o", "markdown"])
         assert result.exit_code == 0
         assert "- panel" in result.output
 
@@ -375,7 +375,7 @@ class TestPnCommands:
         assert "Button" in result.output
 
     def test_pn_list_markdown(self):
-        result = runner.invoke(app, ["pn", "list", "--package", "panel", "--name", "Button"])
+        result = runner.invoke(app, ["pn", "list", "--package", "panel", "--name", "Button", "-o", "markdown"])
         assert result.exit_code == 0
         assert "| Package | Name | Description |" in result.output
         assert "Button" in result.output
@@ -394,7 +394,7 @@ class TestPnCommands:
         assert "Button" in result.output
 
     def test_pn_get_markdown(self):
-        result = runner.invoke(app, ["pn", "get", "Button", "-P", "panel"])
+        result = runner.invoke(app, ["pn", "get", "Button", "-P", "panel", "-o", "markdown"])
         assert result.exit_code == 0
         assert "# panel.Button" in result.output
         assert "**Module**" in result.output
@@ -414,7 +414,7 @@ class TestPnCommands:
         assert "name" in result.output or "Parameter" in result.output
 
     def test_pn_params_markdown(self):
-        result = runner.invoke(app, ["pn", "params", "Button", "-P", "panel"])
+        result = runner.invoke(app, ["pn", "params", "Button", "-P", "panel", "-o", "markdown"])
         assert result.exit_code == 0
         assert "| Parameter | Type | Default | Description |" in result.output
 
@@ -432,7 +432,7 @@ class TestPnCommands:
         assert "Button" in result.output
 
     def test_pn_search_markdown(self):
-        result = runner.invoke(app, ["pn", "search", "button"])
+        result = runner.invoke(app, ["pn", "search", "button", "-o", "markdown"])
         assert result.exit_code == 0
         assert "| Score | Package | Name | Description |" in result.output
         assert "Button" in result.output
@@ -470,7 +470,7 @@ class TestHvCommands:
         assert "Curve" in result.output
 
     def test_hv_list_markdown(self):
-        result = runner.invoke(app, ["hv", "list"])
+        result = runner.invoke(app, ["hv", "list", "-o", "markdown"])
         assert result.exit_code == 0
         assert "- Curve" in result.output
 
@@ -488,7 +488,7 @@ class TestHvCommands:
         assert "Curve" in result.output
 
     def test_hv_get_markdown(self):
-        result = runner.invoke(app, ["hv", "get", "Curve"])
+        result = runner.invoke(app, ["hv", "get", "Curve", "-o", "markdown"])
         assert result.exit_code == 0
         # Core returns markdown-formatted content already
         assert "Curve" in result.output
@@ -514,7 +514,7 @@ class TestHvplotCommands:
         assert "line" in result.output
 
     def test_hvplot_list_markdown(self):
-        result = runner.invoke(app, ["hvplot", "list"])
+        result = runner.invoke(app, ["hvplot", "list", "-o", "markdown"])
         assert result.exit_code == 0
         assert "- line" in result.output
 
@@ -533,7 +533,7 @@ class TestHvplotCommands:
         assert "signature" in data
 
     def test_hvplot_get_markdown(self):
-        result = runner.invoke(app, ["hvplot", "get", "bar"])
+        result = runner.invoke(app, ["hvplot", "get", "bar", "-o", "markdown"])
         assert result.exit_code == 0
         assert len(result.output) > 0
 
@@ -563,12 +563,12 @@ class TestSkillCommands:
         assert "panel" in result.output
 
     def test_skill_list_markdown(self):
-        result = runner.invoke(app, ["skill", "list"])
+        result = runner.invoke(app, ["skill", "list", "-o", "markdown"])
         assert result.exit_code == 0
         assert "**panel**" in result.output
 
     def test_skill_get(self):
-        result = runner.invoke(app, ["skill", "get", "panel"])
+        result = runner.invoke(app, ["skill", "get", "panel", "-o", "markdown"])
         assert result.exit_code == 0
         assert len(result.output) > 0
         assert "panel" in result.output.lower() or "Panel" in result.output
@@ -596,11 +596,13 @@ class TestOutputFormat:
             ["skill", "list"],
         ],
     )
-    def test_default_is_markdown(self, args):
-        """Default output should contain markdown bullet points, not JSON."""
+    def test_default_is_pretty(self, args):
+        """Default output should be rich-rendered, not raw JSON."""
         result = runner.invoke(app, args)
         assert result.exit_code == 0
-        assert result.output.strip().startswith("- ")
+        # Pretty output should not be valid JSON
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(result.output)
 
     @pytest.mark.parametrize(
         "args",
@@ -633,23 +635,23 @@ class TestOutputFormat:
             json.loads(result.output)
 
     def test_markdown_table_for_pn_list(self):
-        result = runner.invoke(app, ["pn", "list", "--package", "panel"])
+        result = runner.invoke(app, ["pn", "list", "--package", "panel", "-o", "markdown"])
         assert result.exit_code == 0
         assert "| Package |" in result.output
         assert "|---------|" in result.output
 
     def test_markdown_table_for_pn_search(self):
-        result = runner.invoke(app, ["pn", "search", "button"])
+        result = runner.invoke(app, ["pn", "search", "button", "-o", "markdown"])
         assert result.exit_code == 0
         assert "| Score |" in result.output
 
     def test_markdown_table_for_pn_params(self):
-        result = runner.invoke(app, ["pn", "params", "Button", "-P", "panel"])
+        result = runner.invoke(app, ["pn", "params", "Button", "-P", "panel", "-o", "markdown"])
         assert result.exit_code == 0
         assert "| Parameter |" in result.output
 
     def test_markdown_heading_for_pn_get(self):
-        result = runner.invoke(app, ["pn", "get", "Button", "-P", "panel"])
+        result = runner.invoke(app, ["pn", "get", "Button", "-P", "panel", "-o", "markdown"])
         assert result.exit_code == 0
         assert "# panel.Button" in result.output
 
@@ -661,7 +663,7 @@ class TestOutputFormatEnum:
         assert OutputFormat.pretty == "pretty"
 
     def test_enum_is_default(self):
-        """Verify markdown is the default by checking help output."""
+        """Verify pretty is the default by checking help output."""
         result = runner.invoke(app, ["pn", "packages", "--help"])
         assert result.exit_code == 0
-        assert "markdown" in result.output
+        assert "pretty" in result.output

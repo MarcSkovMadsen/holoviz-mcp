@@ -528,7 +528,7 @@ Area - Area plots for stacked or filled visualizations
 ### Lookup additional information
 
 - If the HoloViz MCP server tools are available, DO use them: `search` (documentation), `hv_list` (available elements), `hv_get` (docstrings and options), `skill_get` (best-practice skills).
-- If MCP tools are not available but the `holoviz-mcp` CLI is installed (often aliased as `hv`), use the equivalent CLI commands: `holoviz-mcp search`, `holoviz-mcp hv list`, `holoviz-mcp hv get`.
+- If MCP tools are not available but the `holoviz-mcp` CLI is installed (also available as `hv`), use the equivalent CLI commands: `holoviz-mcp search`, `holoviz-mcp hv list`, `holoviz-mcp hv get`.
 - If neither is available, DO search the web. For example searching the HoloViews website for relevant information via https://holoviews.org url.
 
 ### Test the app with pytest

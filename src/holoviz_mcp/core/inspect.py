@@ -26,8 +26,6 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from holoviz_mcp.panel_mcp.models import ConsoleLogEntry
-
 logger = logging.getLogger(__name__)
 
 # Known browser/framework noise patterns to filter from console logs.
@@ -52,6 +50,20 @@ _NOISE_PATTERNS: list[str] = [
 def _is_noise(message: str) -> bool:
     """Check if a console log message is known browser/framework noise."""
     return any(pattern in message for pattern in _NOISE_PATTERNS)
+
+
+@dataclass
+class ConsoleLogEntry:
+    """A single browser console log entry captured during app inspection."""
+
+    level: str = ""
+    """Console message level: 'log', 'info', 'warning', 'error', 'debug', etc."""
+
+    message: str = ""
+    """The text content of the console message."""
+
+    timestamp: str | None = None
+    """ISO 8601 timestamp when the message was captured."""
 
 
 @dataclass
