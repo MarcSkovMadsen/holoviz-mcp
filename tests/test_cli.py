@@ -1,6 +1,7 @@
 """Tests for the holoviz-mcp CLI."""
 
 import json
+import re
 import subprocess
 import sys
 import time
@@ -12,6 +13,13 @@ from holoviz_mcp.cli import OutputFormat
 from holoviz_mcp.cli import app
 
 runner = CliRunner(env={"COLUMNS": "200", "NO_COLOR": "1"})
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def plain(text: str) -> str:
+    """Strip ANSI escape codes from text."""
+    return _ANSI_RE.sub("", text)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -196,145 +204,148 @@ class TestPnHelp:
     def test_pn_help(self):
         result = runner.invoke(app, ["pn", "--help"])
         assert result.exit_code == 0
-        assert "Panel component tools" in result.output
+        assert "Panel component tools" in plain(result.output)
 
     def test_pn_list_help(self):
         result = runner.invoke(app, ["pn", "list", "--help"])
         assert result.exit_code == 0
-        assert "--package" in result.output
-        assert "--name" in result.output
-        assert "--module" in result.output
-        assert "--output" in result.output
+        assert "--package" in plain(result.output)
+        assert "--name" in plain(result.output)
+        assert "--module" in plain(result.output)
+        assert "--output" in plain(result.output)
 
     def test_pn_get_help(self):
         result = runner.invoke(app, ["pn", "get", "--help"])
         assert result.exit_code == 0
-        assert "Component name" in result.output
+        assert "Component name" in plain(result.output)
 
     def test_pn_params_help(self):
         result = runner.invoke(app, ["pn", "params", "--help"])
         assert result.exit_code == 0
-        assert "parameter details" in result.output.lower()
+        assert "parameter details" in plain(result.output).lower()
 
     def test_pn_search_help(self):
         result = runner.invoke(app, ["pn", "search", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.output
+        assert "--limit" in plain(result.output)
 
     def test_pn_packages_help(self):
         result = runner.invoke(app, ["pn", "packages", "--help"])
         assert result.exit_code == 0
-        assert "packages" in result.output.lower()
+        assert "packages" in plain(result.output).lower()
 
 
 class TestHvHelp:
     def test_hv_help(self):
         result = runner.invoke(app, ["hv", "--help"])
         assert result.exit_code == 0
-        assert "HoloViews element tools" in result.output
+        assert "HoloViews element tools" in plain(result.output)
 
     def test_hv_list_help(self):
         result = runner.invoke(app, ["hv", "list", "--help"])
         assert result.exit_code == 0
-        assert "--output" in result.output
+        assert "--output" in plain(result.output)
 
     def test_hv_get_help(self):
         result = runner.invoke(app, ["hv", "get", "--help"])
         assert result.exit_code == 0
-        assert "--backend" in result.output
+        assert "--backend" in plain(result.output)
 
 
 class TestHvplotHelp:
     def test_hvplot_help(self):
         result = runner.invoke(app, ["hvplot", "--help"])
         assert result.exit_code == 0
-        assert "hvPlot plot type tools" in result.output
+        assert "hvPlot plot type tools" in plain(result.output)
 
     def test_hvplot_list_help(self):
         result = runner.invoke(app, ["hvplot", "list", "--help"])
         assert result.exit_code == 0
-        assert "--output" in result.output
+        assert "--output" in plain(result.output)
 
     def test_hvplot_get_help(self):
         result = runner.invoke(app, ["hvplot", "get", "--help"])
         assert result.exit_code == 0
-        assert "--signature" in result.output
-        assert "--style" in result.output
+        assert "--signature" in plain(result.output)
+        assert "--style" in plain(result.output)
 
 
 class TestSkillHelp:
     def test_skill_help(self):
         result = runner.invoke(app, ["skill", "--help"])
         assert result.exit_code == 0
-        assert "skill" in result.output.lower()
+        assert "skill" in plain(result.output).lower()
 
     def test_skill_list_help(self):
         result = runner.invoke(app, ["skill", "list", "--help"])
         assert result.exit_code == 0
-        assert "--output" in result.output
+        assert "--output" in plain(result.output)
 
     def test_skill_get_help(self):
         result = runner.invoke(app, ["skill", "get", "--help"])
         assert result.exit_code == 0
-        assert "Skill name" in result.output
+        assert "Skill name" in plain(result.output)
 
 
 class TestDocHelp:
     def test_doc_help(self):
         result = runner.invoke(app, ["doc", "--help"])
         assert result.exit_code == 0
-        assert "Documentation" in result.output
+        assert "Documentation" in plain(result.output)
 
     def test_doc_get_help(self):
         result = runner.invoke(app, ["doc", "get", "--help"])
         assert result.exit_code == 0
-        assert "Document path" in result.output
-        assert "Project name" in result.output
+        assert "Document path" in plain(result.output)
+        assert "Project name" in plain(result.output)
 
 
 class TestProjectHelp:
     def test_project_help(self):
         result = runner.invoke(app, ["project", "--help"])
         assert result.exit_code == 0
-        assert "project" in result.output.lower()
+        assert "project" in plain(result.output).lower()
 
     def test_project_list_help(self):
         result = runner.invoke(app, ["project", "list", "--help"])
         assert result.exit_code == 0
-        assert "--output" in result.output
+        assert "--output" in plain(result.output)
 
 
 class TestRefHelp:
     def test_ref_help(self):
         result = runner.invoke(app, ["ref", "--help"])
         assert result.exit_code == 0
-        assert "reference" in result.output.lower() or "Reference" in result.output
+        output = plain(result.output)
+        assert "reference" in output.lower() or "Reference" in output
 
     def test_ref_get_help(self):
         result = runner.invoke(app, ["ref", "get", "--help"])
         assert result.exit_code == 0
-        assert "--project" in result.output
-        assert "--no-content" in result.output
+        assert "--project" in plain(result.output)
+        assert "--no-content" in plain(result.output)
 
 
 class TestSearchHelp:
     def test_search_help(self):
         result = runner.invoke(app, ["search", "--help"])
         assert result.exit_code == 0
-        assert "--project" in result.output
-        assert "--max-results" in result.output
-        assert "--content" in result.output
-        assert "--output" in result.output
+        output = plain(result.output)
+        assert "--project" in output
+        assert "--max-results" in output
+        assert "--content" in output
+        assert "--output" in output
 
 
 class TestInspectHelp:
     def test_inspect_help(self):
         result = runner.invoke(app, ["inspect", "--help"])
         assert result.exit_code == 0
-        assert "--no-screenshot" in result.output
-        assert "--no-console-logs" in result.output
-        assert "--log-level" in result.output
-        assert "--save-screenshot" in result.output
+        output = plain(result.output)
+        assert "--no-screenshot" in output
+        assert "--no-console-logs" in output
+        assert "--log-level" in output
+        assert "--save-screenshot" in output
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -666,4 +677,4 @@ class TestOutputFormatEnum:
         """Verify pretty is the default by checking help output."""
         result = runner.invoke(app, ["pn", "packages", "--help"])
         assert result.exit_code == 0
-        assert "pretty" in result.output
+        assert "pretty" in plain(result.output)
