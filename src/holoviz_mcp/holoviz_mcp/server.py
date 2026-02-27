@@ -7,6 +7,7 @@ Use this server to search and access documentation for HoloViz libraries (Panel,
 """
 
 import atexit
+import dataclasses
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -564,7 +565,7 @@ async def inspect(
         result.append(image.to_image_content())
 
     if console_logs:
-        logs_json = json.dumps([entry.asdict() for entry in core_result.console_logs], indent=2)
+        logs_json = json.dumps([dataclasses.asdict(entry) for entry in core_result.console_logs], indent=2)
         result.append(TextContent(type="text", text=logs_json))
 
     return result
