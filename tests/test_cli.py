@@ -11,7 +11,7 @@ from typer.testing import CliRunner
 from holoviz_mcp.cli import OutputFormat
 from holoviz_mcp.cli import app
 
-runner = CliRunner()
+runner = CliRunner(env={"COLUMNS": "200"})
 
 
 # ══════════════════════════════════════════════════════════════════════════════
