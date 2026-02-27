@@ -1,4 +1,4 @@
-"""Panel app for exploring the HoloViz MCP holoviz_get_skill tool.
+"""Panel app for exploring the HoloViz MCP skill_get tool.
 
 Uses panel-material-ui widgets and Page layout.
 """
@@ -103,10 +103,10 @@ class SkillViewer(pn.viewable.Viewer):
     Features:
         - Parameter-driven reactivity
         - Modern, responsive UI using Panel Material UI
-        - Integration with HoloViz MCP holoviz_get_skill tool
+        - Integration with HoloViz MCP skill_get tool
     """
 
-    title = param.String(default="HoloViz MCP - holoviz_get_skill Tool Demo", doc="Title of the skill viewer")
+    title = param.String(default="HoloViz MCP - skill_get Tool Demo", doc="Title of the skill viewer")
     config: SkillConfiguration = param.Parameter(doc="Configuration for the skill viewer")  # type: ignore
 
     def __init__(self, **params):

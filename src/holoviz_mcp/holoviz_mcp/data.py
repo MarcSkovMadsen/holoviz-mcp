@@ -1111,6 +1111,9 @@ class DocumentationIndexer:
         # update_index tool or run method) and concurrently with search operations
         if not hasattr(self, "_index_documentation_wrapped"):
             original_index_documentation = self.index_documentation
+            # Keep a reference to the unwrapped version for use inside ensure_indexed
+            # (which already holds db_lock, so calling the wrapped version would deadlock)
+            self._index_documentation_unlocked = original_index_documentation
 
             async def _locked_index_documentation(*args: Any, **kwargs: Any) -> Any:
                 async with self.db_lock:
@@ -1236,10 +1239,64 @@ class DocumentationIndexer:
             return False
 
     async def ensure_indexed(self, ctx: Context | None = None):
-        """Ensure documentation is indexed, creating if necessary."""
+        """Ensure documentation is indexed, creating if necessary.
+
+        If the index exists but is missing configured projects (e.g. because the
+        default config was merged with a user config after the initial index was
+        built, or because ChromaDB lost data), the missing projects are indexed
+        incrementally.
+
+        NOTE: This method is called inside db_lock, so it must use
+        ``_index_documentation_unlocked`` to avoid deadlock.
+        """
         if not self.is_indexed():
             await log_info("Documentation index not found. Creating initial index...", ctx)
-            await self.index_documentation()
+            await self._index_documentation_unlocked()
+            return
+
+        # Check for configured projects that are not yet in ChromaDB.
+        # We check ChromaDB (not just the hash file) because the hash file
+        # can be out of sync if ChromaDB lost data after a failed write.
+        configured_projects = set(self.config.repositories.keys())
+        indexed_projects = self._get_indexed_project_names_from_db()
+        missing = sorted(configured_projects - indexed_projects)
+        if missing:
+            # Remove stale hashes for missing projects so index_documentation
+            # re-processes them instead of skipping unchanged files.
+            self._remove_hashes_for_projects(missing)
+            await log_info(f"Indexing {len(missing)} new project(s): {', '.join(missing)}", ctx)
+            await self._index_documentation_unlocked(projects=missing)
+
+    def _get_indexed_project_names_from_db(self) -> set[str]:
+        """Return project names that have documents in ChromaDB.
+
+        Queries the vector database for unique project metadata values.
+        Used by ``ensure_indexed`` to detect projects that need indexing.
+        """
+        try:
+            results = self.collection.get(include=["metadatas"])
+            if not results["metadatas"]:
+                return set()
+            return {str(m.get("project", "")) for m in results["metadatas"] if m.get("project")}
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
+            return set()
+
+    def _remove_hashes_for_projects(self, projects: list[str]) -> None:
+        """Remove hash entries for the given projects so they get re-indexed.
+
+        When ChromaDB is missing projects that the hash file still tracks,
+        the incremental indexer would skip them (hash unchanged). Removing
+        the stale hashes forces re-extraction and re-embedding.
+        """
+        hashes = self._load_hashes()
+        prefixes = tuple(f"{p}___" for p in projects)
+        cleaned = {k: v for k, v in hashes.items() if not k.startswith(prefixes)}
+        removed = len(hashes) - len(cleaned)
+        if removed > 0:
+            logger.info("Removed %d stale hash entries for projects: %s", removed, ", ".join(projects))
+            self._save_hashes(cleaned)
 
     async def clone_or_update_repo(self, repo_name: str, repo_config: "GitRepository", ctx: Context | None = None) -> Optional[Path]:
         """Clone or update a single repository.
@@ -1281,12 +1338,22 @@ class DocumentationIndexer:
                         # Fall through to clone below
                     else:
                         logger.info(f"Updating {repo_name} repository at {repo_path}...")
-                        repo.remotes.origin.pull()
-                        return repo_path
+                        try:
+                            repo.remotes.origin.pull()
+                            return repo_path
+                        except Exception as pull_err:
+                            logger.info(f"Pull failed for {repo_name} ({pull_err}). Deleting and re-cloning...")
+                            shutil.rmtree(repo_path)
+                            # Fall through to clone below
                 else:
                     logger.info(f"Updating {repo_name} repository at {repo_path}...")
-                    repo.remotes.origin.pull()
-                    return repo_path
+                    try:
+                        repo.remotes.origin.pull()
+                        return repo_path
+                    except Exception as pull_err:
+                        logger.info(f"Pull failed for {repo_name} ({pull_err}). Deleting and re-cloning...")
+                        shutil.rmtree(repo_path)
+                        # Fall through to clone below
 
             # Repo does not exist (fresh or was just deleted above)
             logger.info(f"Cloning {repo_name} repository to {repo_path}...")
@@ -1672,6 +1739,18 @@ class DocumentationIndexer:
 
         # Load existing hashes BEFORE extraction so workers can skip unchanged files
         old_hashes = self._load_hashes()
+
+        # Integrity check: if the hash cache claims documents exist but the
+        # database is empty (e.g. ChromaDB was deleted/corrupted while the
+        # hash sidecar file survived), discard stale hashes and force a full
+        # rebuild so every document gets re-indexed.
+        if old_hashes and self.collection.count() == 0:
+            await log_warning(
+                "Hash cache has entries but database is empty — forcing full rebuild",
+                ctx,
+            )
+            old_hashes = {}
+
         is_full_rebuild = full_rebuild or not old_hashes
         worker_hashes = {} if is_full_rebuild else old_hashes
 
@@ -1973,6 +2052,38 @@ class DocumentationIndexer:
                 all_results.append(document)
 
             return all_results
+
+    def _get_example_paths(self, project: str, limit: int = 5) -> list[str]:
+        """Get a few example source_path values for a project.
+
+        Must be called while holding db_lock.
+
+        Parameters
+        ----------
+        project : str
+            The project name.
+        limit : int
+            Maximum number of example paths to return.
+
+        Returns
+        -------
+        list[str]
+            A small sample of valid source_path values.
+        """
+        try:
+            results = self.collection.get(
+                where={"project": project},
+                include=["metadatas"],
+                limit=limit * 3,  # fetch extra to deduplicate chunks
+            )
+            if not results["metadatas"]:
+                return []
+            paths = sorted({str(m.get("source_path", "")) for m in results["metadatas"] if m.get("source_path")})
+            return paths[:limit]
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
+            return []
 
     def _reconstruct_document_content(self, source_path: str, project: str) -> str:
         """Reconstruct full document content from its chunks in ChromaDB.
@@ -2291,7 +2402,15 @@ class DocumentationIndexer:
             # Reconstruct full content from chunks
             merged_content = self._reconstruct_document_content(path, project)
             if not merged_content:
-                raise ValueError(f"No document found for path '{path}' in project '{project}'.")
+                # Provide example paths from this project to help discoverability
+                example_paths = self._get_example_paths(project, limit=5)
+                examples_str = ""
+                if example_paths:
+                    examples_str = f" Example paths for '{project}': {', '.join(example_paths)}"
+                raise ValueError(
+                    f"No document found for path '{path}' in project '{project}'.{examples_str} "
+                    f"Tip: Use the search tool with content=False to discover valid document paths (look at the source_path field)."
+                )
 
             # Get metadata from a single chunk (for Document fields)
             results = self.collection.get(

@@ -1,5 +1,6 @@
 """Data models for the HoloViz Documentation MCP server."""
 
+from typing import Any
 from typing import Optional
 
 from pydantic import BaseModel
@@ -19,3 +20,8 @@ class Document(BaseModel):
     description: Optional[str] = Field(default=None, description="A brief description of the document.")
     content: Optional[str] = Field(default=None, description="The content of the documentation, if available. In Markdown format if possible.")
     relevance_score: Optional[float] = Field(default=None, description="Relevance score of the document, where 1 is the highest score indicating an exact match.")
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """Override to exclude None values by default, saving tokens."""
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump(**kwargs)

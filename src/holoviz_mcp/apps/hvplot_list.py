@@ -1,4 +1,4 @@
-"""An app to demo the usage and responses of the hvplot_list_plot_types tool."""
+"""An app to demo the usage and responses of the hvplot_list tool."""
 
 import panel as pn
 import panel_material_ui as pmui
@@ -8,7 +8,7 @@ from holoviz_mcp.client import call_tool
 ABOUT = """
 # hvPlot List Plot Types Tool
 
-The `hvplot_list_plot_types` tool lists all available hvPlot plot types supported in the current environment.
+The `hvplot_list` tool lists all available hvPlot plot types supported in the current environment.
 
 ## Purpose
 
@@ -30,23 +30,22 @@ A sorted list of all plot type names available in hvPlot.
 
 After discovering plot types with this tool, use:
 
-- [`hvplot_get_docstring`](./hvplot_get_docstring) - Get detailed documentation for a specific plot type
-- [`hvplot_get_signature`](./hvplot_get_signature) - Get the function signature for a plot type
+- [`hvplot_get`](./hvplot_get) - Get detailed documentation or function signature for a specific plot type
 """
 
 
 @pn.cache
 async def hvplot_list_plot_types() -> list[str]:
-    """Demo the usage and responses of the hvplot_list_plot_types tool."""
+    """Demo the usage and responses of the hvplot_list tool."""
     response = await call_tool(
-        tool_name="hvplot_list_plot_types",
+        tool_name="hvplot_list",
         parameters={},
     )
     return response.data
 
 
 def create_app():
-    """Create the Panel Material UI app for demoing the hvplot_list_plot_types tool."""
+    """Create the Panel Material UI app for demoing the hvplot_list tool."""
     about_button = pmui.IconButton(
         label="About",
         icon="info",
@@ -73,7 +72,7 @@ def create_app():
     main = pmui.Container(about, pn.pane.JSON(hvplot_list_plot_types, theme="dark", depth=3, sizing_mode="stretch_width"))
 
     return pmui.Page(
-        title="HoloViz-MCP: hvplot_list_plot_types Tool Demo",
+        title="HoloViz-MCP: hvplot_list Tool Demo",
         header=[pmui.Row(pn.HSpacer(), about_button, github_button, sizing_mode="stretch_width")],
         main=[main],
     )

@@ -150,7 +150,7 @@ class ServerConfig(BaseModel):
         default_factory=lambda: (_holoviz_mcp_user_dir() / "vector_db" / "chroma").expanduser(), description="Path to the Chroma vector database."
     )
     screenshots_dir: Path = Field(
-        default_factory=lambda: (_holoviz_mcp_user_dir() / "screenshots").expanduser(), description="Directory for saving screenshots from panel_inspect_app tool."
+        default_factory=lambda: (_holoviz_mcp_user_dir() / "screenshots").expanduser(), description="Directory for saving screenshots from inspect tool."
     )
 
 

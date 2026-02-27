@@ -24,6 +24,7 @@ from fastmcp import Client
 from mcp.types import ImageContent
 from mcp.types import TextContent
 
+from holoviz_mcp.holoviz_mcp.server import mcp as holoviz_mcp
 from holoviz_mcp.panel_mcp.server import mcp
 
 
@@ -35,7 +36,7 @@ class TestPanelMCPIntegration:
         """Test the packages tool with real data."""
         client = Client(mcp)
         async with client:
-            result = await client.call_tool("list_packages", {})
+            result = await client.call_tool("packages", {})
 
         # Should return a list of package names
         assert isinstance(result.data, list)
@@ -51,7 +52,7 @@ class TestPanelMCPIntegration:
         """Test the components tool with real data."""
         client = Client(mcp)
         async with client:
-            result = await client.call_tool("list_components", {})
+            result = await client.call_tool("list", {})
 
         # Should return a list of component dictionaries
         assert isinstance(result.data, list)
@@ -77,11 +78,11 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get all packages
-            packages_result = await client.call_tool("list_packages", {})
+            packages_result = await client.call_tool("packages", {})
             packages = packages_result.data
 
             for test_package in packages:
-                result = await client.call_tool("list_components", {"package": test_package})
+                result = await client.call_tool("list", {"package": test_package})
 
                 # All components should be from the specified package
                 assert isinstance(result.data, list)
@@ -94,12 +95,12 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get all components to find a name to filter by
-            all_components = await client.call_tool("list_components", {})
+            all_components = await client.call_tool("list", {})
 
             if len(all_components.data) > 0:
                 # Use the first component's name
                 test_name = all_components.data[0]["name"]
-                result = await client.call_tool("list_components", {"name": test_name})
+                result = await client.call_tool("list", {"name": test_name})
 
                 # All components should have the specified name
                 assert isinstance(result.data, list)
@@ -112,7 +113,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Search for common widget terms
-            result = await client.call_tool("search_components", {"query": "widget"})
+            result = await client.call_tool("search", {"query": "widget"})
 
         # Should return a list of search results
         assert isinstance(result.data, list)
@@ -137,7 +138,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Search with a limit
-            result = await client.call_tool("search_components", {"query": "widget", "limit": 2})
+            result = await client.call_tool("search", {"query": "widget", "limit": 2})
 
         assert isinstance(result.data, list)
         assert len(result.data) <= 2
@@ -148,13 +149,13 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get available packages
-            packages_result = await client.call_tool("list_packages", {})
+            packages_result = await client.call_tool("packages", {})
             packages = packages_result.data
 
             if len(packages) > 0:
                 # Search within a specific package
                 test_package = packages[0]
-                result = await client.call_tool("search_components", {"query": "widget", "package": test_package})
+                result = await client.call_tool("search", {"query": "widget", "package": test_package})
 
                 # All results should be from the specified package
                 assert isinstance(result.data, list)
@@ -167,7 +168,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First get all components to find one to query
-            all_components = await client.call_tool("list_components", {})
+            all_components = await client.call_tool("list", {})
 
             if len(all_components.data) > 0:
                 # Find a component that should be unique (or use package filter)
@@ -176,7 +177,7 @@ class TestPanelMCPIntegration:
                 test_package = test_component["package"]
 
                 # Query for the specific component with package filter to ensure uniqueness
-                result = await client.call_tool("get_component", {"name": test_name, "package": test_package})
+                result = await client.call_tool("get", {"name": test_name, "package": test_package})
 
                 # Should return detailed component information
                 assert result.structured_content
@@ -200,7 +201,7 @@ class TestPanelMCPIntegration:
         async with client:
             # This should raise an error
             with pytest.raises(Exception) as exc_info:
-                await client.call_tool("get_component", {"name": "NonExistentComponent12345"})
+                await client.call_tool("get", {"name": "NonExistentComponent12345"})
 
             assert "No components found" in str(exc_info.value)
 
@@ -210,7 +211,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # First check if there are any components with the same name across packages
-            all_components = await client.call_tool("list_components", {})
+            all_components = await client.call_tool("list", {})
 
             # Group by name to find duplicates
             name_counts: dict = {}
@@ -228,7 +229,7 @@ class TestPanelMCPIntegration:
             if ambiguous_name:
                 # This should raise an error about multiple components
                 with pytest.raises(Exception) as exc_info:
-                    await client.call_tool("get_component", {"name": ambiguous_name})
+                    await client.call_tool("get", {"name": ambiguous_name})
 
                 assert "Multiple components found" in str(exc_info.value)
 
@@ -241,12 +242,11 @@ class TestPanelMCPIntegration:
 
         tool_names = [tool.name for tool in tools]
         expected_tools = [
-            "list_packages",
-            "list_components",
-            "search_components",
-            "get_component",
-            "get_component_parameters",
-            "inspect_app",
+            "packages",
+            "list",
+            "search",
+            "get",
+            "params",
         ]
 
         for tool in expected_tools:
@@ -275,8 +275,8 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Get packages and components
-            packages_result = await client.call_tool("list_packages", {})
-            components_result = await client.call_tool("list_components", {})
+            packages_result = await client.call_tool("packages", {})
+            components_result = await client.call_tool("list", {})
 
             packages = set(packages_result.data)
             component_packages = set(comp["package"] for comp in components_result.data)
@@ -293,7 +293,7 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Search for a term that should return multiple results
-            result = await client.call_tool("search_components", {"query": "input"})
+            result = await client.call_tool("search", {"query": "input"})
 
         if len(result.data) > 1:
             # Check that results are ordered by relevance score (descending)
@@ -306,12 +306,12 @@ class TestPanelMCPIntegration:
         client = Client(mcp)
         async with client:
             # Get all components and check the first one with parameters
-            components_result = await client.call_tool("list_components", {})
+            components_result = await client.call_tool("list", {})
 
             if len(components_result.data) > 0:
                 # Get detailed info for the first component
                 first_comp = components_result.data[0]
-                result = await client.call_tool("get_component", {"name": first_comp["name"], "package": first_comp["package"]})
+                result = await client.call_tool("get", {"name": first_comp["name"], "package": first_comp["package"]})
 
                 assert result.structured_content
                 parameters = result.structured_content["parameters"]
@@ -325,18 +325,18 @@ class TestPanelMCPIntegration:
         """Test inspect_app returns both screenshot and console logs by default."""
         pytest.importorskip("playwright.async_api")
 
-        import holoviz_mcp.panel_mcp.server as _srv
+        import holoviz_mcp.core.inspect as _inspect_mod
 
         # Reset the PlaywrightManager singleton so the browser is created
         # in the current event loop context (avoids stale cross-context refs).
-        if _srv._playwright_manager is not None:
-            await _srv._playwright_manager.close()
-            _srv._playwright_manager = None
+        if _inspect_mod._playwright_manager is not None:
+            await _inspect_mod._playwright_manager.close()
+            _inspect_mod._playwright_manager = None
 
-        client = Client(mcp)
+        client = Client(holoviz_mcp)
         async with client:
             url = "data:text/html,<html><body><h1>Hello</h1><script>console.log('hello')</script></body></html>"
-            result = await client.call_tool("inspect_app", {"url": url})
+            result = await client.call_tool("inspect", {"url": url})
 
         # Should have both image and text content
         assert len(result.content) == 2
@@ -349,38 +349,38 @@ class TestPanelMCPIntegration:
         assert any(entry["message"] == "hello" for entry in logs)
 
         # Clean up to avoid cross-test browser leaks
-        if _srv._playwright_manager is not None:
-            await _srv._playwright_manager.close()
-            _srv._playwright_manager = None
+        if _inspect_mod._playwright_manager is not None:
+            await _inspect_mod._playwright_manager.close()
+            _inspect_mod._playwright_manager = None
 
     @pytest.mark.asyncio
     async def test_inspect_app_screenshot_only(self):
         """Test inspect_app with console_logs=False returns only a screenshot."""
         pytest.importorskip("playwright.async_api")
 
-        client = Client(mcp)
+        client = Client(holoviz_mcp)
         async with client:
             url = "data:text/html,<html><body><h1>Hello</h1></body></html>"
-            result = await client.call_tool("inspect_app", {"url": url, "console_logs": False})
+            result = await client.call_tool("inspect", {"url": url, "console_logs": False})
 
         assert len(result.content) == 1
         assert isinstance(result.content[0], ImageContent)
 
-        import holoviz_mcp.panel_mcp.server as _srv
+        import holoviz_mcp.core.inspect as _inspect_mod
 
-        if _srv._playwright_manager is not None:
-            await _srv._playwright_manager.close()
-            _srv._playwright_manager = None
+        if _inspect_mod._playwright_manager is not None:
+            await _inspect_mod._playwright_manager.close()
+            _inspect_mod._playwright_manager = None
 
     @pytest.mark.asyncio
     async def test_inspect_app_console_logs_only(self):
         """Test inspect_app with screenshot=False returns only console logs."""
         pytest.importorskip("playwright.async_api")
 
-        client = Client(mcp)
+        client = Client(holoviz_mcp)
         async with client:
             url = "data:text/html,<html><body><script>console.log('test-msg')</script></body></html>"
-            result = await client.call_tool("inspect_app", {"url": url, "screenshot": False})
+            result = await client.call_tool("inspect", {"url": url, "screenshot": False})
 
         assert len(result.content) == 1
         assert isinstance(result.content[0], TextContent)
@@ -388,21 +388,21 @@ class TestPanelMCPIntegration:
         logs = json.loads(result.content[0].text)
         assert any(entry["message"] == "test-msg" for entry in logs)
 
-        import holoviz_mcp.panel_mcp.server as _srv
+        import holoviz_mcp.core.inspect as _inspect_mod
 
-        if _srv._playwright_manager is not None:
-            await _srv._playwright_manager.close()
-            _srv._playwright_manager = None
+        if _inspect_mod._playwright_manager is not None:
+            await _inspect_mod._playwright_manager.close()
+            _inspect_mod._playwright_manager = None
 
     @pytest.mark.asyncio
     async def test_inspect_app_log_level_filter(self):
         """Test inspect_app filters console logs by level."""
         pytest.importorskip("playwright.async_api")
 
-        client = Client(mcp)
+        client = Client(holoviz_mcp)
         async with client:
             url = "data:text/html,<html><body><script>console.log('info-msg');console.error('err-msg')</script></body></html>"
-            result = await client.call_tool("inspect_app", {"url": url, "screenshot": False, "log_level": "error"})
+            result = await client.call_tool("inspect", {"url": url, "screenshot": False, "log_level": "error"})
 
         assert len(result.content) == 1
         logs = json.loads(result.content[0].text)
@@ -410,21 +410,21 @@ class TestPanelMCPIntegration:
         assert all(entry["level"] == "error" for entry in logs)
         assert any(entry["message"] == "err-msg" for entry in logs)
 
-        import holoviz_mcp.panel_mcp.server as _srv
+        import holoviz_mcp.core.inspect as _inspect_mod
 
-        if _srv._playwright_manager is not None:
-            await _srv._playwright_manager.close()
-            _srv._playwright_manager = None
+        if _inspect_mod._playwright_manager is not None:
+            await _inspect_mod._playwright_manager.close()
+            _inspect_mod._playwright_manager = None
 
     @pytest.mark.asyncio
     async def test_inspect_app_both_false_raises(self):
         """Test inspect_app raises ValueError when both screenshot and console_logs are False."""
         pytest.importorskip("playwright.async_api")
 
-        client = Client(mcp)
+        client = Client(holoviz_mcp)
         async with client:
             with pytest.raises(Exception) as exc_info:
-                await client.call_tool("inspect_app", {"url": "data:text/html,<html></html>", "screenshot": False, "console_logs": False})
+                await client.call_tool("inspect", {"url": "data:text/html,<html></html>", "screenshot": False, "console_logs": False})
             assert "at least one" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
@@ -435,18 +435,21 @@ class TestPanelMCPIntegration:
 
         pytest.importorskip("playwright.async_api")
 
-        import holoviz_mcp.panel_mcp.server as _srv
+        import holoviz_mcp.core.inspect as _inspect_mod
+        from holoviz_mcp.config.loader import get_config
+
+        config = get_config()
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Patch the module-level _config directly so the tool sees the change
-            original_screenshots_dir = _srv._config.server.screenshots_dir
-            _srv._config.server.screenshots_dir = Path(tmpdir) / "screenshots"
+            # Patch the config directly so the tool sees the change
+            original_screenshots_dir = config.server.screenshots_dir
+            config.server.screenshots_dir = Path(tmpdir) / "screenshots"
 
             try:
-                client = Client(mcp)
+                client = Client(holoviz_mcp)
                 async with client:
                     url = "data:text/html,<html><body><h1>Hello</h1></body></html>"
-                    result = await client.call_tool("inspect_app", {"url": url, "save_screenshot": True, "console_logs": False})
+                    result = await client.call_tool("inspect", {"url": url, "save_screenshot": True, "console_logs": False})
 
                 image_content = result.content[0]
                 assert isinstance(image_content, ImageContent)
@@ -457,25 +460,25 @@ class TestPanelMCPIntegration:
                 assert len(saved_files) == 1
                 assert saved_files[0].stat().st_size > 0
             finally:
-                _srv._config.server.screenshots_dir = original_screenshots_dir
-                if _srv._playwright_manager is not None:
-                    await _srv._playwright_manager.close()
-                    _srv._playwright_manager = None
+                config.server.screenshots_dir = original_screenshots_dir
+                if _inspect_mod._playwright_manager is not None:
+                    await _inspect_mod._playwright_manager.close()
+                    _inspect_mod._playwright_manager = None
 
     @pytest.mark.asyncio
     async def test_inspect_app_rejects_relative_path(self):
         """Test that inspect_app raises ValueError for relative save_screenshot paths."""
         pytest.importorskip("playwright.async_api")
 
-        import holoviz_mcp.panel_mcp.server as _srv
+        import holoviz_mcp.core.inspect as _inspect_mod
 
         try:
-            client = Client(mcp)
+            client = Client(holoviz_mcp)
             async with client:
                 with pytest.raises(Exception) as exc_info:
-                    await client.call_tool("inspect_app", {"url": "data:text/html,<html></html>", "save_screenshot": "./relative.png", "console_logs": False})
+                    await client.call_tool("inspect", {"url": "data:text/html,<html></html>", "save_screenshot": "./relative.png", "console_logs": False})
                 assert "absolute" in str(exc_info.value).lower()
         finally:
-            if _srv._playwright_manager is not None:
-                await _srv._playwright_manager.close()
-                _srv._playwright_manager = None
+            if _inspect_mod._playwright_manager is not None:
+                await _inspect_mod._playwright_manager.close()
+                _inspect_mod._playwright_manager = None

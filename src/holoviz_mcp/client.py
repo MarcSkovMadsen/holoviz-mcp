@@ -8,10 +8,10 @@ Examples
 >>> from holoviz_mcp.client import call_tool
 >>>
 >>> # List available Panel components
->>> result = await call_tool("panel_list_components", {})
+>>> result = await call_tool("pn_list", {})
 >>>
 >>> # Search documentation
->>> result = await call_tool("holoviz_search", {"query": "Button"})
+>>> result = await call_tool("search", {"query": "Button"})
 """
 
 import asyncio
@@ -63,8 +63,8 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     Parameters
     ----------
     tool_name : str
-        The name of the tool to call (e.g., "panel_list_components",
-        "holoviz_search", "hvplot_list_plot_types").
+        The name of the tool to call (e.g., "pn_list",
+        "search", "hvplot_list").
     parameters : dict[str, Any]
         A dictionary of parameters to pass to the tool.
 
@@ -77,13 +77,13 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
     Examples
     --------
     >>> # List all Panel components
-    >>> result = await call_tool("panel_list_components", {})
+    >>> result = await call_tool("pn_list", {})
     >>>
     >>> # Search for a specific component
-    >>> result = await call_tool("panel_search", {"query": "Button", "limit": 5})
+    >>> result = await call_tool("pn_search", {"query": "Button", "limit": 5})
     >>>
     >>> # Get documentation for a project
-    >>> result = await call_tool("holoviz_get_skill", {"name": "panel"})
+    >>> result = await call_tool("skill_get", {"name": "panel"})
     """
     global _CLIENT
     async with _CLIENT_LOCK:

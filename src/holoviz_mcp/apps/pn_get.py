@@ -1,6 +1,6 @@
-"""An app to retrieve detailed parameter information for Panel components.
+"""An app to retrieve complete details about a Panel component.
 
-An interactive version of the holoviz_mcp.panel_mcp.server.get_component_parameters tool.
+An interactive version of the holoviz_mcp.panel_mcp.server.pn_get tool.
 """
 
 import pandas as pd
@@ -17,52 +17,28 @@ pn.pane.Markdown.disable_anchors = True
 ALL = "All Packages"
 
 ABOUT = """
-## Panel Get Component Parameters Tool
+## Panel Get Component Tool
 
-This tool provides **detailed parameter information** for a single Panel component, focusing specifically
-on parameter specifications without the full docstring and signature overhead.
+This tool provides detailed information about a **single** Panel component, including its complete docstring,
+initialization signature, and parameter specifications.
 
 ### How to Use This Tool
 
 1. **Component Name**: Enter the component name (e.g., "Button", "TextInput", "Slider")
 2. **Module Path** (optional): Enter exact module path for precision (e.g., "panel.widgets.Button")
 3. **Package** (optional): Select a package to disambiguate components with same name
-4. **Click Get Parameters**: Retrieve parameter specifications
+4. **Click Get Component**: Retrieve complete component details
 
 **Note**: Component names are case-insensitive.
 
 ### Key Features
 
-This tool is **focused on parameters only**:
-- Returns **parameter specifications** for exactly ONE component
-- Shows **types, defaults, documentation, and constraints** for each parameter
-- Displays parameters in a **sortable, filterable table**
-- Lighter weight than `get_component` (no docstring/signature)
-- Best for **understanding configuration options**
-
-### Difference from get_component
-
-| Feature | get_component | get_component_parameters |
-|---------|---------------|-------------------------|
-| **Returns** | Full component details | Parameters only |
-| **Includes** | Name, package, docstring, signature, parameters | Parameters dict only |
-| **Size** | Larger payload | Smaller, focused |
-| **Use Case** | Complete understanding | Configuration focus |
-
-Use `get_component_parameters` when you:
-- Already know what the component does
-- Need quick access to parameter options
-- Want to understand configuration possibilities
-- Are building parameter-driven interfaces
-
-### Parameter Information
-
-Each parameter shows:
-- **Name**: Parameter identifier
-- **Type**: Parameter type (String, Number, Boolean, Selector, etc.)
-- **Default**: Default value if not specified
-- **Documentation**: Description of what the parameter does
-- **Constraints**: Bounds, available options, regex patterns, readonly/constant flags
+Unlike `pn_list` which returns summaries, this tool:
+- Returns **complete details** for exactly ONE component
+- Includes **full docstring** with usage examples
+- Shows **initialization signature** with all parameters
+- Provides **detailed parameter specifications** (types, defaults, constraints)
+- Best for **understanding how to use** a specific component
 
 ### Handling Ambiguous Names
 
@@ -71,14 +47,22 @@ When a component name matches multiple packages (e.g., "Button" exists in both "
 - Use the **Package filter** to specify which one you want
 - Or use the exact **Module Path** for precision
 
+### Results Display
+
+The component details are organized into expandable sections:
+- **Overview**: Name, package, module path, and description
+- **Docstring**: Complete documentation with usage examples
+- **Parameters**: Table of all parameters with types, defaults, and documentation
+- **Signature**: Initialization method signature
+
 ### Example Usage
 
-**Get Panel Button parameters**:
+**Get Panel's Button**:
 - Component Name: `Button`
 - Package: `panel`
 
-**Get Material UI TextInput parameters**:
-- Component Name: `TextInput`
+**Get Material UI Button**:
+- Component Name: `Button`
 - Package: `panel_material_ui`
 
 **Get by exact path**:
@@ -91,16 +75,16 @@ For more information visit: [HoloViz MCP](https://marcskovmadsen.github.io/holov
 """
 
 
-class GetComponentParametersConfiguration(param.Parameterized):
-    """Configuration for Panel get_component_parameters tool."""
+class GetComponentConfiguration(param.Parameterized):
+    """Configuration for Panel pn_get tool."""
 
     component_name = param.String(default="Button", label="Component Name")
     module_path = param.String(default="", label="Module Path")
     package = param.Selector(default="panel", objects=[ALL, "panel"], label="Package")
 
-    get_parameters = param.Event(label="Get Parameters")
+    get_component = param.Event(label="Get Component")
 
-    result = param.Dict(default={}, doc="Component parameters result")
+    result = param.Dict(default={}, doc="Component details result")
     loading = param.Boolean(default=False, doc="Loading state")
     error_message = param.String(default="", doc="Error message if request fails")
 
@@ -110,21 +94,21 @@ class GetComponentParametersConfiguration(param.Parameterized):
             pn.state.location.sync(self, ["component_name", "module_path", "package"])
         # Initialize with available packages
         pn.state.execute(self._update_packages)
-        # Load default component parameters on startup
+        # Load default component on startup
         pn.state.execute(self._update_result)
 
     async def _update_packages(self):
         """Update the available Panel packages."""
         try:
-            result = await call_tool("panel_list_packages", {})
+            result = await call_tool("pn_packages", {})
             packages = sorted([p for p in result.data])
             self.param.package.objects = [ALL] + packages
         except Exception as e:
             self.error_message = f"Failed to load packages: {str(e)}"
 
-    @param.depends("get_parameters", watch=True)
+    @param.depends("get_component", watch=True)
     async def _update_result(self):
-        """Execute get_component_parameters and update result."""
+        """Execute pn_get and update result."""
         self.loading = True
         self.error_message = ""
         self.result = {}
@@ -146,14 +130,13 @@ class GetComponentParametersConfiguration(param.Parameterized):
             return
 
         try:
-            result = await call_tool("panel_get_component_parameters", params)
-
+            result = await call_tool("pn_get", params)
             if result and hasattr(result, "structured_content"):
-                # get_component_parameters returns a dict of parameter info
+                # get_component returns a single ComponentDetails object, not a list
                 if result.structured_content:
                     self.result = result.structured_content
                 else:
-                    self.error_message = "No parameters found for the specified component"
+                    self.error_message = "No component found matching the criteria"
             else:
                 self.error_message = "Request returned no data"
 
@@ -170,63 +153,43 @@ class GetComponentParametersConfiguration(param.Parameterized):
             self.loading = False
 
 
-class ComponentParametersViewer(pn.viewable.Viewer):
-    """Viewer for displaying component parameters."""
+class ComponentDetailsViewer(pn.viewable.Viewer):
+    """Viewer for displaying complete component details."""
 
-    result = param.Dict(default={}, allow_refs=True, doc="Component parameters")
+    result = param.Dict(default={}, allow_refs=True, doc="Component details")
 
     def __init__(self, **params):
         super().__init__(**params)
 
         # Empty state message
-        no_parameters_message = pn.pane.Markdown(
-            "### No parameters to display.\n\n"
-            "Click 'Get Parameters' to retrieve parameter information for a Panel component.\n\n"
-            "The default 'Button' component parameters will be loaded automatically.",
+        no_component_message = pn.pane.Markdown(
+            "### No component details to display.\n\n"
+            "Click 'Get Component' to retrieve information about a Panel component.\n\n"
+            "The default 'Button' component will be loaded automatically.",
             sizing_mode="stretch_width",
             visible=self.is_empty,
         )
 
-        # Summary statistics cards
-        self._stats_row = pn.Row(
-            self._create_stat_card("Total Parameters", self._get_param_count, "📊"),
-            self._create_stat_card("Required Parameters", self._get_required_count, "⚠️"),
-            self._create_stat_card("With Constraints", self._get_constrained_count, "🔒"),
-            self._create_stat_card("Readonly Parameters", self._get_readonly_count, "🔐"),
+        # Create accordion sections with reactive content
+        self._overview_section = self._create_overview_section()
+        self._docstring_section = self._create_docstring_section()
+        self._parameters_section = self._create_parameters_section()
+        self._signature_section = self._create_signature_section()
+
+        accordion = pmui.Accordion(
+            ("📋 Overview", self._overview_section),
+            ("📖 Docstring", self._docstring_section),
+            ("🔧 Signature", self._signature_section),
+            ("⚙️ Parameters", self._parameters_section),
+            active=[0, 1],  # Open first two sections by default
             visible=self.is_not_empty,
             sizing_mode="stretch_width",
         )
 
-        # Parameters table
-        parameters_table = pn.widgets.Tabulator(
-            self._get_parameters_df,
-            sizing_mode="stretch_both",
-            show_index=False,
-            disabled=True,
-            sortable=True,
-            titles={
-                "name": "Parameter",
-                "type": "Type",
-                "default": "Default",
-                "doc": "Documentation",
-                "constraints": "Constraints",
-            },
-            formatters={"doc": "textarea"},
-            header_filters={
-                "name": {"type": "input", "func": "like", "placeholder": "Filter name..."},
-                "type": {"type": "list", "valuesLookup": True, "multiselect": True},
-                "doc": {"type": "input", "func": "like", "placeholder": "Search docs..."},
-            },
-            layout="fit_data_table",
-            theme="materialize",
-        )
-
         formatted_view = pmui.Column(
-            no_parameters_message,
-            self._stats_row,
-            pmui.Typography("## Parameter Details", variant="h6", visible=self.is_not_empty),
-            parameters_table,
-            name="Parameters Table",
+            no_component_message,
+            accordion,
+            name="Human Readable View",
             sizing_mode="stretch_width",
         )
 
@@ -234,28 +197,70 @@ class ComponentParametersViewer(pn.viewable.Viewer):
             self.param.result,
             theme="dark",
             name="Raw Response",
-            depth=1,
+            depth=2,
             sizing_mode="stretch_width",
         )
 
         self._layout = pn.Tabs(formatted_view, response_pane)
 
-    def _create_stat_card(self, title: str, value_func, icon: str):
-        """Create a statistic card."""
-        return pmui.Paper(
-            pmui.Column(
-                pmui.Row(
-                    pmui.Typography(icon, variant="h4", sx={"marginRight": "10px"}),
-                    pmui.Column(
-                        pmui.Typography(title, variant="caption", sx={"color": "text.secondary"}),
-                        pmui.Typography(value_func, variant="h5", sx={"color": "primary.main"}),
-                    ),
-                ),
-                sx={"padding": "15px"},
+    def _create_overview_section(self):
+        """Create overview section with component metadata."""
+        return pmui.Column(
+            # Component Name
+            pmui.Typography("Component Name", variant="subtitle2", sx={"color": "text.secondary", "marginBottom": "5px"}),
+            pmui.Typography(self._get_name, variant="h6", sx={"color": "primary.main", "marginBottom": "15px"}),
+            pmui.Divider(),
+            # Package
+            pmui.Typography("Package", variant="subtitle2", sx={"color": "text.secondary", "marginTop": "15px", "marginBottom": "5px"}),
+            pmui.Typography(self._get_package, variant="body1", sx={"marginBottom": "15px"}),
+            pmui.Divider(),
+            # Module Path
+            pmui.Typography("Module Path", variant="subtitle2", sx={"color": "text.secondary", "marginTop": "15px", "marginBottom": "5px"}),
+            pmui.Typography(self._get_module_path, variant="body2", sx={"fontFamily": "monospace", "marginBottom": "15px"}),
+            pmui.Divider(),
+            # Description
+            pmui.Typography("Description", variant="subtitle2", sx={"color": "text.secondary", "marginTop": "15px", "marginBottom": "5px"}),
+            pn.pane.Markdown(self._get_description),
+        )
+
+    def _create_docstring_section(self):
+        """Create docstring section."""
+        return pn.pane.Markdown(
+            self._get_docstring,
+            sizing_mode="stretch_width",
+        )
+
+    def _create_parameters_section(self):
+        """Create parameters section with tabulator."""
+        return pmui.Column(
+            pn.pane.Markdown(self._get_param_count, sizing_mode="stretch_width"),
+            pn.widgets.Tabulator(
+                self._get_parameters_df,
+                sizing_mode="stretch_width",
+                show_index=False,
+                disabled=True,
+                sortable=True,
+                titles={
+                    "name": "Parameter",
+                    "type": "Type",
+                    "default": "Default",
+                    "doc": "Documentation",
+                    "constraints": "Constraints",
+                },
+                formatters={"doc": "textarea"},
+                header_filters=True,
             ),
-            elevation=2,
-            sx={"minWidth": "200px"},
-            margin=10,
+            sizing_mode="stretch_width",
+        )
+
+    def _create_signature_section(self):
+        """Create signature section."""
+        return pmui.Column(
+            pmui.Typography("Initialization Signature", variant="subtitle2", sx={"color": "text.secondary", "marginBottom": "10px"}),
+            pn.pane.Markdown(
+                self._get_signature_markdown,
+                sizing_mode="stretch_width",
+            ),
         )
 
     @param.depends("result")
@@ -269,36 +274,52 @@ class ComponentParametersViewer(pn.viewable.Viewer):
         return bool(self.result)
 
     @param.depends("result")
+    def _get_name(self):
+        """Get component name."""
+        return self.result.get("name", "N/A")
+
+    @param.depends("result")
+    def _get_package(self):
+        """Get component package."""
+        return self.result.get("package", "N/A")
+
+    @param.depends("result")
+    def _get_module_path(self):
+        """Get component module path."""
+        return self.result.get("module_path", "N/A")
+
+    @param.depends("result")
+    def _get_description(self):
+        """Get component description."""
+        return self.result.get("description", "_No description available._")
+
+    @param.depends("result")
+    def _get_docstring(self):
+        """Get component docstring."""
+        docstring = self.result.get("docstring", "")
+        if not docstring:
+            return "_No docstring available._"
+        # Wrap in code block if it looks like plain text
+        if not docstring.strip().startswith("#"):
+            return f"```markdown\n{docstring}\n```"
+        return docstring
+
+    @param.depends("result")
     def _get_param_count(self):
-        """Get total parameter count."""
-        return str(len(self.result))
-
-    @param.depends("result")
-    def _get_required_count(self):
-        """Get count of parameters with no default."""
-        count = sum(1 for p in self.result.values() if p.get("default") is None and not p.get("allow_None", False))
-        return str(count)
-
-    @param.depends("result")
-    def _get_constrained_count(self):
-        """Get count of parameters with constraints."""
-        count = sum(1 for p in self.result.values() if p.get("bounds") is not None or p.get("objects") is not None or p.get("regex") is not None)
-        return str(count)
-
-    @param.depends("result")
-    def _get_readonly_count(self):
-        """Get count of readonly or constant parameters."""
-        count = sum(1 for p in self.result.values() if p.get("readonly", False) or p.get("constant", False))
-        return str(count)
+        """Get parameter count message."""
+        params = self.result.get("parameters", {})
+        count = len(params)
+        return f"**{count} parameter(s)** defined for this component:"
 
     @param.depends("result")
     def _get_parameters_df(self):
         """Convert parameters dict to DataFrame."""
-        if not self.result:
+        params = self.result.get("parameters", {})
+        if not params:
             return pd.DataFrame(columns=["name", "type", "default", "doc", "constraints"])
 
         rows = []
-        for param_name, param_info in self.result.items():
+        for param_name, param_info in params.items():
             # Extract common fields
             param_type = param_info.get("type", "Unknown")
             default = param_info.get("default", "")
@@ -311,17 +332,17 @@ class ComponentParametersViewer(pn.viewable.Viewer):
             if "objects" in param_info and param_info["objects"] is not None:
                 objects = param_info["objects"]
                 if isinstance(objects, list) and len(objects) > 5:
-                    constraints.append(f"options: {len(objects)} choices")
+                    constraints.append(f"objects: {len(objects)} options")
                 else:
-                    constraints.append(f"options: {objects}")
+                    constraints.append(f"objects: {objects}")
             if "regex" in param_info and param_info["regex"] is not None:
                 constraints.append(f"regex: {param_info['regex']}")
             if "allow_None" in param_info and param_info["allow_None"]:
-                constraints.append("allow_None")
+                constraints.append("allow_None: True")
             if "readonly" in param_info and param_info["readonly"]:
-                constraints.append("readonly")
+                constraints.append("readonly: True")
             if "constant" in param_info and param_info["constant"]:
-                constraints.append("constant")
+                constraints.append("constant: True")
 
             constraint_str = ", ".join(constraints) if constraints else ""
 
@@ -337,22 +358,30 @@ class ComponentParametersViewer(pn.viewable.Viewer):
 
         return pd.DataFrame(rows)
 
+    @param.depends("result")
+    def _get_signature_markdown(self):
+        """Get signature as markdown code block."""
+        signature = self.result.get("init_signature", "")
+        if not signature:
+            return "_No signature available._"
+        return f"```python\n{signature}\n```"
+
     def __panel__(self):
         """Return the Panel layout."""
         return self._layout
 
 
-class PanelGetComponentParametersApp(pn.viewable.Viewer):
-    """Main application for retrieving Panel component parameters."""
+class PanelGetComponentApp(pn.viewable.Viewer):
+    """Main application for retrieving Panel component details."""
 
-    title = param.String(default="HoloViz MCP - panel_get_component_parameters Tool Demo")
+    title = param.String(default="HoloViz MCP - pn_get Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)
 
         # Create configuration and viewer
-        self._config = GetComponentParametersConfiguration()
-        self._parameters_viewer = ComponentParametersViewer(result=self._config.param.result)
+        self._config = GetComponentConfiguration()
+        self._component_viewer = ComponentDetailsViewer(result=self._config.param.result)
 
         with pn.config.set(sizing_mode="stretch_width"):
             self._name_input = pmui.TextInput.from_param(
@@ -379,12 +408,12 @@ class PanelGetComponentParametersApp(pn.viewable.Viewer):
             )
 
             self._get_button = pmui.Button.from_param(
-                self._config.param.get_parameters,
-                label="Get Parameters",
+                self._config.param.get_component,
+                label="Get Component",
                 color="primary",
                 variant="contained",
                 sx={"width": "100%", "marginTop": "10px"},
-                on_click=lambda e: self._config.param.trigger("get_parameters"),
+                on_click=lambda e: self._config.param.trigger("get_component"),
             )
 
         # Status indicators
@@ -392,13 +421,13 @@ class PanelGetComponentParametersApp(pn.viewable.Viewer):
         self._error_pane = pmui.Alert(
             self._error_text,
             alert_type="error",
-            visible=pn.rx(lambda msg: bool(msg))(self._config.param.error_message),
+            visible=pn.rx(bool)(self._config.param.error_message),
             sizing_mode="stretch_width",
         )
 
         # Create static layout structure
         self._sidebar = pn.Column(
-            pmui.Typography("## Parameter Lookup", variant="h6"),
+            pmui.Typography("## Component Lookup", variant="h6"),
             self._name_input,
             self._module_path_input,
             self._package_select,
@@ -408,17 +437,17 @@ class PanelGetComponentParametersApp(pn.viewable.Viewer):
             sizing_mode="stretch_width",
         )
 
-        self._main = pmui.Container(self._parameters_viewer, width_option="xl", margin=10)
+        self._main = pmui.Container(self._component_viewer, width_option="xl", margin=10)
 
     @param.depends("_config.loading", "_config.result")
     def _status_text(self):
         """Generate status message."""
         if self._config.loading:
-            return "_Loading parameter information..._"
+            return "_Loading component details..._"
         elif self._config.result:
-            param_count = len(self._config.result)
-            component_name = self._config.component_name or "Component"
-            return f"_Successfully loaded **{param_count} parameters** for **{component_name}**_"
+            name = self._config.result.get("name", "Component")
+            package = self._config.result.get("package", "")
+            return f"_Successfully loaded **{name}** from **{package}**_"
         return ""
 
     @param.depends("_config.error_message")
@@ -433,7 +462,7 @@ class PanelGetComponentParametersApp(pn.viewable.Viewer):
             about_button = pmui.IconButton(
                 label="About",
                 icon="info",
-                description="Click to learn about the Panel Get Component Parameters Tool.",
+                description="Click to learn about the Panel Get Component Tool.",
                 sizing_mode="fixed",
                 color="light",
                 margin=(10, 0),
@@ -464,4 +493,4 @@ class PanelGetComponentParametersApp(pn.viewable.Viewer):
 
 if pn.state.served:
     pn.extension("tabulator")
-    PanelGetComponentParametersApp().servable()
+    PanelGetComponentApp().servable()

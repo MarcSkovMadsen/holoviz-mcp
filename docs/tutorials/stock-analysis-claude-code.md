@@ -6,7 +6,7 @@ By the end, you'll have built an interactive report that displays financial data
 
 !!! tip "What you'll learn"
     - How to use Claude Code to plan and build data applications
-    - How to use the `holoviz_display` tool to quickly visualize and persist your work
+    - How to use the `show` tool to quickly visualize and persist your work
     - How to work with stock data using `yfinance`
     - How to iterate on visualizations using natural language
 
@@ -45,13 +45,13 @@ Claude will use `holoviz-data-explorer` to develop a detailed architecture plan:
 Now let's ask Claude to implement the report and use the display tool to show it:
 
 ```text
-Please implement the report. Then display it using the holoviz_display tool.
+Please implement the report. Then display it using the show tool.
 ```
 
 Claude will:
 
 1. Generate the complete Python code
-2. Use the `holoviz_display` tool to execute it
+2. Use the `show` tool to execute it
 3. Provide a URL where you can view the results
 
 You should see output like:

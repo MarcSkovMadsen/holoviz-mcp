@@ -68,6 +68,16 @@ You should see output confirming that agents were installed to `.github/agents/`
 !!! note "What's happening"
     This command installs custom Copilot agents specifically designed for HoloViz development. These agents understand the `holoviz-mcp` server and can use it to understand the architecture patterns and best practices for Panel, hvPlot, and other HoloViz libraries.
 
+!!! tip "Install User-Level Agents"
+
+    To make agents available across all projects:
+
+    ```bash
+    holoviz-mcp install copilot --scope user
+    ```
+
+    This installs agents to `~/.copilot/agents/`.
+
 !!! tip
     Run `holoviz-mcp install copilot --skills` to populate the `.github/skills` folder too. See [Use Agent Skills in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills) for more info.
 

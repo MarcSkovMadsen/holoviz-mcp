@@ -217,8 +217,9 @@ area - Area plots for stacked or filled visualizations
 
 ### Lookup additional information
 
-- If the HoloViz MCP server is available DO use the HoloViz MCP server to access relevant documentation (`holoviz_search`), list of plot types available (`hvplot_list_plot_types`), and detailed docstrings (`hvplot_get_docstring`).
-- If the HoloViz MCP server is not available, DO search the web. For example searching the hvplot website for `streaming` related information via https://hvplot.holoviz.org/en/docs/latest/search.html?q=streaming url.
+- If the HoloViz MCP server tools are available, DO use them: `search` (documentation), `hvplot_list` (available plot types), `hvplot_get` (docstrings and signatures), `skill_get` (best-practice skills).
+- If MCP tools are not available but the `holoviz-mcp` CLI is installed (also available as `hv`), use the equivalent CLI commands: `holoviz-mcp search`, `holoviz-mcp hvplot list`, `holoviz-mcp hvplot get`.
+- If neither is available, DO search the web. For example searching the hvplot website for `streaming` related information via https://hvplot.holoviz.org/en/docs/latest/search.html?q=streaming url.
 
 ### Test the app with pytest
 

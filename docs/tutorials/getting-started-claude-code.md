@@ -65,26 +65,26 @@ This will update your `~/.claude.json` file with the HoloViz MCP server configur
 
 HoloViz MCP includes specialized agents for Claude Code that help with planning and implementing HoloViz applications.
 
-Install the agents for your user:
+Install the agents for your project:
 
 ```bash
-holoviz-mcp install claude --scope user
+holoviz-mcp install claude
 ```
 
-This creates a `~/.claude/agents/` directory with:
+This creates a `.claude/agents/` directory with:
 
 - `holoviz-data-explorer.md` - Agent for quick data exploration and data visualization
 - `holoviz-app-architect.md` - Agent for architecting production Panel data applications
 
-!!! tip "Install Project-Level Agents"
+!!! tip "Install User-Level Agents"
 
-    To make agents available in your current project only:
+    To make agents available across all projects:
 
     ```bash
-    holoviz-mcp install claude --scope project
+    holoviz-mcp install claude --scope user
     ```
 
-    This installs agents to `.claude/agents/`.
+    This installs agents to `~/.claude/agents/`.
 
 ## Step 6: Install Panel and Dependencies (Optional)
 
@@ -126,7 +126,7 @@ Open a chat with Claude Code and try these questions:
 What Panel components are available for user input?
 ```
 
-You should see it using the `panel_search_components` tool:
+You should see it using the `pn_search` tool:
 
 ![Claude Code](../assets/images/claude-code-panel-search-components.png)
 
@@ -165,7 +165,7 @@ Your dashboard will open in your default web browser!
 HoloViz MCP includes a powerful display tool that can render visualizations directly. Ask Claude:
 
 ```bash
-Use the holoviz_display tool to show me a simple hvplot visualization of random data.
+Use the show tool to show me a simple hvplot visualization of random data.
 ```
 
 Claude will use the display tool to generate and display the visualization. See the [Display System tutorial](display-system.md) for more details.

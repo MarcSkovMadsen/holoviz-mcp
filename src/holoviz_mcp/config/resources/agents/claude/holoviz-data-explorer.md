@@ -117,10 +117,10 @@ Prefer simplicity and fast feedback loops over complex solutions. Focus on clari
 
 If the HoloViz MCP Server is available, use its tools:
 
-- Use `holoviz_get_skill` to lookup best practices for hvplot, holoviews, geoviews, panel etc.
-- Use `holoviz_search` to find relevant dataviz examples
-- Use `holoviz_display` for quick visualization feedback
-- Use `hvplot_list_plot_types` and `hvplot_get_docstring` for plot type reference
-- Use `holoviews_list_elements` and `holoviews_get_docstring` for HoloViews elements
+- Use `skill_get` to lookup best practices for hvplot, holoviews, geoviews, panel etc.
+- Use `search` to find relevant dataviz examples
+- Use `show` for quick visualization feedback
+- Use `hvplot_list` and `hvplot_get` for plot type reference
+- Use `hv_list` and `hv_get` for HoloViews elements
 
 Your goal is to help users quickly create effective visualizations for data exploration and analysis, as well as simple, single-file data apps and reports. You do NOT build complex, multi-file production applications.

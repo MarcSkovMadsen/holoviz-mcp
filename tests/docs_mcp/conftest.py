@@ -72,7 +72,7 @@ def docs_test_config():
     Since ~/.holoviz-mcp-test/ persists between runs, subsequent runs skip indexing.
     """
     import holoviz_mcp.config.loader as loader_module
-    import holoviz_mcp.holoviz_mcp.server as server_module
+    import holoviz_mcp.core.docs as docs_module
 
     config = _build_test_config()
 
@@ -82,11 +82,11 @@ def docs_test_config():
 
     # Save originals
     original_loader = loader_module._config_loader
-    original_indexer = server_module._indexer
+    original_indexer = docs_module._indexer
 
     # Patch global config loader and reset indexer singleton
     loader_module._config_loader = test_loader
-    server_module._indexer = None
+    docs_module._indexer = None
 
     logger.info(
         "Docs test config: %d repos (%s), vector_db=%s",
@@ -106,7 +106,7 @@ def docs_test_config():
             shutil.rmtree(vector_db_path, ignore_errors=True)
             SharedSystemClient.clear_system_cache()
             # Reset indexer so it picks up the cleaned DB
-            server_module._indexer = None
+            docs_module._indexer = None
         schema_marker.parent.mkdir(parents=True, exist_ok=True)
         schema_marker.write_text(SCHEMA_VERSION)
 
@@ -115,7 +115,7 @@ def docs_test_config():
     # db_lock, and index_documentation() also acquires db_lock — causing a
     # deadlock when the index is empty.  By building here, ensure_indexed()
     # always finds is_indexed()==True and skips the build.
-    indexer = server_module.get_indexer()
+    indexer = docs_module.get_indexer()
     if not indexer.is_indexed():
         logger.info("Building test index for %s ...", ", ".join(TEST_PROJECTS))
         asyncio.run(indexer.ensure_indexed())
@@ -126,4 +126,4 @@ def docs_test_config():
 
     # Restore originals
     loader_module._config_loader = original_loader
-    server_module._indexer = original_indexer
+    docs_module._indexer = original_indexer

@@ -63,13 +63,13 @@ If Claude provides detailed, accurate responses with specific Panel component in
 
 HoloViz MCP provides specialized agents for Claude Code that can help with planning and implementation:
 
-**User-level installation (default)** (installs to `~/.claude/agents/`):
+**Project-level installation (default)** (installs to `.claude/agents/`):
 
 ```bash
-holoviz-mcp install claude --scope user
+holoviz-mcp install claude
 ```
 
-**Project-level installation** (installs to `.claude/agents/`):
+**User-level installation** (installs to `~/.claude/agents/`):
 
 ```bash
 holoviz-mcp install claude --scope project

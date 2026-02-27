@@ -54,10 +54,10 @@ async def setup_composed_server() -> None:
     This uses static composition (import_server), which copies components
     from sub-servers into the main server with appropriate prefixes.
     """
-    await mcp.import_server(holoviz_mcp, prefix="holoviz")
-    await mcp.import_server(hvplot_mcp, prefix="hvplot")
-    await mcp.import_server(panel_mcp, prefix="panel")
-    await mcp.import_server(holoviews_mcp, prefix="holoviews")
+    await mcp.import_server(holoviz_mcp)  # General: search, project_list, doc_get, ref_get, skill_list, skill_get, show, inspect
+    await mcp.import_server(hvplot_mcp, prefix="hvplot")  # hvplot_list, hvplot_get
+    await mcp.import_server(panel_mcp, prefix="pn")  # pn_list, pn_get, pn_params, pn_search, pn_packages
+    await mcp.import_server(holoviews_mcp, prefix="hv")  # hv_list, hv_get
 
 
 def main() -> None:

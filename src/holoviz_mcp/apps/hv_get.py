@@ -1,4 +1,4 @@
-"""An app to retrieve HoloViews element documentation via the holoviews_get_docstring tool."""
+"""An app to retrieve HoloViews element documentation via the hv_get tool."""
 
 import panel as pn
 import panel_material_ui as pmui
@@ -53,7 +53,7 @@ class GetDocstringConfiguration(param.Parameterized):
     async def _update_elements(self):
         """Populate available HoloViews elements."""
         try:
-            result = await call_tool("holoviews_list_elements", {})
+            result = await call_tool("hv_list", {})
             elements = sorted(result.data)
             if elements:
                 self.param.element.objects = elements
@@ -75,7 +75,7 @@ class GetDocstringConfiguration(param.Parameterized):
         params = {"element": self.element, "backend": self.backend}
 
         try:
-            response = await call_tool("holoviews_get_docstring", params)
+            response = await call_tool("hv_get", params)
             data = getattr(response, "data", None)
             if data:
                 self.result = data.replace("``", "`")
@@ -110,7 +110,7 @@ class DocstringViewer(pn.viewable.Viewer):
 class HoloviewsGetDocstringApp(pn.viewable.Viewer):
     """Main application for retrieving HoloViews docstrings."""
 
-    title = param.String(default="HoloViz MCP - holoviews_get_docstring Tool Demo")
+    title = param.String(default="HoloViz MCP - hv_get Tool Demo")
 
     def __init__(self, **params):
         super().__init__(**params)

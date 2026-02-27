@@ -8,7 +8,7 @@ By the end, you'll have built an interactive report that displays financial data
 
 !!! tip "What you'll learn"
     - How to use the *HoloViz Data Explorer* agent to design data visualizations
-    - How to use the `holoviz_display` tool to quickly visualize and persist your work
+    - How to use the `show` tool to quickly visualize and persist your work
 
 !!! note "Prerequisites"
     Before starting, ensure you have:
@@ -33,7 +33,7 @@ First, let's use the HoloViz Data Explorer agent to design our application archi
     - Trading volume visualization
     - Professional styling and error handling
 
-    Display using the #holoviz_display tool. KISS - Keep it simple stupid.
+    Display using the #show tool. KISS - Keep it simple stupid.
     ```
 
     ![HoloViz Data Explorer](../assets/images/stock-analysis-holoviz-data-explorer.png)
@@ -61,7 +61,7 @@ Implement the plan outlined above.
 2. Wait for the agent to generate the complete code
 
 !!! tip "What's happening"
-    The agent will use the `holoviz_display` tool to create and show your report. This tool executes Python code and provides a URL where you can view the results.
+    The agent will use the `show` tool to create and show your report. This tool executes Python code and provides a URL where you can view the results.
 
 You should see a response like:
 

@@ -126,8 +126,14 @@ jobs:
         run: pixi run -e ${{ matrix.environment }} postinstall
       - name: Run unit tests (fast)
         run: pixi run -e ${{ matrix.environment }} pytest tests/ --ignore=tests/docs_mcp --color=yes
+        env:
+          TTY_COMPATIBLE: "1"
+          TTY_INTERACTIVE: "0"
       - name: Run docs integration tests (slow, uses cached index)
         run: pixi run -e ${{ matrix.environment }} pytest tests/docs_mcp --color=yes
+        env:
+          TTY_COMPATIBLE: "1"
+          TTY_INTERACTIVE: "0"
 
   pytest_ui:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
