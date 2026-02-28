@@ -35,6 +35,33 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 - **📖 Always Updated**: Documentation stays current with the latest HoloViz ecosystem changes.
 - **🔧 Zero Setup**: Works immediately with any MCP-compatible AI assistant.
 
+## 🛠️ Agent Skills (Standalone)
+
+The HoloViz MCP skills follow the [Agent Skills specification](https://agentskills.io) and can be installed standalone — without running the MCP server — using any skills package manager.
+
+Available skills: `panel`, `hvplot`, `holoviews`, `param`, `panel-material-ui`, `panel-custom-components`, `panel-holoviews`, `holoviz-mcp-cli`
+
+**With [agr](https://github.com/kasperjunge/agent-resources):**
+
+```bash
+pip install agr
+agr add MarcSkovMadsen/holoviz-mcp/panel
+```
+
+**With [Vercel skills](https://github.com/vercel-labs/skills):**
+
+```bash
+npx skills add MarcSkovMadsen/holoviz-mcp --skill panel
+```
+
+**With [openskills](https://github.com/numman-ali/openskills):**
+
+```bash
+npx openskills install MarcSkovMadsen/holoviz-mcp/panel
+```
+
+**Manually:** Copy the `skills/<name>/SKILL.md` file into your agent's skills directory (e.g., `.claude/skills/`).
+
 Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to see it in action.
 
 [![HoloViz MCP Introduction](docs/assets/images/holoviz-mcp-introduction.png)](https://youtu.be/M-YUZWEeSDA)

@@ -14,19 +14,20 @@ logger = logging.getLogger(__name__)
 
 async def extract_tools():
     """Extract available tools from the HoloViz MCP server and return as structured data."""
-    await setup_composed_server()
-    tools_dict = await mcp.get_tools()
+    setup_composed_server()
+    tools_list = await mcp.list_tools()
 
     # Group tools by category
     holoviz_tools = []
     panel_tools = []
     utility_tools = []
 
-    for tool_name, tool_info in tools_dict.items():
+    for tool_info in tools_list:
+        tool_name = tool_info.name
         tool_data = {"name": tool_name, "description": getattr(tool_info, "description", "No description available"), "parameters": []}
 
         # Get input schema
-        input_schema = getattr(tool_info, "inputSchema", None)
+        input_schema = getattr(tool_info, "inputSchema", None) or getattr(tool_info, "parameters", None)
         if input_schema and hasattr(input_schema, "get") and "properties" in input_schema:
             for param_name, param_info in input_schema["properties"].items():
                 required = param_name in input_schema.get("required", [])

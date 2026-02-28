@@ -4,8 +4,11 @@ Simple tests for the documentation MCP server.
 Tests just the docs server functionality without the composed server.
 """
 
+import json
+
 import pytest
 from fastmcp import Client
+from fastmcp.exceptions import ToolError
 
 from holoviz_mcp.holoviz_mcp.server import mcp
 
@@ -57,13 +60,13 @@ async def test_semantic_search():
 
         # Verify each result is a proper Document
         for document in result.data:
-            assert "title" in document
-            assert "url" in document
-            assert "project" in document
-            assert "source_path" in document
-            assert "source_url" in document
+            assert hasattr(document, "title")
+            assert hasattr(document, "url")
+            assert hasattr(document, "project")
+            assert hasattr(document, "source_path")
+            assert hasattr(document, "source_url")
             # Should include content by default
-            assert "content" in document
+            assert hasattr(document, "content")
 
 
 @pytest.mark.integration
@@ -79,7 +82,7 @@ async def test_search_by_project():
 
         # All results should be from hvplot project
         for document in result.data:
-            assert document["project"] == "hvplot"
+            assert document.project == "hvplot"
 
 
 @pytest.mark.integration
@@ -97,7 +100,7 @@ async def test_search_with_custom_max_results():
 
         # All results should be from panel project
         for document in result.data:
-            assert document["project"] == "panel"
+            assert document.project == "panel"
 
 
 @pytest.mark.integration
@@ -113,13 +116,13 @@ async def test_search_without_content():
 
         # Verify each result has metadata but no content
         for document in result.data:
-            assert "title" in document
-            assert "url" in document
-            assert "project" in document
-            assert "source_path" in document
-            assert "source_url" in document
+            assert hasattr(document, "title")
+            assert hasattr(document, "url")
+            assert hasattr(document, "project")
+            assert hasattr(document, "source_path")
+            assert hasattr(document, "source_url")
             # Should not include content when content=False
-            assert document.get("content") is None
+            assert document.content is None
 
 
 @pytest.mark.integration
@@ -135,7 +138,7 @@ async def test_search_material_ui_specific():
 
         # Results should be from panel-material-ui project
         for document in result.data:
-            assert document["project"] == "panel-material-ui"
+            assert document.project == "panel-material-ui"
 
 
 @pytest.mark.integration
@@ -201,7 +204,7 @@ async def test_search_returns_unique_source_paths():
         assert isinstance(result.data, list)
 
         # All source_paths should be unique
-        paths = [doc["source_path"] for doc in result.data]
+        paths = [doc.source_path for doc in result.data]
         assert len(paths) == len(set(paths)), f"Duplicate source_paths found: {paths}"
 
 
@@ -217,9 +220,9 @@ async def test_reference_guide_content_complete_after_chunking():
         assert len(result.data) == 1
 
         doc = result.data[0]
-        assert doc["content"] is not None
+        assert doc.content is not None
         # Content should be substantial (merged from chunks, not just first chunk)
-        assert len(doc["content"]) > 200
+        assert len(doc.content) > 200
 
 
 @pytest.mark.integration
@@ -234,12 +237,12 @@ async def test_search_content_mode_chunk():
         assert len(result.data) >= 1
 
         doc = result.data[0]
-        assert doc.get("content") is not None
+        assert doc.content is not None
 
         # Chunk content should be no larger than full document content
-        full_result = await client.call_tool("doc_get", {"path": doc["source_path"], "project": doc["project"]})
+        full_result = await client.call_tool("doc_get", {"path": doc.source_path, "project": doc.project})
         assert full_result.data
-        assert len(doc["content"]) <= len(full_result.data.content)
+        assert len(doc.content) <= len(full_result.data.content)
 
 
 @pytest.mark.integration
@@ -254,11 +257,11 @@ async def test_search_content_mode_full():
         search_doc = search_result.data[0]
 
         # Get the same document via get_document
-        full_doc = await client.call_tool("doc_get", {"path": search_doc["source_path"], "project": search_doc["project"]})
+        full_doc = await client.call_tool("doc_get", {"path": search_doc.source_path, "project": search_doc.project})
         assert full_doc.data
 
         # Content should match
-        assert search_doc.get("content") == full_doc.data.content
+        assert search_doc.content == full_doc.data.content
 
 
 @pytest.mark.integration
@@ -270,7 +273,7 @@ async def test_search_content_mode_truncated_default():
         result = await client.call_tool("search", {"query": "dashboard layout", "max_results": 1})
         assert result.data
         doc = result.data[0]
-        assert doc.get("content") is not None
+        assert doc.content is not None
 
 
 @pytest.mark.integration
@@ -282,8 +285,43 @@ async def test_search_keyword_prefilter_camelcase_integration():
         result = await client.call_tool("search", {"query": "CheckboxEditor SelectEditor", "project": "panel", "content": False})
         assert result.data
         assert isinstance(result.data, list)
-        titles = [doc["title"] for doc in result.data]
+        titles = [doc.title for doc in result.data]
         assert any("Tabulator" in t for t in titles), f"Expected Tabulator in results, got: {titles}"
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_list_documents():
+    """Test listing documents for a project."""
+    client = Client(mcp)
+    async with client:
+        # Use raw MCP call because doc_list returns list[dict] which FastMCP
+        # deserializes into empty Root dataclass objects instead of dicts.
+        raw = await client.call_tool_mcp("doc_list", {"project": "panel"})
+        assert raw.content
+        docs = json.loads(raw.content[0].text)
+        assert isinstance(docs, list)
+        assert len(docs) > 0
+
+        # Each entry should have the expected keys
+        for d in docs:
+            assert "source_path" in d
+            assert "title" in d
+            assert "is_reference" in d
+
+        # Results should be sorted by source_path
+        paths = [d["source_path"] for d in docs]
+        assert paths == sorted(paths)
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_list_documents_invalid_project():
+    """Test listing documents for a nonexistent project raises error."""
+    client = Client(mcp)
+    async with client:
+        with pytest.raises(ToolError, match="No documents found"):
+            await client.call_tool("doc_list", {"project": "nonexistent_project_xyz"})
 
 
 @pytest.mark.integration
@@ -295,5 +333,5 @@ async def test_search_keyword_prefilter_mixed_integration():
         result = await client.call_tool("search", {"query": "add_filter RangeSlider Tabulator", "project": "panel", "content": False})
         assert result.data
         assert isinstance(result.data, list)
-        titles = [doc["title"] for doc in result.data]
+        titles = [doc.title for doc in result.data]
         assert any("Tabulator" in t for t in titles), f"Expected Tabulator in results, got: {titles}"

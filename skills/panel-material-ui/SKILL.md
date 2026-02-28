@@ -1,5 +1,5 @@
 ---
-name: panel-material-ui-development
+name: panel-material-ui
 description: Best practices for developing modern looking tools, dashboards and data apps using HoloViz Panel and Panel Material UI components.
 metadata:
   version: "1.0.0"
@@ -123,9 +123,9 @@ class HelloWorld(pn.viewable.Viewer):
             main=list(instance._outputs),
         )
 
-# DO provide a method to serve the app with `python`
+# DO provide a method for quick development preview with `python`
 if __name__ == "__main__":
-    # DO run with `python path_to_this_file.py`
+    # DO run with `python path_to_this_file.py` for quick development preview
     HelloWorld.create_app().show(port=5007, autoreload=True, open=True)
 # DO provide a method to serve the app with `panel serve`
 elif pn.state.served:

@@ -8,8 +8,8 @@ from holoviz_mcp.server import setup_composed_server
 
 
 @pytest.fixture(scope="function", autouse=True)
-async def _setup_composed_server():
-    await setup_composed_server()
+def _setup_composed_server():
+    setup_composed_server()
 
 
 @pytest.mark.asyncio
@@ -28,3 +28,6 @@ async def test_server():
 
         result = await client.call_tool("skill_get", {"name": "panel"})
         assert result.data
+
+        result = await client.call_tool("skill_files", {"name": "panel"})
+        assert result.data is not None

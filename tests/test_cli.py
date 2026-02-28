@@ -293,6 +293,13 @@ class TestDocHelp:
         assert result.exit_code == 0
         assert "Documentation" in plain(result.output)
 
+    def test_doc_list_help(self):
+        result = runner.invoke(app, ["doc", "list", "--help"])
+        assert result.exit_code == 0
+        output = plain(result.output)
+        assert "Project name" in output
+        assert "--output" in output
+
     def test_doc_get_help(self):
         result = runner.invoke(app, ["doc", "get", "--help"])
         assert result.exit_code == 0

@@ -40,7 +40,7 @@ classifiers = [
 dependencies = [
     "certifi",
     "chromadb",
-    "fastmcp<3",
+    "fastmcp>=3.0",
     "GitPython",
     "hvplot",
     "hvsampledata",
@@ -188,6 +188,9 @@ skip = "*.js,*.css,*.svg,*.json"
 python_version = '3.11'
 no_implicit_optional = true
 check_untyped_defs = true
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "holoviz_mcp/skills"
 
 [tool.hatch.version]
 source = "vcs"

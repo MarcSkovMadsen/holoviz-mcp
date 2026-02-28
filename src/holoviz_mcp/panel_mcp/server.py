@@ -88,7 +88,7 @@ async def search_components(ctx: Context, query: str, package: str | None = None
         Examples: "button", "input", "text", "chart", "plot", "slider", "select"
     package : str, optional
         Package name to filter results. If None, searches all packages.
-        Examples: "hvplot", "panel", or "panel_material_ui"
+        Examples: "panel" or "panel_material_ui"
     limit : int, optional
         Maximum number of results to return. Default is 10.
 
@@ -136,7 +136,7 @@ async def list_components(ctx: Context, name: str | None = None, module_path: st
         Examples: "panel.widgets" to get all widgets, "panel.pane" to get all panes
     package : str, optional
         Package name to filter by. If None, returns all components.
-        Examples: "hvplot", "panel" or "panel_material_ui"
+        Examples: "panel" or "panel_material_ui"
 
     Returns
     -------
@@ -240,7 +240,7 @@ async def get_component_parameters(ctx: Context, name: str | None = None, module
         Examples: "panel.widgets.Button", "panel_material_ui.Button"
     package : str, optional
         Package name to filter by. If None, searches all packages.
-        Examples: "hvplot", "panel" or "panel_material_ui"
+        Examples: "panel" or "panel_material_ui"
 
     Returns
     -------

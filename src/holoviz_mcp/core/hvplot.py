@@ -81,6 +81,9 @@ def get_plot_type(
     str
         The docstring or signature string.
     """
+    available = list_plot_types()
+    if plot_type not in available:
+        raise ValueError(f"Unknown plot type '{plot_type}'. Use list_plot_types() to see all {len(available)} available plot types.")
     doc, sig = _help(plot_type=plot_type, docstring=docstring, generic=generic, style=style)
     if signature:
         return str(sig)

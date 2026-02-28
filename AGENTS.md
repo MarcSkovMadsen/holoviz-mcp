@@ -92,13 +92,23 @@ src/holoviz_mcp/
 ├── __init__.py                 # Package initialization, version info
 ├── server.py                   # Main MCP server (composes sub-servers)
 ├── serve.py                    # Alternative server entry point
+├── cli.py                      # CLI entry point (holoviz-mcp command)
+├── client.py                   # MCP client utilities
 │
 ├── config/                     # Configuration management
 │   ├── loader.py              # Config file loading (YAML)
 │   └── models.py              # Pydantic models for config validation
 │
-├── docs_mcp/                   # Documentation search sub-server
-│   ├── server.py              # MCP tools for doc search
+├── core/                       # Shared business logic (used by sub-servers)
+│   ├── docs.py                # Document indexing and search logic
+│   ├── hv.py                  # HoloViews element introspection
+│   ├── hvplot.py              # hvPlot plot type introspection
+│   ├── inspect.py             # Browser inspection (screenshot, console logs)
+│   ├── pn.py                  # Panel component introspection
+│   └── skills.py              # Skill loading and management
+│
+├── holoviz_mcp/                # Documentation + skills sub-server
+│   ├── server.py              # MCP tools for doc search, skills, display
 │   ├── data.py                # ChromaDB integration, indexing
 │   └── models.py              # Document models
 │
@@ -110,9 +120,36 @@ src/holoviz_mcp/
 ├── hvplot_mcp/                 # hvPlot sub-server
 │   └── server.py              # MCP tools for hvPlot
 │
-├── apps/                       # Panel applications (dev tools)
+├── holoviews_mcp/              # HoloViews sub-server
+│   └── server.py              # MCP tools for HoloViews elements
+│
+├── display_mcp/                # Display/visualization sub-server
+│   ├── app.py                 # Panel application for viewing visualizations
+│   ├── cli.py                 # Display server CLI
+│   ├── client.py              # Display client utilities
+│   ├── database.py            # Visualization storage
+│   ├── endpoints.py           # HTTP endpoints
+│   ├── manager.py             # Display lifecycle management
+│   ├── ui.py                  # UI components
+│   ├── utils.py               # Display utilities
+│   └── pages/                 # Panel app pages
+│       ├── add_page.py
+│       ├── admin_page.py
+│       ├── feed_page.py
+│       └── view_page.py
+│
+├── apps/                       # Panel applications (dev/testing tools)
 │   ├── search.py              # Documentation search UI
-│   └── configuration_viewer.py # Config viewer app
+│   ├── configuration_viewer.py # Config viewer app
+│   ├── hv_get.py              # HoloViews element viewer
+│   ├── hvplot_get.py          # hvPlot type viewer
+│   ├── hvplot_list.py         # hvPlot type listing
+│   ├── pn_get.py              # Panel component viewer
+│   ├── pn_list.py             # Panel component listing
+│   ├── pn_packages.py         # Panel packages viewer
+│   ├── pn_params.py           # Panel params viewer
+│   ├── pn_search.py           # Panel component search
+│   └── skill_get.py           # Skill viewer
 │
 └── shared/                     # Shared utilities
     └── extract_tools.py       # Tool extraction utilities
@@ -120,23 +157,26 @@ src/holoviz_mcp/
 
 ### Server Composition Pattern
 
-The main server (`server.py`) uses **static composition** to combine three sub-servers:
+The main server (`server.py`) uses **static composition** to combine four sub-servers:
 
-1. **holoviz_mcp**: Semantic search over HoloViz documentation (ChromaDB + sentence-transformers), Agent skills
-2. **panel_mcp**: Component introspection
+1. **holoviz_mcp**: Semantic search over HoloViz documentation (ChromaDB + sentence-transformers), skills, display
+2. **panel_mcp**: Panel component introspection
 3. **hvplot_mcp**: hvPlot plot types, signatures, and documentation
+4. **holoviews_mcp**: HoloViews element listing and documentation
 
-Each sub-server is a standalone FastMCP instance that gets imported with a prefix:
+Each sub-server is a standalone FastMCP instance that gets mounted with a namespace (synchronous):
 
 ```python
-await mcp.import_server(holoviz_mcp, prefix="docs")    # holoviz_search, holoviz_get_document, etc.
-await mcp.import_server(panel_mcp, prefix="panel")  # panel_search, panel_list_components, panel_get_component etc.
-await mcp.import_server(hvplot_mcp, prefix="hvplot") # hvplot_list_plot_types, etc.
+def setup_composed_server() -> None:
+    mcp.mount(holoviz_mcp)                        # search, project_list, doc_get, ref_get, skill_list, skill_get, show, inspect
+    mcp.mount(hvplot_mcp, namespace="hvplot")      # hvplot_list, hvplot_get
+    mcp.mount(panel_mcp, namespace="pn")           # pn_list, pn_get, pn_params, pn_search, pn_packages
+    mcp.mount(holoviews_mcp, namespace="hv")       # hv_list, hv_get
 ```
 
 ### Key Technologies
 
-- **FastMCP**: Python SDK for MCP servers (async/await based)
+- **FastMCP 3.0+**: Python SDK for MCP servers (server composition via synchronous `mount()`)
 - **ChromaDB**: Vector database for semantic documentation search
 - **sentence-transformers**: Embedding model for semantic similarity
 - **Panel**: Web framework for interactive Python applications
@@ -228,15 +268,13 @@ Environment variables:
 
 ### Type Hints
 
-**REQUIRED** for all new code:
+**REQUIRED** for all new code. Use modern Python 3.11+ syntax (not `typing` module):
 
 ```python
-from typing import Optional, List, Dict
-
 def search_components(
     query: str,
-    limit: Optional[int] = 10
-) -> List[ComponentSummary]:
+    limit: int | None = 10,
+) -> list[ComponentSummary]:
     """Search for Panel components."""
     ...
 ```
@@ -292,43 +330,61 @@ Auto-fixed by pre-commit:
 ```
 tests/
 ├── __init__.py
-├── test_server.py           # Main server tests
-├── test_panel_mcp.py        # Panel MCP integration tests
-├── test_installation.py     # Installation/import tests
+├── test_server.py              # Main server tests
+├── test_panel_mcp.py           # Panel MCP integration tests
+├── test_holoviews_mcp.py       # HoloViews MCP integration tests
+├── test_cli.py                 # CLI tests
+├── test_client.py              # Client tests
+├── test_installation.py        # Installation/import tests
 │
-├── config/                  # Config tests
+├── config/                     # Config tests
 │   ├── test_loader.py
-│   └── test_models.py
+│   ├── test_models.py
+│   ├── test_new_features.py
+│   └── test_schema.py
 │
-├── holoviz_mcp/                # Documentation MCP tests
-│   ├── test_server.py
+├── core/                       # Core business logic tests
+│   ├── test_hv.py
+│   ├── test_hvplot.py
+│   ├── test_inspect.py
+│   ├── test_pn.py
+│   └── test_skills.py
+│
+├── docs_mcp/                   # Documentation MCP tests
+│   ├── test_data.py
+│   ├── test_docs_mcp.py
+│   ├── test_docs_mcp_reference_guide.py
+│   └── test_tabulator_truncation.py
+│
+├── display_mcp/                # Display MCP tests
+│   ├── test_database.py
+│   ├── test_integration.py
+│   └── test_utils.py
+│
+├── panel_mcp/                  # Panel MCP tests
 │   └── test_data.py
 │
-├── panel_mcp/               # Panel MCP tests
-│   ├── test_server.py
-│   └── test_data.py
-│
-└── ui/                      # Playwright UI tests
-    └── test_panel_serve.py
+└── ui/                         # Playwright UI tests
+    └── test_ui.py
 ```
 
 ### Writing Tests
 
-**Pattern**: Use pytest with async support
+**Pattern**: Use pytest with async support and FastMCP 3.0 `Client`
 
 ```python
 import pytest
-from fastmcp.testing import MCPTestClient
+from fastmcp import Client
+
+from holoviz_mcp.panel_mcp.server import mcp
 
 @pytest.mark.asyncio
 async def test_panel_search():
     """Test Panel component search functionality."""
-    async with MCPTestClient(panel_mcp) as client:
-        result = await client.call_tool("panel_search", query="Button")
-
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("search", {"query": "Button"})
         assert result is not None
-        assert len(result) > 0
-        assert any("Button" in r["name"] for r in result)
 ```
 
 ### Test Coverage
@@ -344,12 +400,12 @@ Current coverage expectations:
 
 ### Adding a New MCP Tool
 
-1. **Choose the right sub-server**: `holoviz_mcp`, `panel_mcp`, or `hvplot_mcp`
+1. **Choose the right sub-server**: `holoviz_mcp`, `panel_mcp`, `hvplot_mcp`, or `holoviews_mcp`
 2. **Add the tool function** with FastMCP decorator:
 
 ```python
 @mcp.tool()
-async def my_new_tool(query: str, ctx: Context) -> List[dict]:
+async def my_new_tool(query: str, ctx: Context) -> list[dict]:
     """Tool description for AI assistants.
 
     Parameters
@@ -361,7 +417,7 @@ async def my_new_tool(query: str, ctx: Context) -> List[dict]:
 
     Returns
     -------
-    List[dict]
+    list[dict]
         Description of return value
     """
     ctx.info(f"Executing my_new_tool with query: {query}")
@@ -489,10 +545,11 @@ This server provides AI assistance for the HoloViz ecosystem:
 - Stores document embeddings
 - Enables similarity search over documentation
 
-**FastMCP**:
+**FastMCP 3.0+**:
 - Python SDK for building MCP servers
-- Async/await based
+- Server composition via synchronous `mount()` with optional `namespace`
 - Provides decorators: `@mcp.tool()`, `@mcp.resource()`, `@mcp.prompt()`
+- Client via `from fastmcp import Client`
 
 ---
 
@@ -658,5 +715,5 @@ BSD 3-Clause License - See [LICENSE.txt](LICENSE.txt) for details.
 
 ---
 
-**Last Updated**: 2025-11-21
+**Last Updated**: 2026-02-28
 **For Agent Use**: This file is specifically designed to help AI coding agents understand and contribute to the HoloViz MCP project effectively.

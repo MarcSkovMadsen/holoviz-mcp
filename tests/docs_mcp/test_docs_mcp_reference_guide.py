@@ -23,13 +23,13 @@ async def test_get_reference_guide_button_no_project():
 
         # Should find Button components from various projects
         for document in result.data:
-            assert "title" in document
-            assert "url" in document
-            assert "project" in document
-            assert "source_path" in document
-            assert "source_url" in document
-            assert "content" in document
-            assert document["relevance_score"] == 1.0
+            assert hasattr(document, "title")
+            assert hasattr(document, "url")
+            assert hasattr(document, "project")
+            assert hasattr(document, "source_path")
+            assert hasattr(document, "source_url")
+            assert hasattr(document, "content")
+            assert document.relevance_score == 1.0
 
         # Should find at least one result
         assert len(result.data) > 0
@@ -45,12 +45,12 @@ async def test_get_reference_guide_button_panel_specific():
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
         document = result.data[0]
-        assert document["source_path"] == "examples/reference/widgets/Button.ipynb"
-        assert document["source_url"] == "https://github.com/holoviz/panel/blob/main/examples/reference/widgets/Button.ipynb"
-        assert document["project"] == "panel"
-        assert document["title"] == "Button"
-        assert document["url"] == "https://panel.holoviz.org/reference/widgets/Button.html"
-        assert document["relevance_score"] == 1.0
+        assert document.source_path == "examples/reference/widgets/Button.ipynb"
+        assert str(document.source_url) == "https://github.com/holoviz/panel/blob/main/examples/reference/widgets/Button.ipynb"
+        assert document.project == "panel"
+        assert document.title == "Button"
+        assert str(document.url) == "https://panel.holoviz.org/reference/widgets/Button.html"
+        assert document.relevance_score == 1.0
 
 
 @pytest.mark.asyncio
@@ -63,12 +63,12 @@ async def test_get_reference_guide_button_panel_material_ui_specific():
         assert len(result.data) == 1, "Should find exactly one Button reference guide"
 
         document = result.data[0]
-        assert document["source_path"] == "examples/reference/widgets/Button.ipynb"
-        assert document["source_url"] == "https://github.com/panel-extensions/panel-material-ui/blob/main/examples/reference/widgets/Button.ipynb"
-        assert document["project"] == "panel-material-ui"
-        assert document["title"] == "Button"
-        assert document["url"] == "https://panel-material-ui.holoviz.org/reference/widgets/Button.html"
-        assert document["relevance_score"] == 1.0
+        assert document.source_path == "examples/reference/widgets/Button.ipynb"
+        assert str(document.source_url) == "https://github.com/panel-extensions/panel-material-ui/blob/main/examples/reference/widgets/Button.ipynb"
+        assert document.project == "panel-material-ui"
+        assert document.title == "Button"
+        assert str(document.url) == "https://panel-material-ui.holoviz.org/reference/widgets/Button.html"
+        assert document.relevance_score == 1.0
 
 
 @pytest.mark.asyncio
@@ -82,10 +82,10 @@ async def test_get_reference_guide_textinput_material_ui():
         assert len(result.data) == 1
 
         document = result.data[0]
-        assert document["project"] == "panel-material-ui"
-        assert document["source_path"] == "examples/reference/widgets/TextInput.ipynb"
-        assert document["source_url"] == "https://github.com/panel-extensions/panel-material-ui/blob/main/examples/reference/widgets/TextInput.ipynb"
-        assert document["relevance_score"] == 1.0
+        assert document.project == "panel-material-ui"
+        assert document.source_path == "examples/reference/widgets/TextInput.ipynb"
+        assert str(document.source_url) == "https://github.com/panel-extensions/panel-material-ui/blob/main/examples/reference/widgets/TextInput.ipynb"
+        assert document.relevance_score == 1.0
 
 
 @pytest.mark.asyncio
@@ -104,11 +104,11 @@ async def test_get_reference_guide_bar_hvplot():
 
         # All results should be from hvplot project
         for document in result.data:
-            assert document["project"] == "hvplot"
-            assert document["source_path"].startswith("doc/reference")
-            assert document["source_path"].endswith("bar.ipynb")
-            assert document["source_url"].endswith("bar.ipynb")
-            assert document["is_reference"] == True
+            assert document.project == "hvplot"
+            assert document.source_path.startswith("doc/reference")
+            assert document.source_path.endswith("bar.ipynb")
+            assert str(document.source_url).endswith("bar.ipynb")
+            assert document.is_reference == True
 
 
 @pytest.mark.asyncio
@@ -125,7 +125,7 @@ async def test_get_reference_guide_scatter_hvplot():
 
         # All results should be from hvplot project
         for document in result.data:
-            assert document["project"] == "hvplot"
+            assert document.project == "hvplot"
 
         # Should find at least one result
         assert len(result.data) > 0
@@ -142,13 +142,13 @@ async def test_get_reference_guide_audio_no_content():
 
         # Verify each result has metadata but no content
         for document in result.data:
-            assert "title" in document
-            assert "url" in document
-            assert "project" in document
-            assert "source_path" in document
-            assert "source_url" in document
+            assert hasattr(document, "title")
+            assert hasattr(document, "url")
+            assert hasattr(document, "project")
+            assert hasattr(document, "source_path")
+            assert hasattr(document, "source_url")
             # Should not include content when content=False
-            assert document.get("content") is None
+            assert document.content is None
 
         # Should find at least one result
         assert len(result.data) > 0
@@ -169,8 +169,8 @@ async def test_get_reference_guide_common_widgets():
 
             # Should find relevant documentation for each widget
             for document in result.data:
-                assert document["project"] == "panel"
-                assert document["is_reference"]
+                assert document.project == "panel"
+                assert document.is_reference
 
             # Should find at least one result
             assert len(result.data) == 1
@@ -209,12 +209,12 @@ async def test_get_reference_guide_relevance_scoring():
 
         # Should have relevance scores (can be negative for poor matches)
         for document in result.data:
-            if "relevance_score" in document and document["relevance_score"] is not None:
+            if document.relevance_score is not None:
                 # Relevance score should be a float
-                assert isinstance(document["relevance_score"], float)
+                assert isinstance(document.relevance_score, float)
 
         # Results should be sorted by relevance (highest first)
-        scores = [document.get("relevance_score", 0) for document in result.data if document.get("relevance_score") is not None]
+        scores = [document.relevance_score for document in result.data if document.relevance_score is not None]
         if len(scores) > 1:
             assert scores == sorted(scores, reverse=True)
 
@@ -231,31 +231,29 @@ async def test_get_reference_guide_return_structure():
         # Verify structure of each returned Document
         for document in result.data:
             # Required fields
-            assert "title" in document
-            assert "url" in document
-            assert "project" in document
-            assert "source_path" in document
-            assert "source_url" in document
+            assert hasattr(document, "title")
+            assert hasattr(document, "url")
+            assert hasattr(document, "project")
+            assert hasattr(document, "source_path")
+            assert hasattr(document, "source_url")
 
             # Optional fields
-            assert "description" in document  # Can be None
-            assert "content" in document  # Should be present when content=True (default)
-            assert "relevance_score" in document  # Can be None
+            assert hasattr(document, "description")  # Can be None
+            assert hasattr(document, "content")  # Should be present when content=True (default)
+            assert hasattr(document, "relevance_score")  # Can be None
 
             # Type checks
-            assert isinstance(document["title"], str)
-            assert isinstance(document["url"], str)
-            assert isinstance(document["project"], str)
-            assert isinstance(document["source_path"], str)
-            assert isinstance(document["source_url"], str)
+            assert isinstance(document.title, str)
+            assert isinstance(document.project, str)
+            assert isinstance(document.source_path, str)
 
             # URL should be valid
-            assert document["url"].startswith("http")
-            assert document["source_url"].startswith("http")
+            assert str(document.url).startswith("http")
+            assert str(document.source_url).startswith("http")
 
             # Project should be one of the known projects
             known_projects = ["panel", "panel-material-ui", "hvplot", "param", "holoviews"]
-            assert document["project"] in known_projects
+            assert document.project in known_projects
 
 
 @pytest.mark.asyncio
@@ -286,15 +284,15 @@ async def test_get_reference_guide_no_duplicates():
         assert isinstance(result.data, list)
 
         # Check for duplicate URLs
-        urls = [document["url"] for document in result.data]
+        urls = [document.url for document in result.data]
         assert len(urls) == len(set(urls)), "Found duplicate URLs in results"
 
         # Check for duplicate paths
-        paths = [document["source_path"] for document in result.data]
+        paths = [document.source_path for document in result.data]
         assert len(paths) == len(set(paths)), "Found duplicate paths in results"
 
         # Check for duplicate source urls
-        source_urls = [document["source_url"] for document in result.data]
+        source_urls = [document.source_url for document in result.data]
         assert len(source_urls) == len(set(source_urls)), "Found duplicate source URLs in results"
 
 
@@ -309,7 +307,7 @@ async def test_get_reference_guide_multiple_projects():
         assert isinstance(result.data, list)
 
         # Should find Button components from different projects
-        projects_found = set(document["project"] for document in result.data)
+        projects_found = set(document.project for document in result.data)
         assert len(projects_found) >= 1  # Should find at least one project with Button
 
         # Common projects that should have Button components
@@ -329,9 +327,9 @@ async def test_get_reference_guide_exact_filename_matching():
         assert len(result.data) == 1
 
         guide = result.data[0]
-        assert guide["project"] == "panel"
-        assert guide["source_path"] == "examples/reference/widgets/ButtonIcon.ipynb"
-        assert guide["url"] == "https://panel.holoviz.org/reference/widgets/ButtonIcon.html"
-        assert guide["is_reference"]
-        assert guide["title"] == "Buttonicon"
-        assert guide["relevance_score"] == 1.0  # Highest priority score
+        assert guide.project == "panel"
+        assert guide.source_path == "examples/reference/widgets/ButtonIcon.ipynb"
+        assert str(guide.url) == "https://panel.holoviz.org/reference/widgets/ButtonIcon.html"
+        assert guide.is_reference
+        assert guide.title == "Buttonicon"
+        assert guide.relevance_score == 1.0  # Highest priority score

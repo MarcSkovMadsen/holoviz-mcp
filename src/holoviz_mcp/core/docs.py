@@ -114,6 +114,28 @@ async def list_projects() -> list[str]:
     return await indexer.list_projects()
 
 
+async def list_documents(project: str) -> list[dict[str, str | bool]]:
+    """List all documents available for a given project.
+
+    Parameters
+    ----------
+    project : str
+        The project name (e.g., "panel", "hvplot").
+
+    Returns
+    -------
+    list[dict[str, str | bool]]
+        Sorted list of dicts with keys: "source_path", "title", "is_reference".
+
+    Raises
+    ------
+    ValueError
+        If no documents are found for the given project.
+    """
+    indexer = get_indexer()
+    return await indexer.list_documents(project)
+
+
 async def get_reference_guide(
     component: str,
     project: str | None = None,

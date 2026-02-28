@@ -1,2 +1,3 @@
 recursive-include holoviz_mcp/config *.yaml *.json *.md
+recursive-include holoviz_mcp/skills *.md
 recursive-include holoviz_mcp/thumbnails *.png

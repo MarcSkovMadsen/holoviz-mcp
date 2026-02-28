@@ -35,7 +35,7 @@ async def _setup_composed_server() -> None:
     This function ensures the server is properly initialized before creating
     a client. It only needs to be called once and its result is cached.
     """
-    await setup_composed_server()
+    setup_composed_server()
 
 
 async def _create_client() -> Client:

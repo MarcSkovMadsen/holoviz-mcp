@@ -511,15 +511,96 @@ def skill_get_cmd(
     _echo_output(content, output)
 
 
+@skill_app.command("files")
+def skill_files_cmd(
+    name: Annotated[str, typer.Argument(help="Skill name (e.g., 'panel-custom-components').")],
+    output: OutputFlag = OutputFormat.pretty,
+) -> None:
+    """List supporting files in a skill directory (excludes SKILL.md)."""
+    from holoviz_mcp.core.skills import list_skill_files
+
+    try:
+        files = list_skill_files(name)
+    except FileNotFoundError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(1) from None
+
+    if output == OutputFormat.json:
+        _output_json(files)
+    else:
+        if not files:
+            _echo_output(f"No supporting files found for skill '{name}'.", output)
+            return
+        lines: list[str] = [
+            "| Path | Size |",
+            "|------|------|",
+        ]
+        for f in files:
+            lines.append(f"| {f['path']} | {f['size']} |")
+        _echo_output("\n".join(lines), output)
+
+
+@skill_app.command("file-get")
+def skill_file_get_cmd(
+    name: Annotated[str, typer.Argument(help="Skill name (e.g., 'panel-custom-components').")],
+    path: Annotated[str, typer.Argument(help="Relative file path within the skill directory.")],
+    output: OutputFlag = OutputFormat.pretty,
+) -> None:
+    """Read a supporting file from a skill directory."""
+    from holoviz_mcp.core.skills import get_skill_file
+
+    try:
+        content = get_skill_file(name, path)
+    except (FileNotFoundError, ValueError) as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(1) from None
+
+    if output == OutputFormat.json:
+        _output_json({"name": name, "path": path, "content": content})
+    else:
+        _echo_output(content, output)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Document subcommands
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@doc_app.command("list")
+def doc_list_cmd(
+    project: Annotated[str, typer.Argument(help="Project name (e.g., 'panel', 'hvplot').")],
+    output: OutputFlag = OutputFormat.pretty,
+) -> None:
+    """List all documents available for a project."""
+    from holoviz_mcp.core.docs import list_documents
+
+    try:
+        docs = asyncio.run(list_documents(project))
+    except ValueError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(1) from None
+
+    if output == OutputFormat.json:
+        _output_json(docs)
+    else:
+        if not docs:
+            _echo_output(f"No documents found for project '{project}'.", output)
+            return
+        lines: list[str] = [
+            "| Path | Title | Type |",
+            "|------|-------|------|",
+        ]
+        for d in docs:
+            doc_type = "reference" if d["is_reference"] else "guide"
+            title = str(d["title"])[:60]
+            lines.append(f"| {d['source_path']} | {title} | {doc_type} |")
+        _echo_output("\n".join(lines), output)
+
+
 @doc_app.command("get")
 def doc_get_cmd(
-    path: Annotated[str, typer.Argument(help="Document path (e.g., 'index.md').")],
     project: Annotated[str, typer.Argument(help="Project name (e.g., 'panel').")],
+    path: Annotated[str, typer.Argument(help="Document path (e.g., 'index.md').")],
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
     """Retrieve a specific document by path and project."""
@@ -586,7 +667,7 @@ def ref_get_cmd(
     else:
         if not results:
             _echo_output(f"No reference guides found for '{component}'.", output)
-            return
+            raise typer.Exit(1)
         lines: list[str] = []
         for doc in results:
             lines.append(f"## {doc.project} / {doc.source_path}\n")
@@ -674,7 +755,8 @@ def install_copilot(
             shutil.copy(file, target / file.name)
 
     if skills:
-        source = config.skills_dir("default")
+        from holoviz_mcp.core.skills import _scan_skills_in_dir
+        from holoviz_mcp.core.skills import _skills_search_paths
 
         if scope == "user":
             target = Path.home() / ".copilot" / "skills"
@@ -683,17 +765,22 @@ def install_copilot(
 
         target.mkdir(parents=True, exist_ok=True)
 
-        for file in source.glob("*.md"):
-            skill_dir = target / file.stem
+        # Merge skills from all sources (project > user > builtin)
+        merged: dict[str, Path] = {}
+        for search_dir in reversed(_skills_search_paths()):
+            merged.update(_scan_skills_in_dir(search_dir))
+
+        for skill_name, skill_path in sorted(merged.items()):
+            skill_dir = target / skill_name
             skill_dir.mkdir(exist_ok=True)
 
             if scope == "user":
-                display_path = Path("~") / ".copilot" / "skills" / file.stem / "SKILL.md"
+                display_path = Path("~") / ".copilot" / "skills" / skill_name / "SKILL.md"
             else:
                 display_path = (skill_dir / "SKILL.md").relative_to(Path.cwd())
 
             typer.echo(f"Installed: {display_path}")
-            shutil.copy(file, skill_dir / "SKILL.md")
+            shutil.copy(skill_path, skill_dir / "SKILL.md")
 
 
 @install_app.command(name="claude")
@@ -745,7 +832,8 @@ def install_claude(
             shutil.copy(file, target / file.name)
 
     if skills:
-        source = config.skills_dir("default")
+        from holoviz_mcp.core.skills import _scan_skills_in_dir
+        from holoviz_mcp.core.skills import _skills_search_paths
 
         if scope == "user":
             target = Path.home() / ".claude" / "skills"
@@ -754,17 +842,22 @@ def install_claude(
 
         target.mkdir(parents=True, exist_ok=True)
 
-        for file in source.glob("*.md"):
-            skill_dir = target / file.stem
+        # Merge skills from all sources (project > user > builtin)
+        merged: dict[str, Path] = {}
+        for search_dir in reversed(_skills_search_paths()):
+            merged.update(_scan_skills_in_dir(search_dir))
+
+        for skill_name, skill_path in sorted(merged.items()):
+            skill_dir = target / skill_name
             skill_dir.mkdir(exist_ok=True)
 
             if scope == "user":
-                display_path = Path("~") / ".claude" / "skills" / file.stem / "SKILL.md"
+                display_path = Path("~") / ".claude" / "skills" / skill_name / "SKILL.md"
             else:
                 display_path = (skill_dir / "SKILL.md").relative_to(Path.cwd())
 
             typer.echo(f"Installed: {display_path}")
-            shutil.copy(file, skill_dir / "SKILL.md")
+            shutil.copy(skill_path, skill_dir / "SKILL.md")
 
 
 @install_app.command(name="chromium")
@@ -777,7 +870,12 @@ def install_chromium() -> None:
 
 
 @app.command()
-def serve(port: int = 5006, address: str = "0.0.0.0", allow_websocket_origin="*", num_procs: int = 1) -> None:
+def serve(
+    port: Annotated[int, typer.Option(help="Port number to serve on.")] = 5006,
+    address: Annotated[str, typer.Option(help="Address to bind to.")] = "0.0.0.0",
+    allow_websocket_origin: Annotated[str, typer.Option(help="Allowed websocket origins.")] = "*",
+    num_procs: Annotated[int, typer.Option(help="Number of worker processes.")] = 1,
+) -> None:
     """Serve Panel apps from the apps directory.
 
     \f
