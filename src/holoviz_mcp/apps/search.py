@@ -105,7 +105,7 @@ class SearchConfiguration(param.Parameterized):
         doc="Filter results to a specific project. Select 'all' for all projects.",
     )
 
-    max_results = param.Integer(default=2, bounds=(1, 50), doc="Maximum number of search results to return")
+    max_results = param.Integer(default=5, bounds=(1, 50), doc="Maximum number of search results to return")
 
     content = param.Selector(
         default="truncated",

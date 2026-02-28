@@ -44,6 +44,21 @@ async def hvplot_list_plot_types() -> list[str]:
     return response.data
 
 
+async def create_content():
+    """Create the styled content displaying hvPlot plot types as chips."""
+    items = await hvplot_list_plot_types()
+    count = pmui.Typography(
+        f"Found {len(items)} plot types",
+        variant="subtitle1",
+        sx={"color": "text.secondary", "mb": 2},
+    )
+    chips = pmui.FlexBox(
+        *[pmui.Chip(item, variant="outlined", color="primary", size="small") for item in items],
+        sizing_mode="stretch_width",
+    )
+    return pmui.Column(count, chips, sizing_mode="stretch_width")
+
+
 def create_app():
     """Create the Panel Material UI app for demoing the hvplot_list tool."""
     about_button = pmui.IconButton(
@@ -57,7 +72,6 @@ def create_app():
     about = pmui.Dialog(ABOUT, close_on_click=True, width=0)
     about_button.js_on_click(args={"about": about}, code="about.data.open = true")
 
-    # GitHub button
     github_button = pmui.IconButton(
         label="Github",
         icon="star",
@@ -69,7 +83,8 @@ def create_app():
         target="_blank",
     )
 
-    main = pmui.Container(about, pn.pane.JSON(hvplot_list_plot_types, theme="dark", depth=3, sizing_mode="stretch_width"))
+    content = pn.panel(create_content, loading_indicator=True)
+    main = pmui.Container(about, content)
 
     return pmui.Page(
         title="HoloViz-MCP: hvplot_list Tool Demo",
