@@ -105,8 +105,23 @@ def _normalize_root_objects(result: CallToolResult) -> None:
     representation so downstream consumers (Panel JSON panes, DataFrames,
     etc.) can serialize them without errors.
     """
-    data = result.data
-    if isinstance(data, list):
-        for i, item in enumerate(data):
-            if type(item).__name__ == "Root":
-                data[i] = vars(item)
+
+    def _normalize(obj: Any) -> Any:
+        """Recursively replace FastMCP Root instances with plain dicts."""
+        # FastMCP dynamically generates a class named "Root" for structured results.
+        if type(obj).__name__ == "Root":
+            return vars(obj)
+        if isinstance(obj, list):
+            return [_normalize(item) for item in obj]
+        if isinstance(obj, dict):
+            return {key: _normalize(value) for key, value in obj.items()}
+        return obj
+
+    # Normalize the primary data payload.
+    result.data = _normalize(result.data)
+
+    # Normalize structured_content if present on the result, without assuming
+    # that every CallToolResult implementation defines it.
+    structured_content = getattr(result, "structured_content", None)
+    if structured_content is not None:
+        result.structured_content = _normalize(structured_content)

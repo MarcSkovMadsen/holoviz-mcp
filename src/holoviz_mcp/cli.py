@@ -20,44 +20,54 @@ from typing_extensions import Annotated
 
 app = typer.Typer(
     name="holoviz-mcp",
-    help="HoloViz Model Context Protocol (MCP) server and utilities.",
+    help=(
+        "AI-powered documentation and tooling for the HoloViz ecosystem.\n\n"
+        "Connect AI assistants (Claude, Copilot, ...) to Panel, hvPlot, and HoloViews\n"
+        "docs, components, and best-practice guides — or use directly from the terminal.\n\n"
+        "Quick start:\n\n"
+        "    holoviz-mcp                                  Start the MCP server\n"
+        "    holoviz-mcp update index                     Build the search index\n"
+        "    holoviz-mcp search responsive layout         Search the docs\n"
+        "    holoviz-mcp pn get Button --package panel    Look up a component"
+    ),
     no_args_is_help=False,  # Allow running without args to start the server
+    rich_markup_mode="markdown",
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Infrastructure subcommand groups (existing)
 # ══════════════════════════════════════════════════════════════════════════════
 
-update_app = typer.Typer(name="update", help="Update HoloViz MCP resources.", no_args_is_help=True)
-app.add_typer(update_app)
+update_app = typer.Typer(name="update", help="Update the documentation search index.", no_args_is_help=True)
+app.add_typer(update_app, rich_help_panel="Getting Started")
 
-install_app = typer.Typer(name="install", help="Install HoloViz MCP resources.", no_args_is_help=True)
-app.add_typer(install_app)
+install_app = typer.Typer(name="install", help="Set up HoloViz MCP for Claude Code, Copilot, or Playwright.", no_args_is_help=True)
+app.add_typer(install_app, rich_help_panel="Getting Started")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Tool subcommand groups (new)
 # ══════════════════════════════════════════════════════════════════════════════
 
-pn_app = typer.Typer(name="pn", help="Panel component tools (import panel as pn).", no_args_is_help=True)
-app.add_typer(pn_app)
+pn_app = typer.Typer(name="pn", help="Explore Panel widgets, panes, and layouts.", no_args_is_help=True)
+app.add_typer(pn_app, rich_help_panel="Library Introspection")
 
-hv_app = typer.Typer(name="hv", help="HoloViews element tools (import holoviews as hv).", no_args_is_help=True)
-app.add_typer(hv_app)
+hv_app = typer.Typer(name="hv", help="Explore HoloViews visualization elements.", no_args_is_help=True)
+app.add_typer(hv_app, rich_help_panel="Library Introspection")
 
-hvplot_app = typer.Typer(name="hvplot", help="hvPlot plot type tools (import hvplot).", no_args_is_help=True)
-app.add_typer(hvplot_app)
+hvplot_app = typer.Typer(name="hvplot", help="Explore hvPlot chart types and signatures.", no_args_is_help=True)
+app.add_typer(hvplot_app, rich_help_panel="Library Introspection")
 
-skill_app = typer.Typer(name="skill", help="Best-practice skill documents.", no_args_is_help=True)
-app.add_typer(skill_app)
+skill_app = typer.Typer(name="skill", help="Browse best-practice guides for Panel, hvPlot, and more.", no_args_is_help=True)
+app.add_typer(skill_app, rich_help_panel="Search & Browse")
 
-doc_app = typer.Typer(name="doc", help="Documentation documents.", no_args_is_help=True)
-app.add_typer(doc_app)
+doc_app = typer.Typer(name="doc", help="Fetch a specific documentation page by project and path.", no_args_is_help=True)
+app.add_typer(doc_app, rich_help_panel="Search & Browse")
 
-project_app = typer.Typer(name="project", help="Indexed documentation projects.", no_args_is_help=True)
-app.add_typer(project_app)
+project_app = typer.Typer(name="project", help="List documentation projects available for search.", no_args_is_help=True)
+app.add_typer(project_app, rich_help_panel="Search & Browse")
 
-ref_app = typer.Typer(name="ref", help="Reference guides for components.", no_args_is_help=True)
-app.add_typer(ref_app)
+ref_app = typer.Typer(name="ref", help="Look up reference guides for a named component.", no_args_is_help=True)
+app.add_typer(ref_app, rich_help_panel="Search & Browse")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -151,7 +161,7 @@ def main(
 # ══════════════════════════════════════════════════════════════════════════════
 
 
-@app.command()
+@app.command(rich_help_panel="Search & Browse")
 def search(
     query: Annotated[list[str], typer.Argument(help="Search query (space-separated words, no quotes needed).")],
     project: Annotated[Optional[str], typer.Option("--project", "-p", help="Filter by project name.")] = None,
@@ -163,7 +173,7 @@ def search(
     max_chars: Annotated[int, typer.Option("--max-chars", help="Max content chars per result.")] = 10000,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Search indexed documentation using semantic similarity."""
+    """Search documentation by meaning, not just keywords."""
     from holoviz_mcp.core.docs import search as _search
 
     query_str = " ".join(query)
@@ -190,7 +200,7 @@ def search(
         _echo_output("\n".join(lines), output)
 
 
-@app.command()
+@app.command(rich_help_panel="Dev Tools")
 def inspect(
     url: Annotated[str, typer.Argument(help="URL to inspect.")] = "http://localhost:5006/",
     width: Annotated[int, typer.Option("--width", help="Viewport width.")] = 1920,
@@ -203,7 +213,7 @@ def inspect(
     log_level: Annotated[Optional[str], typer.Option("--log-level", help="Filter console logs by level.")] = None,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Inspect a web app by capturing screenshot and/or console logs."""
+    """Capture a screenshot and console logs from a running web app."""
     from holoviz_mcp.core.inspect import inspect_app
 
     # Resolve save_screenshot parameter
@@ -274,7 +284,7 @@ def pn_list_cmd(
     package: Annotated[Optional[str], typer.Option("--package", "-P", help="Filter by package.")] = None,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """List Panel components (summary without parameter details)."""
+    """List all Panel components with name and description."""
     from holoviz_mcp.core.pn import list_components
 
     components = list_components(name=name, module_path=module, package=package)
@@ -299,7 +309,7 @@ def pn_get_cmd(
     module: Annotated[Optional[str], typer.Option("--module", "-m", help="Module path.")] = None,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Get full details for a single Panel component."""
+    """Show full docstring and parameters for a Panel component."""
     from holoviz_mcp.core.pn import get_component
 
     try:
@@ -327,7 +337,7 @@ def pn_params_cmd(
     module: Annotated[Optional[str], typer.Option("--module", "-m", help="Module path.")] = None,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Get parameter details for a single Panel component."""
+    """Show parameter details for a Panel component."""
     from holoviz_mcp.core.pn import get_component_parameters
 
     try:
@@ -357,7 +367,7 @@ def pn_search_cmd(
     limit: Annotated[int, typer.Option("--limit", "-l", help="Maximum results.")] = 10,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Search Panel components by keyword."""
+    """Find Panel components by name or description."""
     from holoviz_mcp.core.pn import search_components
 
     query_str = " ".join(query)
@@ -397,7 +407,7 @@ def pn_packages_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
 
 @hv_app.command("list")
 def hv_list_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
-    """List all available HoloViews visualization elements."""
+    """List all HoloViews element types (Area, Bars, Curve, ...)."""
     from holoviz_mcp.core.hv import list_elements
 
     elements = list_elements()
@@ -415,7 +425,7 @@ def hv_get_cmd(
     backend: Annotated[str, typer.Option("--backend", "-b", help="Plotting backend.")] = "bokeh",
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Get element docstring, parameters, style and plot options."""
+    """Show docstring, parameters, and style options for an element."""
     from holoviz_mcp.core.hv import get_element
 
     try:
@@ -438,7 +448,7 @@ def hv_get_cmd(
 
 @hvplot_app.command("list")
 def hvplot_list_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
-    """List all available hvPlot plot types."""
+    """List all hvPlot chart types (bar, scatter, line, ...)."""
     from holoviz_mcp.core.hvplot import list_plot_types
 
     plot_types = list_plot_types()
@@ -458,7 +468,7 @@ def hvplot_get_cmd(
     style: Annotated[Optional[str], typer.Option("--style", help="Backend for style options (matplotlib, bokeh, plotly).")] = None,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Get docstring or signature for an hvPlot plot type."""
+    """Show docstring or function signature for a chart type."""
     from holoviz_mcp.core.hvplot import get_plot_type
 
     style_val: str | bool = style if style is not None else False
@@ -483,7 +493,7 @@ def hvplot_get_cmd(
 
 @skill_app.command("list")
 def skill_list_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
-    """List all available skills with descriptions."""
+    """List all available best-practice guides."""
     from holoviz_mcp.core.skills import list_skills
 
     skills = list_skills()
@@ -500,7 +510,7 @@ def skill_get_cmd(
     name: Annotated[str, typer.Argument(help="Skill name (e.g., 'panel', 'hvplot').")],
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Get skill content (always Markdown)."""
+    """Show the content of a best-practice guide."""
     from holoviz_mcp.core.skills import get_skill
 
     try:
@@ -516,7 +526,7 @@ def skill_files_cmd(
     name: Annotated[str, typer.Argument(help="Skill name (e.g., 'panel-custom-components').")],
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """List supporting files in a skill directory (excludes SKILL.md)."""
+    """List supporting files bundled with a guide."""
     from holoviz_mcp.core.skills import list_skill_files
 
     try:
@@ -546,7 +556,7 @@ def skill_file_get_cmd(
     path: Annotated[str, typer.Argument(help="Relative file path within the skill directory.")],
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Read a supporting file from a skill directory."""
+    """Read a supporting file from a guide."""
     from holoviz_mcp.core.skills import get_skill_file
 
     try:
@@ -571,7 +581,7 @@ def doc_list_cmd(
     project: Annotated[str, typer.Argument(help="Project name (e.g., 'panel', 'hvplot').")],
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """List all documents available for a project."""
+    """List all pages available in a documentation project."""
     from holoviz_mcp.core.docs import list_documents
 
     try:
@@ -603,7 +613,7 @@ def doc_get_cmd(
     path: Annotated[str, typer.Argument(help="Document path (e.g., 'index.md').")],
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Retrieve a specific document by path and project."""
+    """Show the content of a specific documentation page."""
     from holoviz_mcp.core.docs import get_document
 
     try:
@@ -633,7 +643,7 @@ def doc_get_cmd(
 
 @project_app.command("list")
 def project_list_cmd(output: OutputFlag = OutputFormat.markdown) -> None:
-    """List all projects with indexed documentation."""
+    """List all projects with searchable documentation."""
     from holoviz_mcp.core.docs import list_projects
 
     projects = asyncio.run(list_projects())
@@ -657,7 +667,7 @@ def ref_get_cmd(
     no_content: Annotated[bool, typer.Option("--no-content", help="Metadata only.")] = False,
     output: OutputFlag = OutputFormat.pretty,
 ) -> None:
-    """Find reference guides for a specific component."""
+    """Look up the reference guide for a component (e.g., Button, scatter)."""
     from holoviz_mcp.core.docs import get_reference_guide
 
     results = asyncio.run(get_reference_guide(component, project, content=not no_content))
@@ -694,11 +704,10 @@ def update_index(
         typer.Option("--full", "-f", help="Force full rebuild, ignoring cached hashes."),
     ] = False,
 ) -> None:
-    """Update the documentation index.
+    """Build or update the documentation search index (required before first use).
 
-    This command clones/updates HoloViz repositories and builds the vector database
-    for documentation search. First run may take 2-6 minutes. Subsequent runs
-    are incremental and only re-index changed files.
+    Downloads HoloViz docs and builds a semantic search database.
+    First run: 2-6 min. Subsequent runs are incremental.
     """
     from holoviz_mcp.holoviz_mcp.data import DocumentationIndexer
 
@@ -712,7 +721,7 @@ def install_copilot(
     skills: bool = False,
     scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .github/, 'user' for ~/.copilot/")] = "project",
 ) -> None:
-    """Install HoloViz MCP resources for GitHub Copilot.
+    """Set up HoloViz MCP agents and skills for GitHub Copilot.
 
     \f
 
@@ -789,7 +798,7 @@ def install_claude(
     skills: bool = False,
     scope: Annotated[str, typer.Option("--scope", help="Installation scope: 'project' for .claude/agents/, 'user' for ~/.claude/agents/")] = "project",
 ) -> None:
-    """Install HoloViz MCP resources for Claude Code.
+    """Set up HoloViz MCP agents and skills for Claude Code.
 
     \f
 
@@ -862,21 +871,18 @@ def install_claude(
 
 @install_app.command(name="chromium")
 def install_chromium() -> None:
-    """Install Chromium browser for Playwright.
-
-    This command installs the Chromium browser required for taking screenshots.
-    """
+    """Install Chromium for the inspect command (Playwright)."""
     subprocess.run([str(sys.executable), "-m", "playwright", "install", "chromium"], check=True)
 
 
-@app.command()
+@app.command(rich_help_panel="Dev Tools")
 def serve(
     port: Annotated[int, typer.Option(help="Port number to serve on.")] = 5006,
     address: Annotated[str, typer.Option(help="Address to bind to.")] = "0.0.0.0",
     allow_websocket_origin: Annotated[str, typer.Option(help="Allowed websocket origins.")] = "*",
     num_procs: Annotated[int, typer.Option(help="Number of worker processes.")] = 1,
 ) -> None:
-    """Serve Panel apps from the apps directory.
+    """Launch the built-in developer UI apps (component browser, doc search).
 
     \f
 
