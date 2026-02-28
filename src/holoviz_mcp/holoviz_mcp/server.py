@@ -26,10 +26,13 @@ from holoviz_mcp.config.loader import get_config
 from holoviz_mcp.core.docs import get_indexer
 from holoviz_mcp.core.inspect import inspect_app as _inspect_app
 from holoviz_mcp.core.skills import get_skill as _get_skill
+from holoviz_mcp.core.skills import get_skill_file as _get_skill_file
+from holoviz_mcp.core.skills import list_skill_files as _list_skill_files
 from holoviz_mcp.core.skills import list_skills as _list_skills
 from holoviz_mcp.display_mcp.client import DisplayClient
 from holoviz_mcp.display_mcp.manager import PanelServerManager
 from holoviz_mcp.holoviz_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.models import DocumentSummary
 
 # Global display manager instance (lazy-loaded, subprocess mode only)
 _display_manager: Optional["PanelServerManager"] = None
@@ -188,6 +191,50 @@ def list_skills() -> list[dict[str, str]]:
     return _list_skills()
 
 
+@mcp.tool(name="skill_files")
+def list_skill_files(name: str) -> list[dict[str, str | int]]:
+    """List supporting files in a skill directory (excludes SKILL.md).
+
+    Use this to discover additional resources (examples, references, templates) bundled
+    with a skill beyond its main SKILL.md content.
+
+    Args:
+        name (str): The skill name (e.g., "panel-custom-components").
+
+    Returns
+    -------
+        list[dict[str, str | int]]: List of files with 'path' (relative) and 'size' (bytes).
+            Returns an empty list if the skill has no supporting files.
+
+    Examples
+    --------
+    >>> list_skill_files("panel-custom-components")
+    [{"path": "references/example.md", "size": 1234}]
+    """
+    return _list_skill_files(name)
+
+
+@mcp.tool(name="skill_file_get")
+def get_skill_file(name: str, path: str) -> str:
+    """Read a supporting file from a skill directory.
+
+    Use skill_files tool first to discover available files, then use this tool to read them.
+
+    Args:
+        name (str): The skill name (e.g., "panel-custom-components").
+        path (str): Relative path within the skill directory (e.g., "references/example.md").
+
+    Returns
+    -------
+        str: The file content as text.
+
+    Examples
+    --------
+    >>> get_skill_file("panel-custom-components", "references/example.md")
+    """
+    return _get_skill_file(name, path)
+
+
 @mcp.tool(name="ref_get")
 async def get_reference_guide(
     component: str,
@@ -247,14 +294,43 @@ async def list_projects() -> list[str]:
     return await indexer.list_projects()
 
 
+@mcp.tool(name="doc_list")
+async def list_documents(project: str) -> list[DocumentSummary]:
+    """List all documents available for a given project.
+
+    Use this tool to discover what documents are available before using doc_get.
+    Use project_list to see available projects.
+
+    Args:
+        project (str): The project name (e.g., "panel", "hvplot", "panel-material-ui").
+
+    Returns
+    -------
+        list[DocumentSummary]: List of document summaries with source_path, title, and is_reference.
+
+    Examples
+    --------
+    >>> list_documents("panel")  # List all Panel documents
+    >>> list_documents("hvplot")  # List all hvPlot documents
+    """
+    indexer = get_indexer()
+    docs = await indexer.list_documents(project)
+    return [DocumentSummary(**d) for d in docs]
+
+
 @mcp.tool(name="doc_get")
 async def get_document(path: str, project: str, ctx: Context) -> Document:
     """Retrieve a specific document by path and project.
 
     Use this tool to look up a specific document within a project.
 
+    Tip: Use the doc_list tool first to discover valid document paths for a project,
+    then pass the exact source_path value here.
+
     Args:
-        path: The relative path to the source document (e.g., "index.md", "how_to/customize.md")
+        path: The relative path to the source document as returned by doc_list
+            (e.g., "doc/about/index.md", "doc/how_to/callbacks/periodic.md").
+            Note: paths include a project-specific prefix such as "doc/".
         project: the name of the project (e.g., "panel", "panel-material-ui", "hvplot", "my-custom-project")
 
     Returns
@@ -310,7 +386,7 @@ async def search(
             Good examples: "Button onClick on_click callback event", "hvPlot bar chart kind options"
             Okay examples: "how to style Material UI components", "interactive plotting with widgets"
         project (str, optional): Optional project filter. Defaults to None.
-            Examples: "panel", "hvplot", "my-custom-project""
+            Examples: "panel", "hvplot", "my-custom-project"
         content (str | bool, optional): Controls what content is returned. Defaults to "truncated".
             - "truncated": Full document content, smart-truncated around query keywords (default)
             - "chunk": Only the best-matching chunk from the document
@@ -388,7 +464,7 @@ async def display(
     returning a URL where you can view the output. The code is validated
     before execution and any errors are reported immediately.
 
-    Use this tool to when ever the user asks to show, display, visualize data, plots, dashboards, and other Python objects.
+    Use this tool whenever the user asks to show, display, visualize data, plots, dashboards, and other Python objects.
 
     Parameters
     ----------
@@ -403,7 +479,7 @@ async def display(
         Execution mode:
         - "jupyter": Execute code and display the last expression's result. The last expression must be dedented fully.
             DO use this for standard data visualizations like plots, dataframes, etc. that do not import and use Panel directly.
-        - "panel": Execute code and and display Panel objects marked .servable()
+        - "panel": Execute code and display Panel objects marked .servable()
             DO use this for code that imports and uses Panel to create dashboards, apps, and complex layouts.
 
     Returns
@@ -508,15 +584,14 @@ async def inspect(
     console_logs: bool = True,
     log_level: str | None = None,
 ) -> list[TextContent | ImageContent]:
-    """
-    Inspect a running web app by capturing a screenshot and/or browser console logs.
+    """Inspect a running web app by capturing a screenshot and/or browser console logs.
 
     Web apps (especially custom components) often have JavaScript errors that are
     invisible to users and LLMs. This tool captures both a visual screenshot and the
     browser console output in a single call, making it easy to diagnose rendering
     issues, JS errors, and runtime warnings.
 
-    Arguments
+    Parameters
     ----------
     url : str, default="http://localhost:5006/"
         The URL of the page to inspect.
@@ -540,6 +615,18 @@ async def inspect(
     log_level : str | None, default=None
         Filter console logs by level. If None, all levels are captured.
         Common levels: 'log', 'info', 'warning', 'error', 'debug'.
+
+    Returns
+    -------
+    list[TextContent | ImageContent]
+        A list of MCP content items. Includes an ImageContent with the screenshot
+        (if enabled) and a TextContent with JSON-formatted console logs (if enabled).
+
+    Examples
+    --------
+    >>> inspect()  # Inspect default localhost:5006 with screenshot and console logs
+    >>> inspect(url="http://localhost:5007/", delay=5)  # Custom URL with longer delay
+    >>> inspect(screenshot=False, log_level="error")  # Console errors only, no screenshot
     """
     config = get_config()
     screenshots_dir = config.server.screenshots_dir if save_screenshot is True else None
@@ -589,26 +676,25 @@ def _add_agent_resources():
         mcp.add_resource(resource)
 
 
-def _add_skills_resources():
-    """Add skill resources from the config/resources/skills directory."""
-    config = get_config()
-    files = config.skills_dir("default").rglob("*.md")
-    for file_path in files:
-        path = Path(file_path)
-        name = path.stem.replace("-", "_")  # filename without suffix
-        resource = FileResource(
-            uri=f"resources://skills/{path.name}",
-            path=path.absolute(),  # Path to the actual file
-            name=name,
-            description=f"Best practices for {name}",
-            mime_type="text/markdown",
-            tags=["holoviz", "skills"],
-        )
-        mcp.add_resource(resource)
+def _add_skills_provider():
+    """Add skills via SkillsDirectoryProvider.
+
+    Uses FastMCP's built-in provider to expose skills and their supporting
+    files as ``skill://`` URI resources.  The provider scans the 3-tier
+    precedence directories (project > user > builtin).
+    """
+    from fastmcp.server.providers.skills import SkillsDirectoryProvider
+
+    from holoviz_mcp.core.skills import _skills_search_paths
+
+    roots = [p for p in _skills_search_paths() if p.exists()]
+    if roots:
+        provider = SkillsDirectoryProvider(roots=roots, supporting_files="resources")
+        mcp.add_provider(provider)
 
 
 _add_agent_resources()
-_add_skills_resources()
+_add_skills_provider()
 
 if __name__ == "__main__":
     config = get_config()

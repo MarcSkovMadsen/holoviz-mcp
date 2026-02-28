@@ -230,10 +230,19 @@ class HoloVizMCPConfig(BaseModel):
             return base_dir / tool
         return base_dir
 
-    def skills_dir(self, location: Literal["user", "default"] = "user") -> Path:
+    def skills_dir(self, location: Literal["user", "default", "builtin", "project"] = "user") -> Path:
         """Get the path to the skills directory.
 
         Args:
-            location: Whether to get user or default skills directory
+            location: Which skills directory to get:
+                - "builtin": Skills embedded in the package (skills/<name>/SKILL.md)
+                - "default": Alias for "builtin" (backward compat)
+                - "user": User-level overrides (~/.holoviz-mcp/skills/)
+                - "project": Project-level overrides (./skills/ in cwd)
         """
-        return self.resources_dir(location) / "skills"
+        if location == "builtin" or location == "default":
+            return Path(__file__).parent.parent / "skills"
+        elif location == "project":
+            return Path.cwd() / "skills"
+        else:
+            return self.user_dir / "skills"

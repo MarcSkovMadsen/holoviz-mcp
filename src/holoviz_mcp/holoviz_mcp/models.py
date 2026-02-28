@@ -8,6 +8,14 @@ from pydantic import Field
 from pydantic import HttpUrl
 
 
+class DocumentSummary(BaseModel):
+    """Summary of a document (used by doc_list)."""
+
+    source_path: str = Field(..., description="The path to the document within the project.")
+    title: str = Field(..., description="The title of the document.")
+    is_reference: bool = Field(..., description="Indicates if the document is a reference guide.")
+
+
 class Document(BaseModel):
     """Represents a document."""
 

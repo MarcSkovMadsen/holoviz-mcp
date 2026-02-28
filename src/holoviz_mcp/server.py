@@ -48,16 +48,16 @@ mcp: FastMCP = FastMCP(
 )
 
 
-async def setup_composed_server() -> None:
-    """Set up the composed server by importing all sub-servers with prefixes.
+def setup_composed_server() -> None:
+    """Set up the composed server by mounting all sub-servers with namespaces.
 
-    This uses static composition (import_server), which copies components
-    from sub-servers into the main server with appropriate prefixes.
+    This uses static composition (mount), which copies components
+    from sub-servers into the main server with appropriate namespaces.
     """
-    await mcp.import_server(holoviz_mcp)  # General: search, project_list, doc_get, ref_get, skill_list, skill_get, show, inspect
-    await mcp.import_server(hvplot_mcp, prefix="hvplot")  # hvplot_list, hvplot_get
-    await mcp.import_server(panel_mcp, prefix="pn")  # pn_list, pn_get, pn_params, pn_search, pn_packages
-    await mcp.import_server(holoviews_mcp, prefix="hv")  # hv_list, hv_get
+    mcp.mount(holoviz_mcp)  # General: search, project_list, doc_get, ref_get, skill_list, skill_get, show, inspect
+    mcp.mount(hvplot_mcp, namespace="hvplot")  # hvplot_list, hvplot_get
+    mcp.mount(panel_mcp, namespace="pn")  # pn_list, pn_get, pn_params, pn_search, pn_packages
+    mcp.mount(holoviews_mcp, namespace="hv")  # hv_list, hv_get
 
 
 def main() -> None:
@@ -65,10 +65,10 @@ def main() -> None:
     pid = f"Process ID: {os.getpid()}"
     print(pid)  # noqa: T201
 
-    async def setup_and_run() -> None:
-        await setup_composed_server()
-        config = get_config()
+    setup_composed_server()
+    config = get_config()
 
+    async def run() -> None:
         # Pass host and port for HTTP transport
         if config.server.transport == "http":
             await mcp.run_async(
@@ -79,7 +79,7 @@ def main() -> None:
         else:
             await mcp.run_async(transport=config.server.transport)
 
-    asyncio.run(setup_and_run())
+    asyncio.run(run())
 
 
 if __name__ == "__main__":

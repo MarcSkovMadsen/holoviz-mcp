@@ -1,5 +1,5 @@
 ---
-name: panel-development
+name: panel
 description: Best practices for developing tools, dashboards and interactive data apps with HoloViz Panel. Create reactive, component-based UIs with widgets, layouts, templates, and real-time updates. Use when developing interactive data exploration tools, dashboards, data apps, or any interactive Python web application. Supports file uploads, streaming data, multi-page apps, and integration with HoloViews, hvPlot, Pandas, Polars, DuckDB and the rest of the HoloViz and PyData ecosystems.
 metadata:
   version: "1.0.0"

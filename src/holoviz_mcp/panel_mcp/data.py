@@ -160,6 +160,37 @@ def collect_component_info(cls: type) -> ComponentDetails:
     )
 
 
+def _is_public_component(cls: type) -> bool:
+    """Return True if the class is a concrete, user-facing Panel component.
+
+    Filters out abstract base classes and internal implementation classes
+    by inspecting class names and Python's abstract method registry.
+
+    Parameters
+    ----------
+    cls : type
+        The class to evaluate.
+
+    Returns
+    -------
+    bool
+        False for classes that are abstract, base, or mixin classes.
+    """
+    name = cls.__name__
+
+    # Skip classes with unresolved abstract methods (Python ABC protocol)
+    if getattr(cls, "__abstractmethods__", None):
+        return False
+
+    # Skip classes whose naming convention signals base/mixin/abstract intent
+    if name.endswith(("Base", "Mixin")):
+        return False
+    if name.startswith(("Abstract", "Base")):
+        return False
+
+    return True
+
+
 def get_components(parent=Viewable) -> list[ComponentDetails]:
     """
     Get detailed information about all Panel component subclasses.
@@ -180,8 +211,8 @@ def get_components(parent=Viewable) -> list[ComponentDetails]:
     """
     all_subclasses = find_all_subclasses(parent)
 
-    # Filter to only those in panel_material_ui package and exclude private classes
-    subclasses = [cls for cls in all_subclasses if not cls.__name__.startswith("_")]
+    # Filter to concrete, user-facing components: exclude private, abstract, base, and mixin classes
+    subclasses = [cls for cls in all_subclasses if not cls.__name__.startswith("_") and _is_public_component(cls)]
 
     # Collect component information
     component_data = [collect_component_info(cls) for cls in subclasses]

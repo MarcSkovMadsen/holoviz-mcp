@@ -74,6 +74,16 @@ class TestGetComponent:
             with pytest.raises(ValueError, match="Multiple components found"):
                 get_component(name="Button")
 
+    def test_ambiguous_error_uses_api_syntax_not_cli(self):
+        """Error message should say package="..." not --package ..."""
+        all_comps = list_components(name="Button")
+        if len(all_comps) > 1:
+            with pytest.raises(ValueError) as exc_info:
+                get_component(name="Button")
+            message = str(exc_info.value)
+            assert "--package" not in message, "Error message must not use CLI --package flag syntax"
+            assert 'package="' in message, 'Error message should use API parameter syntax: package="..."'
+
 
 class TestGetComponentParameters:
     def test_returns_dict(self):
@@ -111,3 +121,47 @@ class TestSearchComponents:
         result = search_components("xyznonexistent12345")
         assert isinstance(result, list)
         assert len(result) == 0
+
+    def test_search_secondary_sort_shorter_names_first(self):
+        """Within the same relevance score, shorter component names should rank higher."""
+        result = search_components("slider", package="panel")
+        assert len(result) >= 2
+        # Find groups of components with the same score
+        from itertools import groupby
+
+        for _score, group in groupby(result, key=lambda r: r.relevance_score):
+            group_list = list(group)
+            names = [r.name for r in group_list]
+            # Names within the same score tier should be ordered shortest first
+            assert names == sorted(names, key=len), f"Within score tier, expected names sorted by length (ascending), got: {names}"
+
+
+class TestListComponentsExcludesInternals:
+    def test_no_base_suffix_classes(self):
+        """Components ending with 'Base' are internal and should not appear."""
+        result = list_components()
+        names = [c.name for c in result]
+        base_classes = [n for n in names if n.endswith("Base")]
+        assert base_classes == [], f"Unexpected 'Base' suffix classes in list: {base_classes}"
+
+    def test_no_mixin_suffix_classes(self):
+        """Components ending with 'Mixin' are internal and should not appear."""
+        result = list_components()
+        names = [c.name for c in result]
+        mixin_classes = [n for n in names if n.endswith("Mixin")]
+        assert mixin_classes == [], f"Unexpected 'Mixin' suffix classes in list: {mixin_classes}"
+
+    def test_no_abstract_prefix_classes(self):
+        """Components starting with 'Abstract' are abstract and should not appear."""
+        result = list_components()
+        names = [c.name for c in result]
+        abstract_classes = [n for n in names if n.startswith("Abstract")]
+        assert abstract_classes == [], f"Unexpected 'Abstract' prefix classes in list: {abstract_classes}"
+
+    def test_concrete_components_still_present(self):
+        """Public components must still be included after filtering."""
+        result = list_components(package="panel")
+        names = [c.name for c in result]
+        expected = ["Button", "IntSlider", "Select", "TextInput", "Column", "Row", "Markdown"]
+        for expected_name in expected:
+            assert expected_name in names, f"Expected public component '{expected_name}' missing from list"

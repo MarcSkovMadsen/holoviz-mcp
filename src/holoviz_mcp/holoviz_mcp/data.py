@@ -2471,6 +2471,57 @@ class DocumentationIndexer:
                 logger.error(f"Failed to list projects: {e}")
                 return []
 
+    async def list_documents(self, project: str) -> list[dict[str, str | bool]]:
+        """List all documents available for a given project.
+
+        Parameters
+        ----------
+        project : str
+            The project name (e.g., "panel", "hvplot").
+
+        Returns
+        -------
+        list[dict[str, str | bool]]
+            Sorted list of dicts with keys: "source_path", "title", "is_reference".
+
+        Raises
+        ------
+        ValueError
+            If no documents are found for the given project.
+        """
+        async with self.db_lock:
+            await self.ensure_indexed()
+
+            # Normalize project name (hyphen to underscore for ChromaDB lookup)
+            project_key = project.replace("-", "_")
+
+            try:
+                results = self.collection.get(where={"project": project_key}, include=["metadatas"])
+
+                if not results["metadatas"]:
+                    msg = f"No documents found for project '{project}'. Use project_list to see available projects."
+                    raise ValueError(msg)
+
+                # Deduplicate chunks by source_path
+                seen: dict[str, dict[str, str | bool]] = {}
+                for metadata in results["metadatas"]:
+                    source_path = str(metadata.get("source_path", ""))
+                    if source_path in seen:
+                        continue
+                    seen[source_path] = {
+                        "source_path": source_path,
+                        "title": str(metadata.get("title", "")),
+                        "is_reference": bool(metadata.get("is_reference", False)),
+                    }
+
+                return sorted(seen.values(), key=lambda d: d["source_path"])
+
+            except ValueError:
+                raise
+            except Exception as e:
+                logger.error(f"Failed to list documents for project '{project}': {e}")
+                return []
+
     async def _log_summary_table(self, ctx: Context | None = None):
         """Log a summary table showing document counts by repository."""
         try:

@@ -207,7 +207,7 @@ def get_component(
         suggestions = _find_similar_names(name) if name else []
         if suggestions:
             suggestion_str = ", ".join(suggestions[:10])
-            raise ValueError(f"No exact match for '{name}'. Did you mean: {suggestion_str}? " f"Use search_components('{name}') to explore all matches.")
+            raise ValueError(f"No exact match for '{name}'. Did you mean: {suggestion_str}? Use search_components('{name}') to explore all matches.")
         parts = []
         if name:
             parts.append(f"name='{name}'")
@@ -218,8 +218,8 @@ def get_component(
         raise ValueError(f"No components found matching {', '.join(parts) or '(no filters)'}. Please check your inputs.")
     if len(components) > 1:
         options = ", ".join(f"'{c.package}.{c.name}'" for c in components)
-        packages = ", ".join(f"--package {c.package}" for c in components)
-        raise ValueError(f"Multiple components found: {options}. Disambiguate with {packages}.")
+        packages = " or ".join(f'package="{c.package}"' for c in components)
+        raise ValueError(f"Multiple components found: {options}. Disambiguate by setting {packages}.")
     return components[0]
 
 
@@ -298,7 +298,7 @@ def search_components(
         if score > 0:
             matches.append(_SearchResult.from_component(component=component, relevance_score=score))
 
-    matches.sort(key=lambda x: x.relevance_score, reverse=True)
+    matches.sort(key=lambda x: (-x.relevance_score, len(x.name)))
     if len(matches) > limit:
         matches = matches[:limit]
 

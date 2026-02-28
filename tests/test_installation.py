@@ -143,7 +143,7 @@ class TestDockerInstallation:
                 pytest.fail(diagnostic_msg)
 
             assert "FastMCP" in combined_output, f"Server banner not found in logs. Output: {combined_output[:500]}"
-            assert "Transport:   STDIO" in combined_output, "STDIO transport not detected"
+            assert "transport" in combined_output.lower() and "stdio" in combined_output.lower(), "STDIO transport not detected"
             assert "Starting MCP server 'holoviz'" in combined_output
 
         finally:
@@ -224,9 +224,9 @@ class TestDockerInstallation:
                 pytest.fail(f"No logs found after {log_elapsed}s. Container status: {status.stdout}")
 
             assert "FastMCP" in combined_output, f"Server banner not found in logs. Output: {combined_output[:500]}"
-            assert "Transport:   HTTP" in combined_output, "HTTP transport not detected"
+            assert "transport" in combined_output.lower() and "http" in combined_output.lower(), "HTTP transport not detected"
             # Server can bind to either 127.0.0.1 or 0.0.0.0 depending on configuration
-            assert "http://127.0.0.1:8000/mcp" in combined_output or "http://0.0.0.0:8000/mcp" in combined_output, "Server URL not found in logs"
+            assert "http://127.0.0.1:8000" in combined_output or "http://0.0.0.0:8000" in combined_output, "Server URL not found in logs"
             assert "Uvicorn running" in combined_output
 
         finally:
@@ -279,7 +279,8 @@ class TestDockerInstallation:
             combined_output = logs.stdout + logs.stderr
             assert combined_output.strip(), f"No logs found. Container status: {status.stdout}"
             # HTTP transport should be active
-            assert "Transport:   HTTP" in combined_output, f"HTTP transport not detected. Logs: {combined_output[:500]}"
+            combined_lower = combined_output.lower()
+            assert "transport" in combined_lower and "http" in combined_lower, f"HTTP transport not detected. Logs: {combined_output[:500]}"
 
         finally:
             # Cleanup
