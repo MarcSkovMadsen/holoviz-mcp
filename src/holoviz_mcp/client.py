@@ -91,4 +91,22 @@ async def call_tool(tool_name: str, parameters: dict[str, Any]) -> CallToolResul
             _CLIENT = await _create_client()
 
     async with _CLIENT:
-        return await _CLIENT.call_tool(tool_name, parameters)
+        result = await _CLIENT.call_tool(tool_name, parameters)
+        _normalize_root_objects(result)
+        return result
+
+
+def _normalize_root_objects(result: CallToolResult) -> None:
+    """Convert FastMCP Root objects in result.data to plain dicts.
+
+    FastMCP deserializes structured tool results into dynamically-generated
+    ``Root`` objects that are not JSON-serializable. This function walks
+    ``result.data`` and replaces any such objects with their ``__dict__``
+    representation so downstream consumers (Panel JSON panes, DataFrames,
+    etc.) can serialize them without errors.
+    """
+    data = result.data
+    if isinstance(data, list):
+        for i, item in enumerate(data):
+            if type(item).__name__ == "Root":
+                data[i] = vars(item)

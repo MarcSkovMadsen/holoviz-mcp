@@ -7,12 +7,34 @@ for manually creating visualizations via the UI.
 import logging
 
 import panel as pn
+import panel_material_ui as pmui
 
 from holoviz_mcp.display_mcp.database import get_db
-from holoviz_mcp.display_mcp.ui import banner
 from holoviz_mcp.display_mcp.utils import get_relative_view_url
 
 logger = logging.getLogger(__name__)
+
+ABOUT = """
+## Add Visualization
+
+This page allows you to create new visualizations by writing Python code.
+
+### How to Use
+
+1. **Write Code**: Enter your Python visualization code in the editor
+2. **Configure**: Set a name, description, and execution method in the sidebar
+3. **Submit**: Click the Submit button to create the visualization
+
+### Execution Methods
+
+- **jupyter**: The last expression in the code is displayed (like a Jupyter cell)
+- **panel**: Objects marked with `.servable()` are displayed as a Panel app
+
+### Learn More
+
+For more information about this project, visit:
+[HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
+"""
 
 DEFAULT_SNIPPET = """\
 import pandas as pd
@@ -40,27 +62,26 @@ def add_page():
         sizing_mode="stretch_both",
     )
 
-    name_input = pn.widgets.TextInput(
-        name="Name",
+    name_input = pmui.TextInput(
+        label="Name",
         placeholder="Enter name",
         sizing_mode="stretch_width",
         description="The name of the visualization.",
     )
 
-    description_input = pn.widgets.TextAreaInput(
-        name="Description",
+    description_input = pmui.TextAreaInput(
+        label="Description",
         placeholder="Enter description",
         sizing_mode="stretch_width",
         max_length=500,
         description="A brief description of the visualization.",
     )
 
-    method_select = pn.widgets.RadioBoxGroup(
-        name="Execution Method",
+    method_select = pmui.RadioButtonGroup(
+        label="Execution Method",
         options=["jupyter", "panel"],
         value="jupyter",
         sizing_mode="stretch_width",
-        inline=True,
     )
 
     @pn.depends(name_input.param.value_input, description_input.param.value_input)
@@ -68,12 +89,25 @@ def add_page():
         """Determine if the form can be submitted."""
         return not (name and description)
 
-    submit_button = pn.widgets.Button(
-        name="Submit", button_type="primary", sizing_mode="stretch_width", description="Click to create the visualization.", disabled=cannot_submit
+    submit_button = pmui.Button(
+        label="Submit",
+        color="primary",
+        variant="contained",
+        sizing_mode="stretch_width",
+        description="Click to create the visualization.",
+        disabled=cannot_submit,
     )
 
-    # Status indicator in sidebar
-    status_pane = pn.pane.Alert("", alert_type="info", sizing_mode="stretch_width", visible=False)
+    # Status indicators in sidebar
+    status_alert = pmui.Alert("", alert_type="info", sizing_mode="stretch_width", visible=False, margin=(5, 0))
+    view_link = pmui.Button(
+        label="Open Visualization",
+        icon="open_in_new",
+        color="success",
+        variant="outlined",
+        sizing_mode="stretch_width",
+        visible=False,
+    )
 
     def on_submit(event):
         """Handle submit button click."""
@@ -81,6 +115,8 @@ def add_page():
         name = name_input.value
         description = description_input.value
         method = method_select.value
+
+        view_link.visible = False
 
         try:
             # Call shared business logic directly (no HTTP roundtrip)
@@ -91,84 +127,74 @@ def add_page():
                 method=method,
             )
 
-            # Show success message
+            # Show success message with clickable link
             viz_id = result.id
             url = get_relative_view_url(viz_id)
 
-            status_pane.object = f"""
-### ✅ Success! Visualization created.
+            status_alert.object = f"Visualization '{name or 'Unnamed'}' created successfully."
+            status_alert.alert_type = "success"
+            status_alert.visible = True
 
-**Name:** {name or 'Unnamed'}
-**ID:** `{viz_id}`
-**URL:** [{url}]({url})
-
-Click the URL link to view your visualization.
-"""
-            status_pane.alert_type = "success"
-            status_pane.visible = True
+            view_link.href = url
+            view_link.target = "_blank"
+            view_link.visible = True
 
         except ValueError as e:
-            # Handle validation errors (e.g., empty code)
-            status_pane.object = f"""
-### ❌ ValueError
-
-```
-{str(e)}
-```
-
-Please provide valid code.
-"""
-            status_pane.alert_type = "danger"
-            status_pane.visible = True
+            status_alert.object = f"ValueError: {e}"
+            status_alert.alert_type = "error"
+            status_alert.visible = True
 
         except SyntaxError as e:
-            # Handle syntax errors
-            status_pane.object = f"""
-### ❌ SyntaxError
-
-```
-{str(e)}
-```
-
-Please check your code syntax and try again.
-"""
-            status_pane.alert_type = "danger"
-            status_pane.visible = True
+            status_alert.object = f"SyntaxError: {e}"
+            status_alert.alert_type = "error"
+            status_alert.visible = True
 
         except Exception as e:
-            # Handle all other errors
             logger.exception("Error creating visualization")
-            status_pane.object = f"""
-### ❌ Error
-
-An unexpected error occurred:
-
-```
-{str(e)}
-```
-
-Please check the server logs for more details.
-"""
-            status_pane.alert_type = "danger"
-            status_pane.visible = True
+            status_alert.object = f"Unexpected error: {e}"
+            status_alert.alert_type = "error"
+            status_alert.visible = True
 
     submit_button.on_click(on_submit)
 
-    return pn.template.FastListTemplate(
+    # About button and dialog
+    about_button = pmui.IconButton(
+        label="About",
+        icon="info",
+        description="Click to learn about the Add Visualization page.",
+        sizing_mode="fixed",
+        color="light",
+        margin=(10, 0),
+    )
+    about = pmui.Dialog(ABOUT, close_on_click=True, width=0)
+    about_button.js_on_click(args={"about": about}, code="about.data.open = true")
+
+    # GitHub button
+    github_button = pmui.IconButton(
+        label="Github",
+        icon="star",
+        description="Give HoloViz-MCP a star on GitHub",
+        sizing_mode="fixed",
+        color="light",
+        margin=(10, 0),
+        href="https://github.com/MarcSkovMadsen/holoviz-mcp",
+        target="_blank",
+    )
+
+    return pmui.Page(
         title="Add Visualization",
+        site_url="./",
         sidebar=[
-            pn.pane.Markdown("### Configuration"),
+            pmui.Typography("## Configuration", variant="h6"),
             name_input,
             description_input,
             pn.pane.Markdown("Display Method", margin=(-10, 10, -10, 10)),
             method_select,
             submit_button,
-            pn.pane.Markdown("### Status"),
-            status_pane,
+            pmui.Typography("## Status", variant="h6"),
+            status_alert,
+            view_link,
         ],
-        main=[
-            "## Code",
-            code_editor,
-        ],
-        header=[banner()],
+        header=[pn.Row(pn.Spacer(), about_button, github_button, align="end")],
+        main=[about, pmui.Container("## Code", code_editor, width_option="xl")],
     )

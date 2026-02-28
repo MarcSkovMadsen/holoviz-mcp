@@ -1,4 +1,4 @@
-"""An app to demo the usage and responses of the pn_packages tool."""
+"""An app to demo the usage and responses of the hv_list tool."""
 
 import panel as pn
 import panel_material_ui as pmui
@@ -6,38 +6,50 @@ import panel_material_ui as pmui
 from holoviz_mcp.client import call_tool
 
 ABOUT = """
-# Panel List Packages Tool
+# HoloViews List Elements Tool
 
-The `pn_packages` tool lists all installed packages that provide Panel `Viewable` components.
+The `hv_list` tool lists all available HoloViews visualization elements.
 
 ## Purpose
 
-Discover what Panel-related packages are available in your environment.
-This helps you understand which packages you can use in the 'package' parameter of other tools.
+Discover what visualization elements you can create with HoloViews. Elements are the
+building blocks for composing complex visualizations.
+
+## Use Cases
+
+- Explore available visualization options before creating plots
+- Understand what element types are supported in your environment
+- Find the right element name to use with HoloViews
 
 ## Returns
 
-A list of package names that provide Panel components, sorted alphabetically.
+A sorted list of all HoloViews element names available in the current environment.
 
-**Examples:** `["panel"]` or `["panel", "panel_material_ui"]`
+**Examples:** `['Annotation', 'Area', 'Arrow', 'Bars', 'Curve', 'Scatter', ...]`
+
+## Next Steps
+
+After discovering elements with this tool, use:
+
+- [`hv_get`](./hv_get) - Get detailed documentation for a specific element
 """
 
 
 @pn.cache
-async def panel_list_packages() -> list[str]:
-    """Demo the usage and responses of the pn_packages tool."""
+async def hv_list_elements() -> list[str]:
+    """Fetch the list of HoloViews elements via the hv_list tool."""
     response = await call_tool(
-        tool_name="pn_packages",
+        tool_name="hv_list",
         parameters={},
     )
     return response.data
 
 
 async def create_content():
-    """Create the styled content displaying Panel packages as chips."""
-    items = await panel_list_packages()
+    """Create the styled content displaying HoloViews elements as chips."""
+    items = await hv_list_elements()
     count = pmui.Typography(
-        f"Found {len(items)} package{'s' if len(items) != 1 else ''}",
+        f"Found {len(items)} elements",
         variant="subtitle1",
         sx={"color": "text.secondary", "mb": 2},
     )
@@ -49,11 +61,11 @@ async def create_content():
 
 
 def create_app():
-    """Create the Panel Material UI app for demoing the pn_packages tool."""
+    """Create the Panel Material UI app for demoing the hv_list tool."""
     about_button = pmui.IconButton(
         label="About",
         icon="info",
-        description="Click to learn about the Panel List Packages Tool.",
+        description="Click to learn about the HoloViews List Elements Tool.",
         sizing_mode="fixed",
         color="light",
         margin=(10, 0),
@@ -76,7 +88,7 @@ def create_app():
     main = pmui.Container(about, content)
 
     return pmui.Page(
-        title="HoloViz-MCP: pn_packages Tool Demo",
+        title="HoloViz-MCP: hv_list Tool Demo",
         header=[pmui.Row(pn.HSpacer(), about_button, github_button, sizing_mode="stretch_width")],
         main=[main],
     )

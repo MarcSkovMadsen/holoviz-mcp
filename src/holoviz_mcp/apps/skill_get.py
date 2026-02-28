@@ -7,8 +7,8 @@ import panel as pn
 import panel_material_ui as pmui
 import param
 
-from holoviz_mcp.holoviz_mcp.data import get_skill
-from holoviz_mcp.holoviz_mcp.data import list_skills
+from holoviz_mcp.core.skills import get_skill
+from holoviz_mcp.core.skills import list_skills
 
 pn.extension()
 
@@ -71,12 +71,13 @@ class SkillConfiguration(param.Parameterized):
             pn.state.location.sync(self, parameters=["name"])
 
     def _load_skills(self):
-        """Load available skills½."""
+        """Load available skills."""
         try:
-            skills = list_skills()
-            self.param.skill.objects = skills
-            if skills and self.skill is None:
-                self.skill = skills[0]  # Default to first skill
+            skill_entries = list_skills()
+            skill_names = [entry["name"] for entry in skill_entries]
+            self.param.skill.objects = skill_names
+            if skill_names and self.skill is None:
+                self.skill = skill_names[0]
         except Exception as e:
             self.param.skill.objects = []
             self.content = f"**Error loading skills:** {e}"

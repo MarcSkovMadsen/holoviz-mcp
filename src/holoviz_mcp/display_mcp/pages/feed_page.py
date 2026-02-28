@@ -5,10 +5,33 @@ in a feed-style layout with live updates.
 """
 
 import panel as pn
+import panel_material_ui as pmui
 
 from holoviz_mcp.display_mcp.database import get_db
-from holoviz_mcp.display_mcp.ui import banner
 from holoviz_mcp.display_mcp.utils import get_relative_view_url
+
+ABOUT = """
+## Visualization Feed
+
+This page displays a live feed of recent visualizations created through the HoloViz MCP display tool.
+
+### Features
+
+- **Live Updates**: The feed automatically refreshes every second to show new visualizations
+- **View / Code Tabs**: Each visualization shows both an interactive preview and the source code
+- **Actions**: Open visualizations in full screen, copy code to clipboard, or delete entries
+- **Limit Control**: Use the sidebar to control how many visualizations are displayed
+
+### How It Works
+
+When an AI assistant uses the `show` tool to display a visualization, it appears here in the feed.
+Each entry includes the visualization name, creation time, description, and an iframe preview.
+
+### Learn More
+
+For more information about this project, including setup instructions and advanced configuration options,
+visit: [HoloViz MCP](https://marcskovmadsen.github.io/holoviz-mcp/).
+"""
 
 
 def feed_page():
@@ -17,7 +40,7 @@ def feed_page():
     Displays a feed of recent visualizations with automatic updates.
     """
     # Create sidebar with filters
-    limit = pn.widgets.IntSlider(name="Limit", value=3, start=1, end=100)
+    limit = pmui.IntInput(name="Limit", value=3, start=1, end=100, sizing_mode="stretch_width")
 
     # Create chat feed
     chat_feed = pn.Column(sizing_mode="stretch_both")
@@ -53,11 +76,11 @@ def feed_page():
     allow="fullscreen; clipboard-write; autoplay"
 ></iframe>
 </div>"""
-        # Create copy button with JavaScript callback
-        open_button = pn.widgets.Button(
-            name="🔗 Full Screen",
-            button_type="light",
+        # Create action buttons with Material UI icon buttons
+        open_button = pmui.IconButton(
+            icon="open_in_new",
             description="Open visualization in new tab",
+            color="primary",
         )
         open_button.js_on_click(
             code=f"""
@@ -65,11 +88,10 @@ def feed_page():
         """
         )
 
-        copy_button = pn.widgets.Button(
-            name="📋 Copy Code",
-            button_type="light",
-            width=120,
+        copy_button = pmui.IconButton(
+            icon="content_copy",
             description="Copy code to clipboard",
+            color="primary",
         )
 
         # JavaScript callback to copy code to clipboard
@@ -81,31 +103,38 @@ def feed_page():
         """,
         )
 
-        delete_button = pn.widgets.Button(
-            name="🗑️ Delete",
-            button_type="danger",
-            width=120,
+        delete_button = pmui.IconButton(
+            icon="delete",
             description="Delete this visualization",
+            color="error",
         )
         delete_button.on_click(lambda event: on_delete(req.id))
 
         with pn.config.set(sizing_mode="stretch_width"):
-            message = pn.Column(
-                pn.pane.Markdown(
-                    title,
-                    margin=(10, 10, 0, 10),
-                ),
-                pn.Tabs(
-                    pn.pane.Markdown(iframe, name="View"),
-                    pn.widgets.CodeEditor(
-                        value=req.app,
-                        name="Code",
-                        language="python",
-                        theme="github_dark",
+            message = pmui.Paper(
+                pn.Column(
+                    pn.pane.Markdown(
+                        title,
+                        margin=(10, 10, 0, 10),
                     ),
-                    margin=(0, 10, 10, 10),
+                    pn.Tabs(
+                        pn.pane.Markdown(iframe, name="View"),
+                        pn.widgets.CodeEditor(
+                            value=req.app,
+                            name="Code",
+                            language="python",
+                            theme="github_dark",
+                            sizing_mode="stretch_width",
+                            min_height=400,
+                        ),
+                        margin=(0, 10, 10, 10),
+                    ),
+                    pn.Row(pn.HSpacer(), open_button, copy_button, delete_button, margin=(0, 10, 0, 10), align="end"),
+                    sizing_mode="stretch_width",
                 ),
-                pn.Row(pn.HSpacer(), open_button, copy_button, delete_button, margin=(0, 10, 0, 10), align="end"),
+                elevation=2,
+                margin=(0, 0, 15, 0),
+                sizing_mode="stretch_width",
             )
 
         pn.state.cache["views"][req.id] = message
@@ -129,11 +158,36 @@ def feed_page():
     update_chat()
     pn.state.add_periodic_callback(update_chat, 1000)  # Refresh every 1 seconds
 
-    return pn.template.FastListTemplate(
+    # About button and dialog
+    about_button = pmui.IconButton(
+        label="About",
+        icon="info",
+        description="Click to learn about the Visualization Feed.",
+        sizing_mode="fixed",
+        color="light",
+        margin=(10, 0),
+    )
+    about = pmui.Dialog(ABOUT, close_on_click=True, width=0)
+    about_button.js_on_click(args={"about": about}, code="about.data.open = true")
+
+    # GitHub button
+    github_button = pmui.IconButton(
+        label="Github",
+        icon="star",
+        description="Give HoloViz-MCP a star on GitHub",
+        sizing_mode="fixed",
+        color="light",
+        margin=(10, 0),
+        href="https://github.com/MarcSkovMadsen/holoviz-mcp",
+        target="_blank",
+    )
+
+    return pmui.Page(
         title="Visualization Feed",
+        site_url="./",
         sidebar=[limit],
-        main=[pn.Column(chat_feed, sizing_mode="stretch_both")],
-        header=[banner()],
+        header=[pn.Row(pn.Spacer(), about_button, github_button, align="end")],
+        main=[about, pmui.Container(pn.Column(chat_feed, sizing_mode="stretch_both"), width_option="xl", sizing_mode="stretch_both")],
     )
 
 
