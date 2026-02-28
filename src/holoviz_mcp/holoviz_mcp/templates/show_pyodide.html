@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>HoloViz MCP · show_pyodide</title>
+    <link rel="stylesheet" href="https://panel-extensions.github.io/panel-live/assets/css/panel-live.css" />
+    <script src="https://panel-extensions.github.io/panel-live/assets/js/panel-live.js"></script>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        min-height: 100vh;
+        gap: 12px;
+        padding: 12px;
+        box-sizing: border-box;
+      }
+
+      .meta {
+        display: grid;
+        gap: 4px;
+      }
+
+      .meta h1 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .meta p {
+        margin: 0;
+        opacity: 0.85;
+        font-size: 0.9rem;
+      }
+
+      panel-live {
+        min-height: 420px;
+      }
+
+      pre {
+        margin: 0;
+        max-height: 220px;
+        overflow: auto;
+        padding: 10px;
+        border-radius: 8px;
+        background: rgba(120, 120, 120, 0.15);
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div class="meta">
+        <h1 id="title">show_pyodide</h1>
+        <p id="description">Rendering with panel-live (Pyodide runtime).</p>
+      </div>
+      <pre id="source">Awaiting tool result…</pre>
+      <div id="runner"></div>
+    </div>
+
+    <script type="module">
+      import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@0.4.0/app-with-deps";
+
+      const source = document.getElementById("source");
+      const title = document.getElementById("title");
+      const description = document.getElementById("description");
+      const runner = document.getElementById("runner");
+
+      const app = new App({ name: "holoviz-mcp-show-pyodide", version: "0.1.0" });
+
+      app.ontoolresult = async ({ content }) => {
+        const textContent = content?.find((entry) => entry.type === "text");
+        if (!textContent?.text) {
+          source.textContent = "No tool text payload received.";
+          return;
+        }
+
+        let payload;
+        try {
+          payload = JSON.parse(textContent.text);
+        } catch {
+          source.textContent = textContent.text;
+          return;
+        }
+
+        if (payload.name) {
+          title.textContent = payload.name;
+        }
+        if (payload.description) {
+          description.textContent = payload.description;
+        }
+
+        const code = payload.code ?? "";
+        source.textContent = code || "No code provided.";
+
+        if (!code.trim()) {
+          runner.innerHTML = "";
+          return;
+        }
+
+        runner.innerHTML = "";
+        await window.PanelLive.mount(
+          {
+            mode: "app",
+            code,
+            autoRun: true,
+          },
+          runner,
+        );
+      };
+
+      await app.connect();
+    </script>
+  </body>
+</html>

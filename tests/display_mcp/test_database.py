@@ -135,3 +135,26 @@ class TestSnippetDatabase:
         results = temp_db.search_snippets("pandas")
         assert len(results) >= 1
         assert any("pandas" in r.app.lower() or "pandas" in r.name.lower() for r in results)
+
+    def test_create_visualization_with_pyodide_method(self, temp_db):
+        """Pyodide execution method is accepted and persisted."""
+        snippet = temp_db.create_visualization(
+            app="print('hello from pyodide')",
+            name="Pyodide snippet",
+            method="pyodide",
+        )
+
+        assert snippet.method == "pyodide"
+        assert snippet.status in {"success", "error"}
+
+        persisted = temp_db.get_snippet(snippet.id)
+        assert persisted is not None
+        assert persisted.method == "pyodide"
+
+    def test_create_visualization_with_invalid_method_raises_value_error(self, temp_db):
+        """Invalid execution methods should raise ValueError (for clean 400 mapping)."""
+        with pytest.raises(ValueError, match="Unsupported execution method"):
+            temp_db.create_visualization(
+                app="print('hello')",
+                method="invalid",  # type: ignore[arg-type]
+            )

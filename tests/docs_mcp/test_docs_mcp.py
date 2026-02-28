@@ -4,10 +4,14 @@ Simple tests for the documentation MCP server.
 Tests just the docs server functionality without the composed server.
 """
 
+import json
+from unittest.mock import patch
+
 import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
+import holoviz_mcp.holoviz_mcp.server as docs_server
 from holoviz_mcp.holoviz_mcp.server import mcp
 
 
@@ -18,6 +22,148 @@ async def test_skills_resource():
     async with client:
         result = await client.call_tool("skill_get", {"name": "panel"})
         assert result.data
+
+
+@pytest.mark.asyncio
+async def test_show_pyodide_payload():
+    """show_pyodide returns a JSON text payload for app rendering."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool(
+            "show_pyodide",
+            {
+                "code": "import panel as pn\npn.extension()\npn.pane.Markdown('hello').servable()",
+                "name": "Pyodide test",
+                "description": "Contract smoke test",
+            },
+        )
+
+    assert isinstance(result.data, str)
+    assert '"tool": "show_pyodide"' in result.data
+    assert '"runtime": "panel-live-pyodide"' in result.data
+
+
+@pytest.mark.asyncio
+async def test_show_pyodide_requires_code():
+    """show_pyodide returns a clear error when code is blank."""
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("show_pyodide", {"code": "   "})
+
+    assert isinstance(result.data, str)
+    assert "Code is required for show_pyodide" in result.data
+
+
+@pytest.mark.asyncio
+async def test_show_display_disabled_returns_legacy_error(monkeypatch: pytest.MonkeyPatch):
+    """show preserves existing fallback error string when display is disabled."""
+
+    class _DisplayConfig:
+        enabled = False
+
+    class _Config:
+        display = _DisplayConfig()
+
+    monkeypatch.setattr(docs_server, "get_config", lambda: _Config())
+
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("show", {"code": "1 + 1"})
+
+    assert isinstance(result.data, str)
+    assert result.data == "Error: Display server is not enabled. Set display.enabled=true in config."
+
+
+@pytest.mark.asyncio
+async def test_show_pyodide_does_not_use_display_client(monkeypatch: pytest.MonkeyPatch):
+    """show_pyodide is runtime-isolated from display client/server path."""
+
+    def _should_not_be_called():
+        raise AssertionError("show_pyodide should not request display client")
+
+    monkeypatch.setattr(docs_server, "_get_display_client", _should_not_be_called)
+
+    client = Client(mcp)
+    async with client:
+        result = await client.call_tool("show_pyodide", {"code": "print('hello')"})
+
+    assert isinstance(result.data, str)
+    assert '"runtime": "panel-live-pyodide"' in result.data
+
+
+@pytest.mark.asyncio
+async def test_show_rewrites_localhost_url_for_codespaces(monkeypatch: pytest.MonkeyPatch):
+    """show should rewrite localhost URLs to Codespaces forwarding URL when available."""
+
+    class _DisplayConfig:
+        enabled = True
+        mode = "subprocess"
+
+    class _ServerConfig:
+        jupyter_server_proxy_url = ""
+
+    class _Config:
+        display = _DisplayConfig()
+        server = _ServerConfig()
+
+    class _FakeClient:
+        def is_healthy(self):
+            return True
+
+        def create_snippet(self, code: str, name: str, description: str, method: str):
+            return {"url": "http://localhost:5005/view?id=abc123"}
+
+    monkeypatch.setattr(docs_server, "get_config", lambda: _Config())
+    monkeypatch.setattr(docs_server, "_get_display_client", lambda: _FakeClient())
+
+    with patch.dict(
+        "os.environ",
+        {
+            "CODESPACE_NAME": "literate-chainsaw-54wjwvrrxv4c4p5q",
+            "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN": "app.github.dev",
+        },
+        clear=False,
+    ):
+        result = await docs_server.display(code="1 + 1")
+
+    assert "https://literate-chainsaw-54wjwvrrxv4c4p5q-5005.app.github.dev/view?id=abc123" in result
+
+
+@pytest.mark.asyncio
+async def test_show_returns_json_payload_for_mcp_app(monkeypatch: pytest.MonkeyPatch):
+    """show returns a structured JSON payload consumable by the MCP App template."""
+
+    class _DisplayConfig:
+        enabled = True
+        mode = "subprocess"
+
+    class _ServerConfig:
+        jupyter_server_proxy_url = ""
+
+    class _Config:
+        display = _DisplayConfig()
+        server = _ServerConfig()
+
+    class _FakeClient:
+        def is_healthy(self):
+            return True
+
+        def create_snippet(self, code: str, name: str, description: str, method: str):
+            return {"url": "http://localhost:5005/view?id=abc123"}
+
+    monkeypatch.setattr(docs_server, "get_config", lambda: _Config())
+    monkeypatch.setattr(docs_server, "_get_display_client", lambda: _FakeClient())
+
+    raw_result = await docs_server.display(code="1 + 1", name="Demo", description="Plot", method="jupyter")
+    payload = json.loads(raw_result)
+
+    assert payload["tool"] == "show"
+    assert payload["status"] == "success"
+    assert payload["name"] == "Demo"
+    assert payload["description"] == "Plot"
+    assert payload["method"] == "jupyter"
+    assert payload["url"].startswith("http")
+    assert payload["url"].endswith("/view?id=abc123")
 
 
 @pytest.mark.integration

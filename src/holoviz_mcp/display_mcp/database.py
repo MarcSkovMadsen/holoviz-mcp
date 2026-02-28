@@ -40,7 +40,7 @@ class Snippet(BaseModel):
     name: str = Field(default="", description="User-provided name")
     description: str = Field(default="", description="Short description of the app")
     readme: str = Field(default="", description="Longer documentation describing the app")
-    method: Literal["jupyter", "panel"] = Field(..., description="Execution method")
+    method: Literal["jupyter", "panel", "pyodide"] = Field(..., description="Execution method")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: Literal["pending", "success", "error"] = Field(default="pending")
@@ -437,7 +437,7 @@ class SnippetDatabase:
         name: str = "",
         description: str = "",
         readme: str = "",
-        method: Literal["jupyter", "panel"] = "jupyter",
+        method: Literal["jupyter", "panel", "pyodide"] = "jupyter",
     ) -> Snippet:
         """Create a visualization request.
 
@@ -455,7 +455,7 @@ class SnippetDatabase:
         readme : str, optional
             Longer documentation describing the app
         method : str, optional
-            Execution method: "jupyter" or "panel"
+            Execution method: "jupyter", "panel", or "pyodide"
 
         Returns
         -------
@@ -476,6 +476,11 @@ class SnippetDatabase:
             raise ValueError("App code is required")
         if ".show(" in app:
             raise ValueError("`.show()` calls are not supported in this environment")
+
+        supported_methods = {"jupyter", "panel", "pyodide"}
+        if method not in supported_methods:
+            supported_text = ", ".join(sorted(supported_methods))
+            raise ValueError(f"Unsupported execution method '{method}'. Supported methods: {supported_text}")
 
         # Validate syntax
         ast.parse(app)  # Raises SyntaxError if invalid
