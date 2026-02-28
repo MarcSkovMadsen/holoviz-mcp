@@ -38,7 +38,7 @@ class TestCLI:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "HoloViz Model Context Protocol" in result.stdout
+        assert "AI-powered documentation and tooling" in result.stdout
         assert "serve" in result.stdout
 
     def test_cli_version(self):
@@ -59,7 +59,7 @@ class TestCLI:
             timeout=15,
         )
         assert result.returncode == 0
-        assert "Update the documentation index" in result.stdout
+        assert "documentation search index" in result.stdout
 
     def test_cli_install_copilot_help(self):
         result = subprocess.run(
@@ -69,7 +69,7 @@ class TestCLI:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Install HoloViz MCP resources" in result.stdout
+        assert "Set up HoloViz MCP" in result.stdout
 
     def test_cli_install_claude_help(self):
         result = subprocess.run(
@@ -79,7 +79,7 @@ class TestCLI:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Install HoloViz MCP resources for Claude Code" in result.stdout
+        assert "Set up HoloViz MCP agents and skills for Claude Code" in result.stdout
 
     def test_cli_serve_help(self):
         result = subprocess.run(
@@ -89,7 +89,7 @@ class TestCLI:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Serve Panel apps" in result.stdout
+        assert "Launch the built-in developer UI apps" in result.stdout
 
     def test_cli_default_starts_server(self):
         process = subprocess.Popen(
@@ -142,7 +142,7 @@ class TestCLIEntryPoint:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "HoloViz Model Context Protocol" in result.stdout
+        assert "AI-powered documentation and tooling" in result.stdout
 
     def test_entry_point_version(self):
         result = subprocess.run(
@@ -162,7 +162,7 @@ class TestCLIEntryPoint:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Update the documentation index" in result.stdout
+        assert "documentation search index" in result.stdout
 
     def test_entry_point_install_copilot(self):
         result = subprocess.run(
@@ -172,7 +172,7 @@ class TestCLIEntryPoint:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Install HoloViz MCP resources" in result.stdout
+        assert "Set up HoloViz MCP" in result.stdout
 
     def test_entry_point_install_claude(self):
         result = subprocess.run(
@@ -182,7 +182,7 @@ class TestCLIEntryPoint:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Install HoloViz MCP resources for Claude Code" in result.stdout
+        assert "Set up HoloViz MCP agents and skills for Claude Code" in result.stdout
 
     def test_entry_point_serve(self):
         result = subprocess.run(
@@ -192,7 +192,7 @@ class TestCLIEntryPoint:
             timeout=10,
         )
         assert result.returncode == 0
-        assert "Serve Panel apps" in result.stdout
+        assert "Launch the built-in developer UI apps" in result.stdout
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -204,7 +204,7 @@ class TestPnHelp:
     def test_pn_help(self):
         result = runner.invoke(app, ["pn", "--help"])
         assert result.exit_code == 0
-        assert "Panel component tools" in plain(result.output)
+        assert "Panel widgets, panes, and layouts" in plain(result.output)
 
     def test_pn_list_help(self):
         result = runner.invoke(app, ["pn", "list", "--help"])
@@ -239,7 +239,7 @@ class TestHvHelp:
     def test_hv_help(self):
         result = runner.invoke(app, ["hv", "--help"])
         assert result.exit_code == 0
-        assert "HoloViews element tools" in plain(result.output)
+        assert "HoloViews visualization elements" in plain(result.output)
 
     def test_hv_list_help(self):
         result = runner.invoke(app, ["hv", "list", "--help"])
@@ -256,7 +256,7 @@ class TestHvplotHelp:
     def test_hvplot_help(self):
         result = runner.invoke(app, ["hvplot", "--help"])
         assert result.exit_code == 0
-        assert "hvPlot plot type tools" in plain(result.output)
+        assert "hvPlot chart types and signatures" in plain(result.output)
 
     def test_hvplot_list_help(self):
         result = runner.invoke(app, ["hvplot", "list", "--help"])
@@ -291,7 +291,7 @@ class TestDocHelp:
     def test_doc_help(self):
         result = runner.invoke(app, ["doc", "--help"])
         assert result.exit_code == 0
-        assert "Documentation" in plain(result.output)
+        assert "documentation page" in plain(result.output)
 
     def test_doc_list_help(self):
         result = runner.invoke(app, ["doc", "list", "--help"])
