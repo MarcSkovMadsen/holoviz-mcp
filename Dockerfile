@@ -28,6 +28,7 @@ WORKDIR /app
 # Copy project files
 COPY pixi.toml pixi.lock pyproject.toml README.md LICENSE.txt MANIFEST.in ./
 COPY src/ ./src/
+COPY skills/ ./skills/
 COPY .git/ ./.git/
 
 # Install dependencies using Pixi
@@ -61,6 +62,7 @@ COPY --from=builder /app/src /app/src
 COPY --from=builder /app/pyproject.toml /app/README.md /app/LICENSE.txt /app/
 COPY --from=builder /app/pixi.toml /app/pixi.lock /app/
 COPY --from=builder /app/.pixi /app/.pixi
+COPY --from=builder /app/skills /app/skills
 # Add any other necessary runtime files here
 
 # Expose default MCP port (if using HTTP transport)
