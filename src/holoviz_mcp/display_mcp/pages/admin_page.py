@@ -69,15 +69,15 @@ def admin_page():
 <% } else if (value === 'success') { %>
   <span style="color: #5cb85c;">&#10003; success</span>
 <% } else { %>
-  <span style="color: #999;">&#8226; <%= value %></span>
+  <span style="color: #999;">&#8226; <%- value %></span>
 <% } %>
 """
     description_template = """
 <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; cursor: default;"
-     title="<%= value %>"><%= value %></div>
+     title="<%- value %>"><%- value %></div>
 """
     formatters = {
-        "View": HTMLTemplateFormatter(template='<a href="<%= value %>" target="_blank" style="color:#1976d2; text-decoration:none; font-weight:500;">Open</a>'),
+        "View": HTMLTemplateFormatter(template='<a href="<%- value %>" target="_blank" style="color:#1976d2; text-decoration:none; font-weight:500;">Open</a>'),
         "Status": HTMLTemplateFormatter(template=status_template),
         "Description": HTMLTemplateFormatter(template=description_template),
     }
