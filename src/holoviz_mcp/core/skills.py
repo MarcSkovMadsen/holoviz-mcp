@@ -289,10 +289,11 @@ def get_skill_file(name: str, path: str) -> str:
         If the path attempts directory traversal outside the skill directory.
     """
     skill_dir = _find_skill_dir(name)
+    resolved_skill_dir = skill_dir.resolve()
     target = (skill_dir / path).resolve()
 
-    # Path traversal protection
-    if not str(target).startswith(str(skill_dir.resolve())):
+    # Path traversal protection using path-aware check (not string prefix matching)
+    if not target.is_relative_to(resolved_skill_dir):
         raise ValueError(f"Path traversal detected: '{path}' escapes skill directory")
 
     if not target.is_file():

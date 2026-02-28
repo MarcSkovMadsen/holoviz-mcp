@@ -32,6 +32,7 @@ from holoviz_mcp.core.skills import list_skills as _list_skills
 from holoviz_mcp.display_mcp.client import DisplayClient
 from holoviz_mcp.display_mcp.manager import PanelServerManager
 from holoviz_mcp.holoviz_mcp.models import Document
+from holoviz_mcp.holoviz_mcp.models import DocumentSummary
 
 # Global display manager instance (lazy-loaded, subprocess mode only)
 _display_manager: Optional["PanelServerManager"] = None
@@ -294,7 +295,7 @@ async def list_projects() -> list[str]:
 
 
 @mcp.tool(name="doc_list")
-async def list_documents(project: str) -> list[dict[str, str | bool]]:
+async def list_documents(project: str) -> list[DocumentSummary]:
     """List all documents available for a given project.
 
     Use this tool to discover what documents are available before using doc_get.
@@ -305,7 +306,7 @@ async def list_documents(project: str) -> list[dict[str, str | bool]]:
 
     Returns
     -------
-        list[dict[str, str | bool]]: List of documents with "source_path", "title", and "is_reference" keys.
+        list[DocumentSummary]: List of document summaries with source_path, title, and is_reference.
 
     Examples
     --------
@@ -313,7 +314,8 @@ async def list_documents(project: str) -> list[dict[str, str | bool]]:
     >>> list_documents("hvplot")  # List all hvPlot documents
     """
     indexer = get_indexer()
-    return await indexer.list_documents(project)
+    docs = await indexer.list_documents(project)
+    return [DocumentSummary(**d) for d in docs]
 
 
 @mcp.tool(name="doc_get")

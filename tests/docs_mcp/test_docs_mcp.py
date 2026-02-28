@@ -4,8 +4,6 @@ Simple tests for the documentation MCP server.
 Tests just the docs server functionality without the composed server.
 """
 
-import json
-
 import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
@@ -295,22 +293,20 @@ async def test_list_documents():
     """Test listing documents for a project."""
     client = Client(mcp)
     async with client:
-        # Use raw MCP call because doc_list returns list[dict] which FastMCP
-        # deserializes into empty Root dataclass objects instead of dicts.
-        raw = await client.call_tool_mcp("doc_list", {"project": "panel"})
-        assert raw.content
-        docs = json.loads(raw.content[0].text)
+        result = await client.call_tool("doc_list", {"project": "panel"})
+        assert result.data
+        docs = result.data
         assert isinstance(docs, list)
         assert len(docs) > 0
 
-        # Each entry should have the expected keys
+        # Each entry should be a DocumentSummary with the expected attributes
         for d in docs:
-            assert "source_path" in d
-            assert "title" in d
-            assert "is_reference" in d
+            assert hasattr(d, "source_path")
+            assert hasattr(d, "title")
+            assert hasattr(d, "is_reference")
 
         # Results should be sorted by source_path
-        paths = [d["source_path"] for d in docs]
+        paths = [d.source_path for d in docs]
         assert paths == sorted(paths)
 
 

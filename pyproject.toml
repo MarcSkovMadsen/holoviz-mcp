@@ -40,7 +40,7 @@ classifiers = [
 dependencies = [
     "certifi",
     "chromadb",
-    "fastmcp>=3.0",
+    "fastmcp>=3.0,<4",
     "GitPython",
     "hvplot",
     "hvsampledata",
