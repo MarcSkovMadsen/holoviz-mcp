@@ -28,35 +28,35 @@ app = typer.Typer(
 # Infrastructure subcommand groups (existing)
 # ══════════════════════════════════════════════════════════════════════════════
 
-update_app = typer.Typer(name="update", help="Update HoloViz MCP resources.")
+update_app = typer.Typer(name="update", help="Update HoloViz MCP resources.", no_args_is_help=True)
 app.add_typer(update_app)
 
-install_app = typer.Typer(name="install", help="Install HoloViz MCP resources.")
+install_app = typer.Typer(name="install", help="Install HoloViz MCP resources.", no_args_is_help=True)
 app.add_typer(install_app)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Tool subcommand groups (new)
 # ══════════════════════════════════════════════════════════════════════════════
 
-pn_app = typer.Typer(name="pn", help="Panel component tools (import panel as pn).")
+pn_app = typer.Typer(name="pn", help="Panel component tools (import panel as pn).", no_args_is_help=True)
 app.add_typer(pn_app)
 
-hv_app = typer.Typer(name="hv", help="HoloViews element tools (import holoviews as hv).")
+hv_app = typer.Typer(name="hv", help="HoloViews element tools (import holoviews as hv).", no_args_is_help=True)
 app.add_typer(hv_app)
 
-hvplot_app = typer.Typer(name="hvplot", help="hvPlot plot type tools (import hvplot).")
+hvplot_app = typer.Typer(name="hvplot", help="hvPlot plot type tools (import hvplot).", no_args_is_help=True)
 app.add_typer(hvplot_app)
 
-skill_app = typer.Typer(name="skill", help="Best-practice skill documents.")
+skill_app = typer.Typer(name="skill", help="Best-practice skill documents.", no_args_is_help=True)
 app.add_typer(skill_app)
 
-doc_app = typer.Typer(name="doc", help="Documentation documents.")
+doc_app = typer.Typer(name="doc", help="Documentation documents.", no_args_is_help=True)
 app.add_typer(doc_app)
 
-project_app = typer.Typer(name="project", help="Indexed documentation projects.")
+project_app = typer.Typer(name="project", help="Indexed documentation projects.", no_args_is_help=True)
 app.add_typer(project_app)
 
-ref_app = typer.Typer(name="ref", help="Reference guides for components.")
+ref_app = typer.Typer(name="ref", help="Reference guides for components.", no_args_is_help=True)
 app.add_typer(ref_app)
 
 
