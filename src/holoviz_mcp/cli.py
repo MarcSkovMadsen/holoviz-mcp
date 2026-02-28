@@ -25,10 +25,10 @@ app = typer.Typer(
         "Connect AI assistants (Claude, Copilot, ...) to Panel, hvPlot, and HoloViews\n"
         "docs, components, and best-practice guides — or use directly from the terminal.\n\n"
         "Quick start:\n\n"
-        "    holoviz-mcp                             Start the MCP server\n"
-        "    holoviz-mcp update index                Build the search index\n"
-        "    holoviz-mcp search responsive layout    Search the docs\n"
-        "    holoviz-mcp pn get Button               Look up a component"
+        "    holoviz-mcp                                  Start the MCP server\n"
+        "    holoviz-mcp update index                     Build the search index\n"
+        "    holoviz-mcp search responsive layout         Search the docs\n"
+        "    holoviz-mcp pn get Button --package panel    Look up a component"
     ),
     no_args_is_help=False,  # Allow running without args to start the server
     rich_markup_mode="markdown",
