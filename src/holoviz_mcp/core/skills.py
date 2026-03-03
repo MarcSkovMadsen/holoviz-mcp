@@ -261,7 +261,7 @@ def list_skill_files(name: str) -> list[dict[str, str | int]]:
     files: list[dict[str, str | int]] = []
     for f in sorted(skill_dir.rglob("*")):
         if f.is_file() and f.name != "SKILL.md":
-            rel = str(f.relative_to(skill_dir))
+            rel = f.relative_to(skill_dir).as_posix()
             files.append({"path": rel, "size": f.stat().st_size})
     return files
 
