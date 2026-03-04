@@ -11,6 +11,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any
 from typing import Literal
 from typing import Optional
@@ -67,6 +68,11 @@ async def log_exception(message: str, ctx: Context | None = None):
     else:
         logger.error(message)
         raise Exception(message)
+
+
+def _normalize_source_path(path: str | Path) -> str:
+    """Normalize source paths to POSIX-style separators for cross-platform consistency."""
+    return str(path).replace("\\", "/")
 
 
 def extract_tech_terms(query: str) -> list[str]:
@@ -1034,15 +1040,15 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
     if remove_first_part and parts:
         parts.pop(0)
 
-    # Reconstruct path and convert to string
+    # Reconstruct path and convert to string (use PurePosixPath for forward slashes)
     if parts:
-        url_path = str(Path(*parts))
+        url_path = "/".join(parts)
     else:
         url_path = ""
 
     # Replace file extensions with suffix
     if url_path:
-        path_obj = Path(url_path)
+        path_obj = PurePosixPath(url_path)
         if url_transform == "plotly":
             url_path = str(path_obj.with_suffix(suffix="")) + "/"
             if url_path.endswith("index/"):
@@ -1160,7 +1166,7 @@ class DocumentationIndexer:
             return
         try:
             shutil.rmtree(self._vector_db_path, ignore_errors=True)
-            shutil.copytree(backup_path, self._vector_db_path)
+            shutil.copytree(backup_path, self._vector_db_path, dirs_exist_ok=True)
             SharedSystemClient.clear_system_cache()
             self.chroma_client = chromadb.PersistentClient(path=str(self._vector_db_path))
             self.collection = self.chroma_client.get_or_create_collection("holoviz_docs", configuration=_CROMA_CONFIGURATION)
@@ -1482,7 +1488,7 @@ class DocumentationIndexer:
 
     def _generate_doc_id(self, project: str, path: Path) -> str:
         """Generate a unique document ID from project and path."""
-        readable_path = str(path).replace("/", "___").replace(".", "_")
+        readable_path = _normalize_source_path(path).replace("/", "___").replace(".", "_")
         readable_id = f"{project}___{readable_path}"
 
         return readable_id
@@ -1522,7 +1528,7 @@ class DocumentationIndexer:
         # If there's a folder URL mapping, we need to adjust the path
         if folder_url_path and folder_name:
             # Remove the folder name from the beginning of the path
-            path_str = str(path)
+            path_str = _normalize_source_path(path)
 
             # Check if path starts with the folder name
             if path_str.startswith(folder_name + "/"):
@@ -1634,21 +1640,22 @@ class DocumentationIndexer:
         """Generate source URL for a file based on repository configuration."""
         url = str(repo_config.url)
         branch = repo_config.branch or "main"
+        posix_path = _normalize_source_path(file_path)
         if url.startswith("https://github.com") and url.endswith(".git"):
             url = url.replace("https://github.com/", "").replace(".git", "")
             project, repository = url.split("/")
             if raw:
-                return f"https://raw.githubusercontent.com/{project}/{repository}/refs/heads/{branch}/{file_path}"
+                return f"https://raw.githubusercontent.com/{project}/{repository}/refs/heads/{branch}/{posix_path}"
 
-            return f"https://github.com/{project}/{repository}/blob/{branch}/{file_path}"
+            return f"https://github.com/{project}/{repository}/blob/{branch}/{posix_path}"
         if "dev.azure.com" in url:
             organisation = url.split("/")[3].split("@")[0]
             project = url.split("/")[-3]
             repo_name = url.split("/")[-1]
             if raw:
-                return f"https://dev.azure.com/{organisation}/{project}/_apis/sourceProviders/TfsGit/filecontents?repository={repo_name}&path=/{file_path}&commitOrBranch={branch}&api-version=7.0"
+                return f"https://dev.azure.com/{organisation}/{project}/_apis/sourceProviders/TfsGit/filecontents?repository={repo_name}&path=/{posix_path}&commitOrBranch={branch}&api-version=7.0"
 
-            return f"https://dev.azure.com/{organisation}/{project}/_git/{repo_name}?path=/{file_path}&version=GB{branch}"
+            return f"https://dev.azure.com/{organisation}/{project}/_git/{repo_name}?path=/{posix_path}&version=GB{branch}"
 
         raise ValueError(f"Unsupported repository URL format: {url}. Please provide a valid GitHub or Azure DevOps URL.")
 
@@ -1684,7 +1691,7 @@ class DocumentationIndexer:
                 "title": title,
                 "url": self._generate_doc_url(project, relative_path, folder_name),
                 "project": project,
-                "source_path": str(relative_path),
+                "source_path": _normalize_source_path(relative_path),
                 "source_path_stem": file_path.stem,
                 "source_url": source_url,
                 "description": description,
@@ -1992,7 +1999,7 @@ class DocumentationIndexer:
                 for i, _ in enumerate(filename_results["ids"][0]):
                     if filename_results["metadatas"] and filename_results["metadatas"][0]:
                         metadata = filename_results["metadatas"][0][i]
-                        source_path = str(metadata["source_path"])
+                        source_path = _normalize_source_path(str(metadata["source_path"]))
 
                         # Validate filters
                         if project and str(metadata["project"]) != project:
@@ -2078,7 +2085,7 @@ class DocumentationIndexer:
             )
             if not results["metadatas"]:
                 return []
-            paths = sorted({str(m.get("source_path", "")) for m in results["metadatas"] if m.get("source_path")})
+            paths = sorted({_normalize_source_path(str(m.get("source_path", ""))) for m in results["metadatas"] if m.get("source_path")})
             return paths[:limit]
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -2106,10 +2113,18 @@ class DocumentationIndexer:
         str
             The reconstructed document content, or empty string if not found.
         """
+        normalized_source_path = _normalize_source_path(source_path)
         results = self.collection.get(
-            where={"$and": [{"project": project}, {"source_path": source_path}]},
+            where={"$and": [{"project": project}, {"source_path": normalized_source_path}]},
             include=["documents", "metadatas"],
         )
+        if not results["ids"]:
+            windows_source_path = normalized_source_path.replace("/", "\\")
+            if windows_source_path != normalized_source_path:
+                results = self.collection.get(
+                    where={"$and": [{"project": project}, {"source_path": windows_source_path}]},
+                    include=["documents", "metadatas"],
+                )
         if not results["ids"]:
             return ""
 
@@ -2124,7 +2139,7 @@ class DocumentationIndexer:
         chunks.sort(key=lambda c: c[0])
         title = chunks[0][2]
         is_ref = bool(results["metadatas"][0].get("is_reference", False)) if results["metadatas"] else False
-        return "\n".join(_strip_title_prefix(c[1], title, project=project, source_path=source_path, is_reference=is_ref) for c in chunks)
+        return "\n".join(_strip_title_prefix(c[1], title, project=project, source_path=normalized_source_path, is_reference=is_ref) for c in chunks)
 
     def _extract_documents_from_results(
         self,
@@ -2399,8 +2414,10 @@ class DocumentationIndexer:
         async with self.db_lock:
             await self.ensure_indexed(ctx=ctx)
 
+            normalized_path = _normalize_source_path(path)
+
             # Reconstruct full content from chunks
-            merged_content = self._reconstruct_document_content(path, project)
+            merged_content = self._reconstruct_document_content(normalized_path, project)
             if not merged_content:
                 # Provide example paths from this project to help discoverability
                 example_paths = self._get_example_paths(project, limit=5)
@@ -2414,10 +2431,18 @@ class DocumentationIndexer:
 
             # Get metadata from a single chunk (for Document fields)
             results = self.collection.get(
-                where={"$and": [{"project": project}, {"source_path": path}]},
+                where={"$and": [{"project": project}, {"source_path": normalized_path}]},
                 include=["metadatas"],
                 limit=1,
             )
+            if not results["metadatas"]:
+                windows_path = normalized_path.replace("/", "\\")
+                if windows_path != normalized_path:
+                    results = self.collection.get(
+                        where={"$and": [{"project": project}, {"source_path": windows_path}]},
+                        include=["metadatas"],
+                        limit=1,
+                    )
             metadata = results["metadatas"][0] if results["metadatas"] else {}
 
             # Safe URL construction
@@ -2429,7 +2454,7 @@ class DocumentationIndexer:
                 title=str(metadata.get("title", "")),
                 url=HttpUrl(url_value),
                 project=str(metadata.get("project", "")),
-                source_path=str(metadata.get("source_path", "")),
+                source_path=_normalize_source_path(str(metadata.get("source_path", ""))),
                 source_url=HttpUrl(str(metadata.get("source_url", ""))),
                 description=str(metadata.get("description", "")),
                 is_reference=bool(metadata.get("is_reference", False)),
