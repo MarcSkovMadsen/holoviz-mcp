@@ -122,7 +122,7 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
         """\
 import panel as pn
 
-pn.extension(design="native")
+pn.config.design = None
 
 """
         + snippet.app
