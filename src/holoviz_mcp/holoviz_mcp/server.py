@@ -834,6 +834,105 @@ def _add_agent_resources():
         mcp.add_resource(resource)
 
 
+def _patch_fastmcp_skills_utf8() -> None:
+    """Patch FastMCP skills providers to read text content as UTF-8."""
+    from fastmcp.server.providers.skills import skill_provider as _skill_provider_module
+
+    if getattr(_skill_provider_module, "_holoviz_utf8_patch_applied", False):
+        return
+
+    def _load_skill_utf8(self):
+        main_file = self._skill_path / self._main_file_name
+
+        if not self._skill_path.exists():
+            raise FileNotFoundError(f"Skill directory not found: {self._skill_path}")
+
+        if not main_file.exists():
+            raise FileNotFoundError(
+                f"Main skill file not found: {main_file}. "
+                f"Expected {self._main_file_name} in {self._skill_path}"
+            )
+
+        content = main_file.read_text(encoding="utf-8")
+        frontmatter, body = _skill_provider_module.parse_frontmatter(content)
+
+        description = frontmatter.get("description", "")
+        if not description:
+            for line in body.strip().split("\n"):
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    description = line[:200]
+                    break
+                elif line.startswith("#"):
+                    description = line.lstrip("#").strip()[:200]
+                    break
+
+        files = _skill_provider_module.scan_skill_files(self._skill_path)
+
+        self._skill_info = _skill_provider_module.SkillInfo(
+            name=self._skill_path.name,
+            description=description or f"Skill: {self._skill_path.name}",
+            path=self._skill_path,
+            main_file=self._main_file_name,
+            files=files,
+            frontmatter=frontmatter,
+        )
+
+        _skill_provider_module.logger.debug(f"SkillProvider loaded skill: {self._skill_info.name}")
+
+    async def _skill_resource_read_utf8(self):
+        if self.is_manifest:
+            return self._generate_manifest()
+
+        main_file_path = self.skill_info.path / self.skill_info.main_file
+        return main_file_path.read_text(encoding="utf-8")
+
+    async def _skill_file_template_read_utf8(self, arguments):
+        file_path = arguments.get("path", "")
+        full_path = self.skill_info.path / file_path
+
+        try:
+            full_path = full_path.resolve()
+            if not full_path.is_relative_to(self.skill_info.path):
+                raise ValueError(f"Path {file_path} escapes skill directory")
+        except ValueError as error:
+            raise ValueError(f"Invalid path: {error}") from error
+
+        if not full_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        if not full_path.is_file():
+            raise ValueError(f"Not a file: {file_path}")
+
+        mime_type, _ = _skill_provider_module.mimetypes.guess_type(str(full_path))
+        if mime_type and mime_type.startswith("text/"):
+            return full_path.read_text(encoding="utf-8")
+
+        return full_path.read_bytes()
+
+    async def _skill_file_resource_read_utf8(self):
+        full_path = self.skill_info.path / self.file_path
+
+        full_path = full_path.resolve()
+        if not full_path.is_relative_to(self.skill_info.path):
+            raise ValueError(f"Path {self.file_path} escapes skill directory")
+
+        if not full_path.exists():
+            raise FileNotFoundError(f"File not found: {self.file_path}")
+
+        mime_type, _ = _skill_provider_module.mimetypes.guess_type(str(full_path))
+        if mime_type and mime_type.startswith("text/"):
+            return full_path.read_text(encoding="utf-8")
+
+        return full_path.read_bytes()
+
+    _skill_provider_module.SkillProvider._load_skill = _load_skill_utf8
+    _skill_provider_module.SkillResource.read = _skill_resource_read_utf8
+    _skill_provider_module.SkillFileTemplate.read = _skill_file_template_read_utf8
+    _skill_provider_module.SkillFileResource.read = _skill_file_resource_read_utf8
+    _skill_provider_module._holoviz_utf8_patch_applied = True
+
+
 def _add_skills_provider():
     """Add skills via SkillsDirectoryProvider.
 
@@ -845,11 +944,12 @@ def _add_skills_provider():
 
     from holoviz_mcp.core.skills import _skills_search_paths
 
+    _patch_fastmcp_skills_utf8()
+
     roots = [p for p in _skills_search_paths() if p.exists()]
     if roots:
         provider = SkillsDirectoryProvider(roots=roots, supporting_files="resources")
         mcp.add_provider(provider)
-
 
 _add_agent_resources()
 _add_skills_provider()
