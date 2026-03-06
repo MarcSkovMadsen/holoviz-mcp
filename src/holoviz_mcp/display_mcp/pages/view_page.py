@@ -117,10 +117,21 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
     """
     module_name = f"holoviz_snippet_{snippet.id.replace('-', '_')}"
 
+    # We need to reset the material design
+    app: str = (
+        """\
+import panel as pn
+
+pn.extension(design="native")
+
+"""
+        + snippet.app
+    )
+
     if snippet.method == "jupyter":
         # Extract last expression
         try:
-            statements, last_expr = extract_last_expression(snippet.app)
+            statements, last_expr = extract_last_expression(app)
         except ValueError as e:
             raise ValueError(f"Failed to parse code: {e}") from e
 
@@ -150,7 +161,7 @@ def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
     else:  # panel method
         # Execute code that should call .servable()
         execute_in_module(
-            snippet.app,
+            app,
             module_name=module_name,
             cleanup=True,  # Can cleanup immediately
         )

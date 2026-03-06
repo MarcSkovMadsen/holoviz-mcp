@@ -6,6 +6,7 @@
     <meta name="color-scheme" content="light dark" />
     <title>HoloViz MCP · show_pyodide</title>
     <link rel="stylesheet" href="https://panel-extensions.github.io/panel-live/assets/css/panel-live.css" />
+    <script>window.PANEL_LIVE_CONFIG = { initTimeout: 300000 };</script>
     <script src="https://panel-extensions.github.io/panel-live/assets/js/panel-live.js"></script>
     <style>
       :root {
@@ -46,6 +47,16 @@
         min-height: 420px;
       }
 
+      /* Override VS Code dark-mode CSS variables that Panel's native.css
+         picks up via shadow DOM inheritance, turning widget text light on
+         the white output background. Same pattern as the --pst-color-text-base
+         fix for pydata-sphinx-theme. */
+      .pl-output {
+        --vscode-editor-foreground: #1a1a2e;
+        --vscode-notebook-editorBackground: #ffffff;
+        --vscode-notebook-cellEditorBackground: #ffffff;
+      }
+
       pre {
         margin: 0;
         max-height: 220px;
@@ -64,7 +75,9 @@
         <p id="description">Rendering with panel-live (Pyodide runtime).</p>
       </div>
       <pre id="source">Awaiting tool result…</pre>
-      <div id="runner"></div>
+      <div style="background: yellow;border: 1px solid red;color:black">
+        HELLO! This is a demonstration of the <code>show_pyodide</code> tool result renderer. The code received from the tool will be displayed in the "source" section above, and executed in the "runner" section below using panel-live with a Pyodide runtime. If you see this message, it means that the runner is working correctly, and any code sent by the tool will be executed here. If you encounter any issues or have questions, please reach out to the developers.
+      <div id="runner"></div></div>
     </div>
 
     <script type="module">
@@ -110,7 +123,10 @@
         runner.innerHTML = "";
         await window.PanelLive.mount(
           {
-            mode: "app",
+            mode: "editor",
+            layout: "vertical",
+            theme: "dark",
+            codeVisibility: "collapsed",
             code,
             autoRun: true,
           },

@@ -492,7 +492,10 @@ async def update_index(ctx: Context) -> str:
     SHOW_RESOURCE_URI,
     app=AppConfig(
         csp=ResourceCSP(
-            resource_domains=["https://unpkg.com"],
+            resource_domains=[
+                "'unsafe-inline'",
+                "https://unpkg.com",
+            ],
             frame_domains=[
                 "http://localhost",
                 "http://127.0.0.1",
@@ -646,9 +649,11 @@ async def display(
     app=AppConfig(
         csp=ResourceCSP(
             resource_domains=[
+                "'unsafe-inline'",
                 "'unsafe-eval'",
                 "'wasm-unsafe-eval'",
                 "blob:",
+                "data:",
                 "https://unpkg.com",
                 "https://panel-extensions.github.io",
                 "https://cdn.holoviz.org",
@@ -658,6 +663,7 @@ async def display(
                 "https://pypi.org",
                 "https://files.pythonhosted.org",
                 "https://cdn.bokeh.org",
+                "https://raw.githubusercontent.com",
             ],
             connect_domains=[
                 "https://panel-extensions.github.io",
@@ -668,6 +674,7 @@ async def display(
                 "https://pypi.org",
                 "https://files.pythonhosted.org",
                 "https://cdn.bokeh.org",
+                "https://raw.githubusercontent.com",
             ],
         )
     ),
