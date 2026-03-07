@@ -140,6 +140,33 @@ Tools for accessing HoloViews documentation.
 
 Tools for searching and accessing HoloViz documentation.
 
+### show
+
+**Purpose**: Execute visualization code via the display server and return a view URL (with MCP App rendering in capable hosts).
+
+**Parameters**:
+- `code` (string): Python code to execute
+- `name` (string, optional): Visualization name
+- `description` (string, optional): Visualization description
+- `method` (string, optional): `jupyter` (default), `panel`, or `pyodide`
+
+**Use Case**: Standard display-server backed visualization flow with URL fallback behavior.
+
+**Returns**: Success/error message containing a view URL.
+
+### show_pyodide
+
+**Purpose**: Return an MCP App payload for panel-live/Pyodide browser execution.
+
+**Parameters**:
+- `code` (string): Python code to run in the browser runtime
+- `name` (string, optional): App title
+- `description` (string, optional): App description
+
+**Use Case**: Browser-only runtime path where server-side execution should be avoided.
+
+**Returns**: JSON text payload consumed by the linked MCP App resource.
+
 ### search
 
 **Purpose**: Search HoloViz documentation using semantic similarity.

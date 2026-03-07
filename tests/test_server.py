@@ -19,6 +19,8 @@ async def test_server():
     async with Client(mcp) as client:
         tools = await client.list_tools()
         assert tools
+        tool_names = {tool.name for tool in tools}
+        assert "show_pyodide" in tool_names
 
         result = await client.call_tool("hvplot_list", {})
         assert result.data
