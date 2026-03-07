@@ -2092,6 +2092,32 @@ class DocumentationIndexer:
         except BaseException:
             return []
 
+    def _resolve_path_by_suffix(self, path: str, project: str) -> str | None:
+        """Find a stored source_path ending with *path* when the exact lookup misses.
+
+        Returns the full path only when exactly one candidate matches; None otherwise.
+        """
+        try:
+            results = self.collection.get(
+                where={"project": project},
+                include=["metadatas"],
+            )
+            if not results["metadatas"]:
+                return None
+
+            all_paths = {_normalize_source_path(str(m.get("source_path", ""))) for m in results["metadatas"] if m.get("source_path")}
+
+            suffix = "/" + path.lstrip("/")
+            matches = [p for p in all_paths if p.endswith(suffix) or p == path]
+
+            if len(matches) == 1:
+                return matches[0]
+            return None
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
+            return None
+
     def _reconstruct_document_content(self, source_path: str, project: str) -> str:
         """Reconstruct full document content from its chunks in ChromaDB.
 
@@ -2418,6 +2444,13 @@ class DocumentationIndexer:
 
             # Reconstruct full content from chunks
             merged_content = self._reconstruct_document_content(normalized_path, project)
+
+            if not merged_content:
+                resolved_path = self._resolve_path_by_suffix(normalized_path, project)
+                if resolved_path:
+                    normalized_path = resolved_path
+                    merged_content = self._reconstruct_document_content(normalized_path, project)
+
             if not merged_content:
                 # Provide example paths from this project to help discoverability
                 example_paths = self._get_example_paths(project, limit=5)
