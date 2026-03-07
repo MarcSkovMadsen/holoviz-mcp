@@ -3,7 +3,49 @@
 import pytest
 
 from holoviz_mcp.core.inspect import InspectResult
+from holoviz_mcp.core.inspect import _internalize_url
 from holoviz_mcp.core.inspect import inspect_app
+
+
+class TestInternalizeUrl:
+    def test_codespaces_plain_path(self, monkeypatch):
+        monkeypatch.setenv("CODESPACE_NAME", "literate-chainsaw-54wjwvrrxv4c4p5q")
+        url = "https://literate-chainsaw-54wjwvrrxv4c4p5q-5077.app.github.dev/view?id=abc"
+        assert _internalize_url(url) == "http://localhost:5077/view?id=abc"
+
+    def test_codespaces_root_path(self, monkeypatch):
+        monkeypatch.setenv("CODESPACE_NAME", "literate-chainsaw-54wjwvrrxv4c4p5q")
+        url = "https://literate-chainsaw-54wjwvrrxv4c4p5q-5077.app.github.dev/"
+        assert _internalize_url(url) == "http://localhost:5077/"
+
+    def test_codespaces_custom_forwarding_domain(self, monkeypatch):
+        monkeypatch.setenv("CODESPACE_NAME", "my-space")
+        monkeypatch.setenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "preview.app.github.dev")
+        url = "https://my-space-8080.preview.app.github.dev/feed"
+        assert _internalize_url(url) == "http://localhost:8080/feed"
+
+    def test_jupyter_proxy(self, monkeypatch):
+        monkeypatch.setenv("JUPYTER_SERVER_PROXY_URL", "https://hub.example.com/user/foo/proxy")
+        url = "https://hub.example.com/user/foo/proxy/5077/view?id=abc"
+        assert _internalize_url(url) == "http://localhost:5077/view?id=abc"
+
+    def test_jupyter_proxy_trailing_slash(self, monkeypatch):
+        monkeypatch.setenv("JUPYTER_SERVER_PROXY_URL", "https://hub.example.com/user/foo/proxy/")
+        url = "https://hub.example.com/user/foo/proxy/5077/feed"
+        assert _internalize_url(url) == "http://localhost:5077/feed"
+
+    def test_localhost_passthrough(self, monkeypatch):
+        monkeypatch.delenv("CODESPACE_NAME", raising=False)
+        monkeypatch.delenv("JUPYTER_SERVER_PROXY_URL", raising=False)
+        assert _internalize_url("http://localhost:5006/") == "http://localhost:5006/"
+
+    def test_external_url_passthrough(self, monkeypatch):
+        monkeypatch.delenv("CODESPACE_NAME", raising=False)
+        monkeypatch.delenv("JUPYTER_SERVER_PROXY_URL", raising=False)
+        assert _internalize_url("https://example.com/app") == "https://example.com/app"
+
+    def test_empty_string(self):
+        assert _internalize_url("") == ""
 
 
 class TestInspectResult:
