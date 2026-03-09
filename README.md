@@ -11,7 +11,7 @@ A comprehensive [Model Context Protocol](https://modelcontextprotocol.io/introdu
 
 [![HoloViz Logo](https://holoviz.org/assets/holoviz-logo-stacked.svg)](https://holoviz.org)
 
-**📖 [Full Documentation](https://marcskovmadsen.github.io/holoviz-mcp/)** | **🚀 [Quick Start](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)** | **🐳 [Docker Guide](https://marcskovmadsen.github.io/holoviz-mcp/how-to/docker/)** | **🤗 [Explore the Tools](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui)**
+**📖 [Full Documentation](https://marcskovmadsen.github.io/holoviz-mcp/)** | **🚀 [Quick Start](https://marcskovmadsen.github.io/holoviz-mcp/#choose-your-tool)** | **🐳 [Docker Guide](https://marcskovmadsen.github.io/holoviz-mcp/how-to/install-docker/)** | **🤗 [Explore the Tools](https://huggingface.co/spaces/awesome-panel/holoviz-mcp-ui)**
 
 ## ✨ What This Provides
 
@@ -70,8 +70,8 @@ Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to
 
 Check out the [`holoviz-mcp` documentation](https://marcskovmadsen.github.io/holoviz-mcp/):
 
-- **[Tutorials](https://marcskovmadsen.github.io/holoviz-mcp/tutorials/getting-started/)**: Step-by-step guides to get you started
-- **[How-To Guides](https://marcskovmadsen.github.io/holoviz-mcp/how-to/installation/)**: Practical guides for common tasks
+- **[Tutorials](https://marcskovmadsen.github.io/holoviz-mcp/#choose-your-tool)**: Step-by-step guides to get you started
+- **[How-To Guides](https://marcskovmadsen.github.io/holoviz-mcp/how-to/install-uv/)**: Practical guides for common tasks
 - **[Explanation](https://marcskovmadsen.github.io/holoviz-mcp/explanation/architecture/)**: Understanding concepts and architecture
 - **[Reference](https://marcskovmadsen.github.io/holoviz-mcp/reference/holoviz_mcp/)**: API documentation and technical details
 
