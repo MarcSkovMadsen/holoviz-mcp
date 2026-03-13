@@ -21,6 +21,11 @@ class TestListSkills:
         assert "panel" in names
         assert "hvplot" in names
 
+    def test_contains_routing_skill(self):
+        result = list_skills()
+        names = [s["name"] for s in result]
+        assert "developing-with-holoviz-tools" in names
+
     def test_returns_dicts_with_name_and_description(self):
         result = list_skills()
         for entry in result:
@@ -49,6 +54,11 @@ class TestGetSkill:
     def test_nonexistent_skill_raises(self):
         with pytest.raises(FileNotFoundError):
             get_skill("nonexistent-skill-xyz-12345")
+
+    def test_routing_skill_content(self):
+        result = get_skill("developing-with-holoviz-tools")
+        assert isinstance(result, str)
+        assert "developing-with-holoviz-tools" in result.lower() or "HoloViz" in result
 
 
 @pytest.fixture()
@@ -133,3 +143,49 @@ class TestGetSkillFile:
 
         with pytest.raises(ValueError, match="Path traversal"):
             get_skill_file("test-skill", "../other-skill/SKILL.md")
+
+
+@pytest.fixture()
+def context_dir_skill(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Fixture that mirrors the built-in developing-with-holoviz-tools layout.
+
+    Structure::
+
+        context/
+            SKILL.md         <- routing skill named "context"
+            skills/
+                sub-skill/
+                    SKILL.md
+    """
+    context_dir = tmp_path / "context"
+    (context_dir).mkdir()
+    (context_dir / "SKILL.md").write_text("---\nname: context\ndescription: Routing skill\n---\n# Routing\n")
+    sub_dir = context_dir / "skills" / "sub-skill"
+    sub_dir.mkdir(parents=True)
+    (sub_dir / "SKILL.md").write_text("---\nname: sub-skill\ndescription: A sub-skill\n---\n# Sub-skill\n")
+
+    monkeypatch.setattr(
+        "holoviz_mcp.core.skills._skills_search_paths",
+        lambda: [context_dir],
+    )
+    return context_dir
+
+
+class TestContextDirectoryLayout:
+    """Verify the two-level developing-with-holoviz-tools layout is correctly scanned."""
+
+    def test_routing_skill_is_found(self, context_dir_skill: Path):
+        names = [s["name"] for s in list_skills()]
+        assert "context" in names
+
+    def test_sub_skill_is_found(self, context_dir_skill: Path):
+        names = [s["name"] for s in list_skills()]
+        assert "sub-skill" in names
+
+    def test_routing_skill_content(self, context_dir_skill: Path):
+        content = get_skill("context")
+        assert "Routing" in content
+
+    def test_sub_skill_content(self, context_dir_skill: Path):
+        content = get_skill("sub-skill")
+        assert "Sub-skill" in content
