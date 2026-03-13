@@ -451,6 +451,7 @@ DO always start and keep running a development server `panel serve path_to_file.
 ## Quick Reference
 
 ### Widget Creation
+
 ```python
 # ✅ Good: Parameter-driven
 widget = pn.widgets.Select.from_param(self.param.model_type, name="Model Type")
@@ -536,7 +537,7 @@ def kpi_value(self):
 
 ### HoloViews/hvPlot
 
-DO follow the relevant `hvplot`, `holoviews` and `panel-holoviews` skills/ best practice guides!
+DO follow the relevant `hvplot`, `holoviews` and `panel-holoviews` sub-skill best practice guides!
 
 ### Matplotlib
 
@@ -587,6 +588,7 @@ DO prefer ECharts dict configuration over of pyecharts
 **CRITICAL**: ECharts configurations must be JSON-serializable. Panel uses Bokeh's serialization mechanism which cannot serialize Python functions.
 
 ❌ **NEVER use Python functions or lambdas** in ECharts configuration:
+
 ```python
 # ❌ WRONG: Lambda functions cause SerializationError
 option = {
@@ -605,6 +607,7 @@ option = {
 ```
 
 ✅ **DO use ECharts native string formatters or static values**:
+
 ```python
 # ✅ CORRECT: Use ECharts template strings
 option = {
@@ -643,6 +646,7 @@ If you need complex formatting logic, pre-process your data in Python before pas
 When updating ECharts dynamically (e.g., filtering data that changes the number of series), ECharts uses a **merge strategy** by default. This can cause old series to persist when series are removed.
 
 ✅ **DO use `replaceMerge` option** when series count can change:
+
 ```python
 # ✅ CORRECT: Use replaceMerge to fully replace series on updates
 chart_pane = pn.pane.ECharts(
@@ -654,6 +658,7 @@ chart_pane = pn.pane.ECharts(
 ```
 
 ❌ **WITHOUT replaceMerge** - old series persist:
+
 ```python
 # ❌ WRONG: Old series remain when filtering reduces series count
 chart_pane = pn.pane.ECharts(
