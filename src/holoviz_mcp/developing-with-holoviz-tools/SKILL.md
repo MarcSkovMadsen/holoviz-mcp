@@ -44,16 +44,19 @@ load all relevant sub-skills in that case.
 
 ### Step 2: Load the Sub-Skill
 
-| User Need                                                                        | Sub-skill to Load                              |
-| -------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Building a Panel dashboard, data app, or web UI                                  | `read skills/panel/SKILL.md`                   |
-| Modern Material UI look and feel in Panel                                        | `read skills/panel-material-ui/SKILL.md`       |
-| Embedding HoloViews / hvPlot plots inside Panel apps, linked selections, streams | `read skills/panel-holoviews/SKILL.md`         |
-| Building custom Panel components (JS, React, AnyWidget)                          | `read skills/panel-custom-components/SKILL.md` |
-| Quick exploratory plots from DataFrames / xarray with `.hvplot`                  | `read skills/hvplot/SKILL.md`                  |
-| Composing HoloViews elements, overlays, layouts, or DynamicMap                   | `read skills/holoviews/SKILL.md`               |
-| Defining parameterized / reactive classes with `param`                           | `read skills/param/SKILL.md`                   |
-| Using the `holoviz-mcp` CLI tool                                                 | `read skills/holoviz-mcp-cli/SKILL.md`         |
+> **Path note:** Sub-skills are siblings of this skill in your agent's skills directory.
+> Use paths relative to this file: `skills/panel/SKILL.md`, `skills/hvplot/SKILL.md`, etc.
+
+| User Need                                                                        | Sub-skill to Load                                  |
+| -------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Building a Panel dashboard, data app, or web UI                                  | `read skills/panel/SKILL.md`                       |
+| Modern Material UI look and feel in Panel                                        | `read skills/panel-material-ui/SKILL.md`           |
+| Embedding HoloViews / hvPlot plots inside Panel apps, linked selections, streams | `read skills/panel-holoviews/SKILL.md`             |
+| Building custom Panel components (JS, React, AnyWidget)                          | `read skills/panel-custom-components/SKILL.md`     |
+| Quick exploratory plots from DataFrames / xarray with `.hvplot`                  | `read skills/hvplot/SKILL.md`                      |
+| Composing HoloViews elements, overlays, layouts, or DynamicMap                   | `read skills/holoviews/SKILL.md`                   |
+| Defining parameterized / reactive classes with `param`                           | `read skills/param/SKILL.md`                       |
+| Using the `holoviz-mcp` CLI tool                                                 | `read skills/holoviz-mcp-cli/SKILL.md`             |
 
 **Common combinations:**
 
@@ -81,16 +84,16 @@ dependency information specific to that library.
 
 ## Skill Map
 
-| Sub-skill                                                          | Covers                                                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| [panel](skills/panel/SKILL.md)                                     | Panel web-app framework: widgets, panes, layouts, templates, reactivity, real-time updates       |
-| [panel-material-ui](skills/panel-material-ui/SKILL.md)             | Modern Material UI components for Panel dashboards and apps                                      |
-| [panel-holoviews](skills/panel-holoviews/SKILL.md)                 | Integrating HoloViews / hvPlot plots in Panel; streams, linked selections, responsive layouts    |
-| [panel-custom-components](skills/panel-custom-components/SKILL.md) | Custom Panel components via JSComponent, ReactComponent, AnyWidgetComponent, MaterialUIComponent |
-| [hvplot](skills/hvplot/SKILL.md)                                   | Quick interactive plots from DataFrames / xarray using the `.hvplot` accessor                    |
-| [holoviews](skills/holoviews/SKILL.md)                             | Composable, declarative visualizations with HoloViews elements, overlays, and DynamicMap         |
-| [param](skills/param/SKILL.md)                                     | Declarative, typed, validated parameters and reactive class definitions                          |
-| [holoviz-mcp-cli](skills/holoviz-mcp-cli/SKILL.md)                 | CLI reference for the `holoviz-mcp` command-line tool                                            |
+| Sub-skill                                                      | Covers                                                                                   |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [panel](skills/panel/SKILL.md)                                 | Panel web-app framework: widgets, panes, layouts, templates, reactivity, real-time updates   |
+| [panel-material-ui](skills/panel-material-ui/SKILL.md)             | Modern Material UI components for Panel dashboards and apps                   |
+| [panel-holoviews](skills/panel-holoviews/SKILL.md)                 | Integrating HoloViews / hvPlot plots in Panel; streams, linked selections, responsive layouts  |
+| [panel-custom-components](skills//panel-custom-components/SKILL.md) | Custom Panel components via JSComponent, ReactComponent, AnyWidgetComponent, MaterialUIComponent |
+| [hvplot](skills/hvplot/SKILL.md)                                   | Quick interactive plots from DataFrames / xarray using the `.hvplot` accessor            |
+| [holoviews](skills/holoviews/SKILL.md)                             | Composable, declarative visualizations with HoloViews elements, overlays, and DynamicMap          |
+| [param](skills/param/SKILL.md)                                     | Declarative, typed, validated parameters and reactive class definitions |
+| [holoviz-mcp-cli](skills/holoviz-mcp-cli/SKILL.md)                 | CLI reference for the `holoviz-mcp` command-line tool                   |
 
 ## Resources
 

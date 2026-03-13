@@ -925,8 +925,12 @@ def _build_context_prefix(project: str, source_path: str, is_reference: bool) ->
 def get_skill(name: str) -> str:
     """Get skill for using a project with LLMs.
 
-    This function searches for skill resources in user and default directories,
-    with user resources taking precedence over default ones.
+    .. deprecated::
+        This function uses a legacy flat ``<name>.md`` lookup that is incompatible
+        with the current context-directory layout
+        (``developing-with-holoviz-tools/skills/<name>/SKILL.md``).
+        Use :func:`holoviz_mcp.core.skills.get_skill` instead, which supports all
+        layouts and the full three-tier precedence (project > user > builtin).
 
     Args:
         name (str): The name of the skill to get.
@@ -939,59 +943,46 @@ def get_skill(name: str) -> str:
     ------
         FileNotFoundError: If the specified skill is not found in either directory.
     """
-    config = get_config()
+    import warnings
 
-    # Convert underscored names to hyphenated for file lookup
-    skill_filename = name.replace("_", "-") + ".md"
+    from holoviz_mcp.core.skills import get_skill as _core_get_skill
 
-    # Search in user directory first, then default directory
-    search_paths = [
-        config.skills_dir("user"),
-        config.skills_dir("default"),
-    ]
-
-    for search_dir in search_paths:
-        skills_file = search_dir / skill_filename
-        if skills_file.exists():
-            return skills_file.read_text(encoding="utf-8")
-
-    # If not found, raise error with helpful message
-    available_files = []
-    for search_dir in search_paths:
-        if search_dir.exists():
-            available_files.extend([f.name for f in search_dir.glob("*.md")])
-
-    available_str = ", ".join(set(available_files)) if available_files else "None"
-    raise FileNotFoundError(f"Skill file {name} not found. Available skills: {available_str}. Searched in: {[str(p) for p in search_paths]}")
+    warnings.warn(
+        "holoviz_mcp.holoviz_mcp.data.get_skill() is deprecated and will be removed in a "
+        "future release. Use holoviz_mcp.core.skills.get_skill() instead, which correctly "
+        "handles the context-directory layout and the full three-tier precedence.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _core_get_skill(name)
 
 
 def list_skills() -> list[str]:
     """List all available skills.
 
-    This function discovers available skills from both user and default directories,
-    with user resources taking precedence over default ones.
+    .. deprecated::
+        This function uses a legacy flat ``*.md`` glob that is incompatible with
+        the current context-directory layout
+        (``developing-with-holoviz-tools/skills/<name>/SKILL.md``).
+        Use :func:`holoviz_mcp.core.skills.list_skills` instead, which supports all
+        layouts and returns richer ``{"name": ..., "description": ...}`` dicts.
 
     Returns
     -------
-        list[str]: A list of the skills available.
-            Names are returned in hyphenated format (e.g., "panel-material-ui").
+        list[str]: A list of the skill names available (hyphenated format).
     """
-    config = get_config()
+    import warnings
 
-    # Collect available projects from both directories
-    available_projects = set()
+    from holoviz_mcp.core.skills import list_skills as _core_list_skills
 
-    search_paths = [
-        config.skills_dir("user"),
-        config.skills_dir("default"),
-    ]
-
-    for search_dir in search_paths:
-        if search_dir.exists():
-            for md_file in search_dir.glob("*.md"):
-                available_projects.add(md_file.stem)
-
-    return sorted(list(available_projects))
+    warnings.warn(
+        "holoviz_mcp.holoviz_mcp.data.list_skills() is deprecated and will be removed in a "
+        "future release. Use holoviz_mcp.core.skills.list_skills() instead, which correctly "
+        "handles the context-directory layout and returns name+description dicts.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return [entry["name"] for entry in _core_list_skills()]
 
 
 def remove_leading_number_sep_from_path(p: Path) -> Path:

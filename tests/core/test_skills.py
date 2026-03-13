@@ -82,6 +82,11 @@ def skill_with_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 
 class TestListSkillFiles:
+    def test_routing_skill_has_no_supporting_files_dir(self):
+        """The routing skill is a context-directory root, not a named subdirectory."""
+        with pytest.raises(FileNotFoundError):
+            list_skill_files("developing-with-holoviz-tools")
+
     def test_returns_list(self, skill_with_files: Path):
         result = list_skill_files("test-skill")
         assert isinstance(result, list)

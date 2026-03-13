@@ -53,8 +53,14 @@ def _skills_search_paths() -> list[Path]:
 def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
     """Locate the SKILL.md file for a given skill name within a directory.
 
-    Supports both the new directory format (``<name>/SKILL.md``) and the
-    legacy flat format (``<name>.md``) for backward compatibility.
+    .. deprecated::
+        This function is no longer called internally — :func:`get_skill` now
+        delegates to :func:`_scan_skills_in_dir` for consistent handling of all
+        layouts (context-directory, flat, and legacy).  ``_find_skill_file`` does
+        not understand the context-directory layout and will fail to find built-in
+        skills.  It is retained for any external callers but will be removed in a
+        future release.  Use :func:`_scan_skills_in_dir` or :func:`get_skill`
+        instead.
 
     Parameters
     ----------
@@ -68,6 +74,13 @@ def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
     Path | None
         Path to the skill file, or None if not found.
     """
+    import warnings
+
+    warnings.warn(
+        "_find_skill_file() is deprecated and does not support the context-directory layout. Use _scan_skills_in_dir() or get_skill() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # New format: <name>/SKILL.md
     candidate = skill_dir / name / "SKILL.md"
     if candidate.exists():
@@ -86,12 +99,12 @@ def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
 
     Supports three layouts:
 
-    1. **Context directory** (built-in layout) — a top-level ``SKILL.md``
+    1. Context directory (built-in layout) — a top-level ``SKILL.md``
        (routing skill) plus a ``skills/`` sub-directory containing the
        individual sub-skills, each as ``skills/<name>/SKILL.md``.
-    2. **Flat directory** — ``<name>/SKILL.md`` sub-directories directly
+    2. Flat directory — ``<name>/SKILL.md`` sub-directories directly
        inside ``skill_dir`` (user / project layout).
-    3. **Legacy flat format** — ``<name>.md`` files directly inside
+    3. Legacy flat format — ``<name>.md`` files directly inside
        ``skill_dir``.
 
     Parameters
@@ -126,6 +139,9 @@ def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
                     skills[sub.name] = skill_file
 
     # Legacy flat format: *.md files directly in skill_dir
+    # Note: in the context-directory layout, skill_dir/SKILL.md also matches this
+    # glob, but its stem ("SKILL") is already present in `skills` under skill_dir.name,
+    # so the `if name not in skills` guard below prevents a spurious "SKILL" entry.
     for md_file in sorted(skill_dir.glob("*.md")):
         name = md_file.stem
         if name not in skills:  # Don't override directory-format skills
