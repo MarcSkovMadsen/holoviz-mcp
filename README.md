@@ -57,10 +57,10 @@ npx skills add MarcSkovMadsen/holoviz-mcp --skill panel
 **With [openskills](https://github.com/numman-ali/openskills):**
 
 ```bash
-npx openskills install MarcSkovMadsen/holoviz-mcp/panel
+npx openskills install MarcSkovMadsen/holoviz-mcp
 ```
 
-**Manually:** Copy the `developing-with-holoviz-tools/skills/<name>/SKILL.md` file into your agent's skills directory (e.g., `.claude/skills/`).
+**Manually:** Copy the `skills/developing-with-holoviz-tools/skills/<name>/SKILL.md` file into your agent's skills directory (e.g., `.claude/skills/`).
 
 Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to see it in action.
 
