@@ -241,7 +241,14 @@ class HoloVizMCPConfig(BaseModel):
                 - "project": Project-level overrides (./skills/ in cwd)
         """
         if location == "builtin" or location == "default":
-            return Path(__file__).parent.parent / "developing-with-holoviz-tools"
+            # In a built wheel, hatch force-include copies skills/developing-with-holoviz-tools/
+            # from the repo root to holoviz_mcp/developing-with-holoviz-tools/ inside the package.
+            installed = Path(__file__).parent.parent / "developing-with-holoviz-tools"
+            if installed.exists():
+                return installed
+            # Development fallback: source hasn't been built yet, point at the repo source tree.
+            repo_source = Path(__file__).parent.parent.parent.parent / "skills" / "developing-with-holoviz-tools"
+            return repo_source
         elif location == "project":
             return Path.cwd() / "skills"
         else:
