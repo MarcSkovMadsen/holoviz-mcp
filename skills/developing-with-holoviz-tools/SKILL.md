@@ -89,7 +89,7 @@ dependency information specific to that library.
 | [panel](skills/panel/SKILL.md)                                 | Panel web-app framework: widgets, panes, layouts, templates, reactivity, real-time updates   |
 | [panel-material-ui](skills/panel-material-ui/SKILL.md)             | Modern Material UI components for Panel dashboards and apps                   |
 | [panel-holoviews](skills/panel-holoviews/SKILL.md)                 | Integrating HoloViews / hvPlot plots in Panel; streams, linked selections, responsive layouts  |
-| [panel-custom-components](skills//panel-custom-components/SKILL.md) | Custom Panel components via JSComponent, ReactComponent, AnyWidgetComponent, MaterialUIComponent |
+| [panel-custom-components](skills/panel-custom-components/SKILL.md) | Custom Panel components via JSComponent, ReactComponent, AnyWidgetComponent, MaterialUIComponent |
 | [hvplot](skills/hvplot/SKILL.md)                                   | Quick interactive plots from DataFrames / xarray using the `.hvplot` accessor            |
 | [holoviews](skills/holoviews/SKILL.md)                             | Composable, declarative visualizations with HoloViews elements, overlays, and DynamicMap          |
 | [param](skills/param/SKILL.md)                                     | Declarative, typed, validated parameters and reactive class definitions |

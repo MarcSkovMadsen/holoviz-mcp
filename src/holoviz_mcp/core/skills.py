@@ -134,6 +134,8 @@ def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
 
     # Legacy flat format: *.md files directly in skill_dir
     for md_file in sorted(skill_dir.glob("*.md")):
+        if md_file.name == "SKILL.md":
+            continue
         name = md_file.stem
         if name not in skills:  # Don't override directory-format skills
             skills[name] = md_file

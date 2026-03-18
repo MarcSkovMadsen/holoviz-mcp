@@ -926,12 +926,12 @@ def get_skill(name: str) -> str:
     """Get skill for using a project with LLMs.
 
     .. deprecated::
-        This function uses a legacy flat ``<name>.md`` lookup that is incompatible
-        with the current context-directory layout
-        (``developing-with-holoviz-tools/skills/<name>/SKILL.md``).
-        Use :func:`holoviz_mcp.core.skills.get_skill` instead, which supports all
-        layouts and the full three-tier precedence (project > user > builtin).
-
+        This function is a deprecated compatibility wrapper around
+        :func:`holoviz_mcp.core.skills.get_skill`.
+        It is retained for backwards compatibility and forwards all arguments
+        to the core implementation, which supports the current context-directory
+        layout and precedence rules.
+        Use :func:`holoviz_mcp.core.skills.get_skill` directly instead.
     Args:
         name (str): The name of the skill to get.
 
@@ -959,10 +959,10 @@ def list_skills() -> list[str]:
     """List all available skills.
 
     .. deprecated::
-        This function uses a legacy flat ``*.md`` glob that is incompatible with
-        the current context-directory layout
-        (``developing-with-holoviz-tools/skills/<name>/SKILL.md``).
-        Use :func:`holoviz_mcp.core.skills.list_skills` instead.
+        This function is a thin wrapper around
+        :func:`holoviz_mcp.core.skills.list_skills` and is kept only for
+        backward compatibility. Use
+        :func:`holoviz_mcp.core.skills.list_skills` instead.
 
     Returns
     -------
