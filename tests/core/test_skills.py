@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from holoviz_mcp.core.skills import _scan_skills_in_dir
 from holoviz_mcp.core.skills import get_skill
 from holoviz_mcp.core.skills import get_skill_file
 from holoviz_mcp.core.skills import list_skill_files
@@ -58,7 +59,7 @@ class TestGetSkill:
     def test_routing_skill_content(self):
         result = get_skill("developing-with-holoviz-tools")
         assert isinstance(result, str)
-        assert "developing-with-holoviz-tools" in result.lower() or "HoloViz" in result
+        assert "developing-with-holoviz-tools" in result.lower()
 
 
 @pytest.fixture()
@@ -147,6 +148,30 @@ class TestGetSkillFile:
 
         with pytest.raises(ValueError, match="Path traversal"):
             get_skill_file("test-skill", "../other-skill/SKILL.md")
+
+
+class TestScanSkillsInDir:
+    """Unit tests for _scan_skills_in_dir, including the legacy flat .md branch."""
+
+    def test_legacy_flat_md_file(self, tmp_path: Path):
+        """A bare *.md file directly in skill_dir is registered by its stem."""
+        (tmp_path / "myplugin.md").write_text("# Legacy skill\n")
+        result = _scan_skills_in_dir(tmp_path)
+        assert "myplugin" in result
+        assert result["myplugin"] == tmp_path / "myplugin.md"
+
+    def test_directory_format_wins_over_flat_md(self, tmp_path: Path):
+        """When both <name>/SKILL.md and <name>.md exist, the directory format takes precedence."""
+        (tmp_path / "panel").mkdir()
+        dir_skill = tmp_path / "panel" / "SKILL.md"
+        dir_skill.write_text("# Directory skill\n")
+        (tmp_path / "panel.md").write_text("# Flat skill\n")
+        result = _scan_skills_in_dir(tmp_path)
+        assert result["panel"] == dir_skill
+
+    def test_nonexistent_dir_returns_empty(self, tmp_path: Path):
+        result = _scan_skills_in_dir(tmp_path / "does-not-exist")
+        assert result == {}
 
 
 @pytest.fixture()
