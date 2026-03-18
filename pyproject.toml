@@ -87,7 +87,7 @@ pydata = [
     "pytest",
     "scikit-learn",
     "seaborn",
-    "setuptools",       # Due to https://github.com/bokeh/ipywidgets_bokeh/issues/125
+    "setuptools", # Due to https://github.com/bokeh/ipywidgets_bokeh/issues/125
     "shapely",
     "vega_datasets",
     "yfinance",
@@ -121,12 +121,12 @@ ignore = [
     "N806", # Variable name should be lowercase
 ]
 select = [
-    "B",      # flake8-bugbear
-    "D",      # pydocstyle
-    "E",      # pycodestyle errors
-    "F",      # pyflakes
-    "W",      # pycodestyle warnings
-    "I",      # isort
+    "B",    # flake8-bugbear
+    "D",    # pydocstyle
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
     "PIE",
     "T20",
     "RUF006",

@@ -5,10 +5,10 @@ No MCP framework required. No heavy dependencies (chromadb, etc.).
 
 Built-in skills follow the Agent Skills standard format inside a named
 context directory.  They live in the repo root at ``skills/developing-with-holoviz-tools/``
-and are copied into the installed package by hatch ``force-include`` at build time::
+and are copied into the installed package at build time::
 
-    skills/developing-with-holoviz-tools/SKILL.md          <- routing skill (source)
-    skills/developing-with-holoviz-tools/skills/<name>/SKILL.md  <- sub-skills (source)
+    skills/developing-with-holoviz-tools/SKILL.md          <- routing skill
+    skills/developing-with-holoviz-tools/skills/<name>/SKILL.md  <- sub-skills
 
     # installed location (wheel / site-packages):
     holoviz_mcp/developing-with-holoviz-tools/SKILL.md
@@ -26,7 +26,6 @@ Usage::
 
     names = list_skills()
     content = get_skill("panel")
-    content = get_skill("developing-with-holoviz-tools")  # routing skill
 """
 
 from __future__ import annotations
@@ -64,7 +63,7 @@ def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
         layouts (context-directory, flat, and legacy).  ``_find_skill_file`` does
         not understand the context-directory layout and will fail to find built-in
         skills.  It is retained for any external callers but will be removed in a
-        future release.  Use :func:`_scan_skills_in_dir` or :func:`get_skill`
+        future release.  Use :func:`get_skill`
         instead.
 
     Parameters
@@ -82,7 +81,7 @@ def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
     import warnings
 
     warnings.warn(
-        "_find_skill_file() is deprecated and does not support the context-directory layout. Use _scan_skills_in_dir() or get_skill() instead.",
+        "_find_skill_file() is deprecated and does not support the context-directory layout. Use get_skill() instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -101,16 +100,6 @@ def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
 
 def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
     """Scan a directory for skills.
-
-    Supports three layouts:
-
-    1. Context directory (built-in layout) — a top-level ``SKILL.md``
-       (routing skill) plus a ``skills/`` sub-directory containing the
-       individual sub-skills, each as ``skills/<name>/SKILL.md``.
-    2. Flat directory — ``<name>/SKILL.md`` sub-directories directly
-       inside ``skill_dir`` (user / project layout).
-    3. Legacy flat format — ``<name>.md`` files directly inside
-       ``skill_dir``.
 
     Parameters
     ----------
@@ -144,9 +133,6 @@ def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
                     skills[sub.name] = skill_file
 
     # Legacy flat format: *.md files directly in skill_dir
-    # Note: in the context-directory layout, skill_dir/SKILL.md also matches this
-    # glob, but its stem ("SKILL") is already present in `skills` under skill_dir.name,
-    # so the `if name not in skills` guard below prevents a spurious "SKILL" entry.
     for md_file in sorted(skill_dir.glob("*.md")):
         name = md_file.stem
         if name not in skills:  # Don't override directory-format skills

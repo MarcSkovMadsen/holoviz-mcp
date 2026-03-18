@@ -948,9 +948,7 @@ def get_skill(name: str) -> str:
     from holoviz_mcp.core.skills import get_skill as _core_get_skill
 
     warnings.warn(
-        "holoviz_mcp.holoviz_mcp.data.get_skill() is deprecated and will be removed in a "
-        "future release. Use holoviz_mcp.core.skills.get_skill() instead, which correctly "
-        "handles the context-directory layout and the full three-tier precedence.",
+        "holoviz_mcp.holoviz_mcp.data.get_skill() is deprecated and will be removed in a " "future release. Use holoviz_mcp.core.skills.get_skill() instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -964,8 +962,7 @@ def list_skills() -> list[str]:
         This function uses a legacy flat ``*.md`` glob that is incompatible with
         the current context-directory layout
         (``developing-with-holoviz-tools/skills/<name>/SKILL.md``).
-        Use :func:`holoviz_mcp.core.skills.list_skills` instead, which supports all
-        layouts and returns richer ``{"name": ..., "description": ...}`` dicts.
+        Use :func:`holoviz_mcp.core.skills.list_skills` instead.
 
     Returns
     -------
@@ -976,9 +973,7 @@ def list_skills() -> list[str]:
     from holoviz_mcp.core.skills import list_skills as _core_list_skills
 
     warnings.warn(
-        "holoviz_mcp.holoviz_mcp.data.list_skills() is deprecated and will be removed in a "
-        "future release. Use holoviz_mcp.core.skills.list_skills() instead, which correctly "
-        "handles the context-directory layout and returns name+description dicts.",
+        "holoviz_mcp.holoviz_mcp.data.list_skills() is deprecated and will be removed in a " "future release. Use holoviz_mcp.core.skills.list_skills() instead.",
         DeprecationWarning,
         stacklevel=2,
     )
