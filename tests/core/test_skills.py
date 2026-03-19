@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from holoviz_mcp.core.skills import _scan_skills_in_dir
 from holoviz_mcp.core.skills import get_skill
 from holoviz_mcp.core.skills import get_skill_file
 from holoviz_mcp.core.skills import list_skill_files
@@ -20,6 +21,11 @@ class TestListSkills:
         names = [s["name"] for s in result]
         assert "panel" in names
         assert "hvplot" in names
+
+    def test_contains_routing_skill(self):
+        result = list_skills()
+        names = [s["name"] for s in result]
+        assert "developing-with-holoviz" in names
 
     def test_returns_dicts_with_name_and_description(self):
         result = list_skills()
@@ -50,6 +56,11 @@ class TestGetSkill:
         with pytest.raises(FileNotFoundError):
             get_skill("nonexistent-skill-xyz-12345")
 
+    def test_routing_skill_content(self):
+        result = get_skill("developing-with-holoviz")
+        assert isinstance(result, str)
+        assert "developing-with-holoviz" in result.lower()
+
 
 @pytest.fixture()
 def skill_with_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -72,6 +83,10 @@ def skill_with_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 
 class TestListSkillFiles:
+    def test_routing_skill_has_no_supporting_files_dir(self):
+        result = list_skill_files("developing-with-holoviz")
+        assert result == []
+
     def test_returns_list(self, skill_with_files: Path):
         result = list_skill_files("test-skill")
         assert isinstance(result, list)
@@ -133,3 +148,73 @@ class TestGetSkillFile:
 
         with pytest.raises(ValueError, match="Path traversal"):
             get_skill_file("test-skill", "../other-skill/SKILL.md")
+
+
+class TestScanSkillsInDir:
+    """Unit tests for _scan_skills_in_dir, including the legacy flat .md branch."""
+
+    def test_legacy_flat_md_file(self, tmp_path: Path):
+        """A bare *.md file directly in skill_dir is registered by its stem."""
+        (tmp_path / "myplugin.md").write_text("# Legacy skill\n")
+        result = _scan_skills_in_dir(tmp_path)
+        assert "myplugin" in result
+        assert result["myplugin"] == tmp_path / "myplugin.md"
+
+    def test_directory_format_wins_over_flat_md(self, tmp_path: Path):
+        """When both <name>/SKILL.md and <name>.md exist, the directory format takes precedence."""
+        (tmp_path / "panel").mkdir()
+        dir_skill = tmp_path / "panel" / "SKILL.md"
+        dir_skill.write_text("# Directory skill\n")
+        (tmp_path / "panel.md").write_text("# Flat skill\n")
+        result = _scan_skills_in_dir(tmp_path)
+        assert result["panel"] == dir_skill
+
+    def test_nonexistent_dir_returns_empty(self, tmp_path: Path):
+        result = _scan_skills_in_dir(tmp_path / "does-not-exist")
+        assert result == {}
+
+
+@pytest.fixture()
+def context_dir_skill(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Fixture that mirrors the built-in developing-with-holoviz layout.
+
+    Structure::
+
+        context/
+            SKILL.md         <- routing skill named "context"
+            skills/
+                sub-skill/
+                    SKILL.md
+    """
+    context_dir = tmp_path / "context"
+    (context_dir).mkdir()
+    (context_dir / "SKILL.md").write_text("---\nname: context\ndescription: Routing skill\n---\n# Routing\n")
+    sub_dir = context_dir / "skills" / "sub-skill"
+    sub_dir.mkdir(parents=True)
+    (sub_dir / "SKILL.md").write_text("---\nname: sub-skill\ndescription: A sub-skill\n---\n# Sub-skill\n")
+
+    monkeypatch.setattr(
+        "holoviz_mcp.core.skills._skills_search_paths",
+        lambda: [context_dir],
+    )
+    return context_dir
+
+
+class TestContextDirectoryLayout:
+    """Verify the two-level developing-with-holoviz layout is correctly scanned."""
+
+    def test_routing_skill_is_found(self, context_dir_skill: Path):
+        names = [s["name"] for s in list_skills()]
+        assert "context" in names
+
+    def test_sub_skill_is_found(self, context_dir_skill: Path):
+        names = [s["name"] for s in list_skills()]
+        assert "sub-skill" in names
+
+    def test_routing_skill_content(self, context_dir_skill: Path):
+        content = get_skill("context")
+        assert "Routing" in content
+
+    def test_sub_skill_content(self, context_dir_skill: Path):
+        content = get_skill("sub-skill")
+        assert "Sub-skill" in content

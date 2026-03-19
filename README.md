@@ -41,26 +41,28 @@ The HoloViz MCP skills follow the [Agent Skills specification](https://agentskil
 
 Available skills: `panel`, `hvplot`, `holoviews`, `param`, `panel-material-ui`, `panel-custom-components`, `panel-holoviews`, `holoviz-mcp-cli`
 
-**With [agr](https://github.com/kasperjunge/agent-resources):**
+**With [openskills](https://github.com/numman-ali/openskills) — installs all skills including the routing skill:**
+
+```bash
+npx openskills install MarcSkovMadsen/holoviz-mcp/skills/developing-with-holoviz
+```
+
+**With [agr](https://github.com/kasperjunge/agent-resources) — installs an individual skill by name:**
 
 ```bash
 pip install agr
 agr add MarcSkovMadsen/holoviz-mcp/panel
 ```
 
-**With [Vercel skills](https://github.com/vercel-labs/skills):**
+**With [Vercel skills](https://github.com/vercel-labs/skills) — installs an individual skill by name:**
 
 ```bash
 npx skills add MarcSkovMadsen/holoviz-mcp --skill panel
 ```
 
-**With [openskills](https://github.com/numman-ali/openskills):**
+Replace `panel` with any of the available skill names above.
 
-```bash
-npx openskills install MarcSkovMadsen/holoviz-mcp/panel
-```
-
-**Manually:** Copy the `skills/<name>/SKILL.md` file into your agent's skills directory (e.g., `.claude/skills/`).
+**Manually:** Copy `skills/developing-with-holoviz/` into your agent's skills directory (e.g., `.claude/skills/`) to get all skills including the routing skill, or copy an individual `skills/developing-with-holoviz/skills/<name>/SKILL.md` for a single skill.
 
 Watch the [HoloViz MCP Introduction](https://youtu.be/M-YUZWEeSDA) on YouTube to see it in action.
 
