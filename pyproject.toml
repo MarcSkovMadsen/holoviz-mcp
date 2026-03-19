@@ -177,7 +177,7 @@ no_implicit_optional = true
 check_untyped_defs = true
 
 [tool.hatch.build.targets.wheel.force-include]
-"skills/developing-with-holoviz-tools" = "holoviz_mcp/developing-with-holoviz-tools"
+"skills/developing-with-holoviz" = "holoviz_mcp/developing-with-holoviz"
 
 [tool.hatch.version]
 source = "vcs"

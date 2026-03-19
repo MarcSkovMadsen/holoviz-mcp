@@ -4,21 +4,21 @@ Pure Python functions for accessing skill/best-practice documents.
 No MCP framework required. No heavy dependencies (chromadb, etc.).
 
 Built-in skills follow the Agent Skills standard format inside a named
-context directory.  They live in the repo root at ``skills/developing-with-holoviz-tools/``
+context directory.  They live in the repo root at ``skills/developing-with-holoviz/``
 and are copied into the installed package at build time::
 
-    skills/developing-with-holoviz-tools/SKILL.md          <- routing skill
-    skills/developing-with-holoviz-tools/skills/<name>/SKILL.md  <- sub-skills
+    skills/developing-with-holoviz/SKILL.md          <- routing skill
+    skills/developing-with-holoviz/skills/<name>/SKILL.md  <- sub-skills
 
     # installed location (wheel / site-packages):
-    holoviz_mcp/developing-with-holoviz-tools/SKILL.md
-    holoviz_mcp/developing-with-holoviz-tools/skills/<name>/SKILL.md
+    holoviz_mcp/developing-with-holoviz/SKILL.md
+    holoviz_mcp/developing-with-holoviz/skills/<name>/SKILL.md
 
 Three sources are scanned with precedence (most specific wins):
 
 1. **Project-level** — ``./skills/`` in cwd
 2. **User-level** — ``~/.holoviz-mcp/skills/``
-3. **Built-in** — Skills installed into the package (``holoviz_mcp/developing-with-holoviz-tools/``)
+3. **Built-in** — Skills installed into the package (``holoviz_mcp/developing-with-holoviz/``)
 
 Usage::
 

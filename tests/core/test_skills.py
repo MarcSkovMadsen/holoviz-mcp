@@ -25,7 +25,7 @@ class TestListSkills:
     def test_contains_routing_skill(self):
         result = list_skills()
         names = [s["name"] for s in result]
-        assert "developing-with-holoviz-tools" in names
+        assert "developing-with-holoviz" in names
 
     def test_returns_dicts_with_name_and_description(self):
         result = list_skills()
@@ -57,9 +57,9 @@ class TestGetSkill:
             get_skill("nonexistent-skill-xyz-12345")
 
     def test_routing_skill_content(self):
-        result = get_skill("developing-with-holoviz-tools")
+        result = get_skill("developing-with-holoviz")
         assert isinstance(result, str)
-        assert "developing-with-holoviz-tools" in result.lower()
+        assert "developing-with-holoviz" in result.lower()
 
 
 @pytest.fixture()
@@ -84,7 +84,7 @@ def skill_with_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 class TestListSkillFiles:
     def test_routing_skill_has_no_supporting_files_dir(self):
-        result = list_skill_files("developing-with-holoviz-tools")
+        result = list_skill_files("developing-with-holoviz")
         assert result == []
 
     def test_returns_list(self, skill_with_files: Path):
@@ -176,7 +176,7 @@ class TestScanSkillsInDir:
 
 @pytest.fixture()
 def context_dir_skill(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Fixture that mirrors the built-in developing-with-holoviz-tools layout.
+    """Fixture that mirrors the built-in developing-with-holoviz layout.
 
     Structure::
 
@@ -201,7 +201,7 @@ def context_dir_skill(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 class TestContextDirectoryLayout:
-    """Verify the two-level developing-with-holoviz-tools layout is correctly scanned."""
+    """Verify the two-level developing-with-holoviz layout is correctly scanned."""
 
     def test_routing_skill_is_found(self, context_dir_skill: Path):
         names = [s["name"] for s in list_skills()]

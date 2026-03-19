@@ -1,5 +1,5 @@
 ---
-name: developing-with-holoviz-tools
+name: developing-with-holoviz
 description: "**[REQUIRED]** Use for ALL HoloViz tasks: creating plots, building dashboards and data apps, composing interactive visualizations, building custom components, or using the holoviz-mcp CLI. Routes to the correct HoloViz sub-skill. Trigger phrases: panel, hvplot, holoviews, param, dashboard, data app, interactive plot, widget, layout, template, pane, .hvplot, hv.element, pn.widgets, pn.pane, pn.layout, pn.template, panel serve, holoviz-mcp."
 ---
 
@@ -101,5 +101,9 @@ dependency information specific to that library.
 - [Panel Documentation](https://panel.holoviz.org/)
 - [hvPlot Documentation](https://hvplot.holoviz.org/)
 - [HoloViews Documentation](https://holoviews.org/)
+- [GeoViews Documentation](https://geoviews.org/)
+- [Datashader Documentation](https://datashader.org/)
+- [Lumen Documentation](https://lumen.holoviz.org/)
 - [Param Documentation](https://param.holoviz.org/)
+- [Colorcet Documentation](https://colorcet.holoviz.org/)
 - [Panel Material UI Documentation](https://panel-material-ui.holoviz.org/)
