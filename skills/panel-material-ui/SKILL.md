@@ -163,29 +163,29 @@ def test_characters_reactivity():
 - DO use Material UI `sx` parameter for all css styling over `styles` and `stylesheets`
 - DO use panel-material-ui components instead of panel components for projects already using panel-material-ui and for new projects
 - DON'T configure the `design`, i.e. DO NOT `pn.extension(design='material')`.
-- DO prefer professional Material UI icons over emojies
+- DO prefer professional Material UI icons over emojis
 
 ## Theming and Styling
 
 Panel Material UI supports four styling layers:
 
-* **`theme_config`**: App-wide theme for palette, typography, shape, and defaults. Prefer this for consistent styling across a page or app.
-* **`sx`**: Local Material UI styling for a specific component, including nested Mui selectors and dark/light mode overrides.
-* **`styles`**: Styles the outer Panel container, useful for spacing, borders, backgrounds, and shadows around a component.
-* **`stylesheets`**: Custom CSS selectors for classic Panel internals. Use sparingly.
+- **`theme_config`**: App-wide theme for palette, typography, shape, and defaults. Prefer this for consistent styling across a page or app.
+- **`sx`**: Local Material UI styling for a specific component, including nested Mui selectors and dark/light mode overrides.
+- **`styles`**: Styles the outer Panel container, useful for spacing, borders, backgrounds, and shadows around a component.
+- **`stylesheets`**: Custom CSS selectors for classic Panel internals. Use sparingly.
 
 **Recommended order of use:** prefer `theme_config` for global consistency, use `sx` for local component-level exceptions, use `styles` for outer container layout/styling, and reserve `stylesheets` for cases not covered by the other options.
 
 ### `sx`
 
-* DO use `sx` for one-off component styling and nested Mui element overrides.
-* DO use selectors like `& .MuiSlider-thumb` to target internal Material UI parts when needed.
-* DO use `.mui-dark` and `.mui-light` selectors for mode-specific local styling.
-* DON'T rely heavily on nested Mui class names unless necessary, as they may change across versions.
+- DO use `sx` for one-off component styling and nested Mui element overrides.
+- DO use selectors like `& .MuiSlider-thumb` to target internal Material UI parts when needed.
+- DO use `.mui-dark` and `.mui-light` selectors for mode-specific local styling.
+- DON'T rely heavily on nested Mui class names unless necessary, as they may change across versions.
 
 ### `theme_config`
 
-* DO use `theme_config` for app-wide palette, typography, shape, and component defaults.
+- DO use `theme_config` for app-wide palette, typography, shape, and component defaults.
 * DO define `theme_config` at a top-level container such as `Page`, `Row`, `Column`, or `Card` so it inherits to children.
 * DO use `"light"` and `"dark"` keys when separate light and dark themes are needed.
 * DO prefer `theme_config` over repeated `sx` values when the same visual language should apply across the app.
@@ -347,7 +347,7 @@ DO embed icons directly in widget labels and options using the `:material/...:` 
 
 ```
 pmui.Select(
-  name="Mode",
+  label="Mode",
   options=[
     "Zoom :material/zoom:",
     "Explore :material/explore@size=large,color=warning:",
