@@ -87,7 +87,6 @@ class HelloWorld(pn.viewable.Viewer):
             self._outputs = pmui.Column(self.model)
             self._panel = pmui.Row(self._inputs, self._outputs)
 
-
     # DO use caching to speed up bound methods that are expensive to compute or load data and return the same result for a given state of the class.
     @pn.cache
     # DO prefer .depends over .bind over .rx for reactivity methods on Parameterized classes as it can be typed and documented
@@ -164,7 +163,81 @@ def test_characters_reactivity():
 - DO use Material UI `sx` parameter for all css styling over `styles` and `stylesheets`
 - DO use panel-material-ui components instead of panel components for projects already using panel-material-ui and for new projects
 - DON'T configure the `design`, i.e. DO NOT `pn.extension(design='material')`.
-- DO prefer professional Material UI icons over emojies
+- DO prefer professional Material UI icons over emojis
+
+## Theming and Styling
+
+Panel Material UI supports four styling layers:
+
+- **`theme_config`**: App-wide theme for palette, typography, shape, and defaults. Prefer this for consistent styling across a page or app.
+- **`sx`**: Local Material UI styling for a specific component, including nested Mui selectors and dark/light mode overrides.
+- **`styles`**: Styles the outer Panel container, useful for spacing, borders, backgrounds, and shadows around a component.
+- **`stylesheets`**: Custom CSS selectors for classic Panel internals. Use sparingly.
+
+**Recommended order of use:** prefer `theme_config` for global consistency, use `sx` for local component-level exceptions, use `styles` for outer container layout/styling, and reserve `stylesheets` for cases not covered by the other options.
+
+### `sx`
+
+- DO use `sx` for one-off component styling and nested Mui element overrides.
+- DO use selectors like `& .MuiSlider-thumb` to target internal Material UI parts when needed.
+- DO use `.mui-dark` and `.mui-light` selectors for mode-specific local styling.
+- DON'T rely heavily on nested Mui class names unless necessary, as they may change across versions.
+
+### `theme_config`
+
+- DO use `theme_config` for app-wide palette, typography, shape, and component defaults.
+* DO define `theme_config` at a top-level container such as `Page`, `Row`, `Column`, or `Card` so it inherits to children.
+* DO use `"light"` and `"dark"` keys when separate light and dark themes are needed.
+* DO prefer `theme_config` over repeated `sx` values when the same visual language should apply across the app.
+
+### `styles`
+
+* DO use `styles` for the outer wrapper box only.
+* DO use it for spacing, borders, backgrounds, border radius, and shadows around a component.
+* DON'T use `styles` when you actually want to style the internal Mui control; use `sx` instead.
+
+### Styling Guidance
+
+* DO use `sizing_mode` for layout behavior before reaching for CSS sizing in `sx`.
+* DO use `sx` for Material UI component internals.
+* DO use `theme_config` for consistency and maintainability.
+* DO use `styles` only for wrapper-level styling.
+* DO use `stylesheets` only when `sx`, `theme_config`, and `styles` are insufficient.
+
+### Example Pattern
+
+```python
+app_theme = {
+    "light": {
+        "palette": {"primary": {"main": "#6a1b9a"}},
+        "shape": {"borderRadius": 12},
+    },
+    "dark": {
+        "palette": {"primary": {"main": "#9575cd"}},
+        "shape": {"borderRadius": 12},
+    },
+}
+
+button_sx = {
+    "fontWeight": 700,
+    "&:hover": {"transform": "scale(1.02)"},
+}
+
+container_styles = {
+    "padding": "8px",
+    "background": "rgba(0,0,0,0.02)",
+}
+
+pmui.Page(
+    main=[
+        pmui.Paper(
+            pmui.Button("Submit", color="primary", sx=button_sx),
+            styles=container_styles,
+        )
+    ],
+    theme_config=app_theme,
+)
+```
 
 ## Component Instructions
 
@@ -196,34 +269,6 @@ pmui.Page(
     sidebar=list(a_list_like_layout),  # This is incorrect
     main=list(a_grid),  # This is incorrect
 )
-```
-
-#### Linking Dashboard Theme with Page Theme
-
-DO synchronize component themes with Page theme:
-
-```python
-    ...
-
-    dark_theme = param.Boolean(
-        doc="""True if the theme is dark""",
-        # To enable providing parameters and bound function references
-        allow_refs=True
-        )
-
-    @classmethod
-    def create_app(cls, **params):
-        """Create app with synchronized theming."""
-        component = cls(**params)
-
-        page = pmui.Page(
-            ...,
-            dark_theme=component.dark_theme,  # Pass theme to Page
-        )
-
-        # Synchronize Page theme to component theme
-        component.dark_theme = page.param.dark_theme
-        return page
 ```
 
 ### Grid
@@ -278,6 +323,7 @@ pmui.Paper.param.margin.default=10
 ### Non-Existing Components
 
 - Do use `Column` instead of `Box`. The `Box` component does not exist.
+- Do use `TextInput` instead of `TextField`. The `TextField` component does not exist.
 
 ## Material UI Examples
 
@@ -295,6 +341,20 @@ pmui.Typography(
 pmui.IconButton(icon=icon, disabled=True, ...)
 ```
 
+### Icons in widget labels and options
+
+DO embed icons directly in widget labels and options using the `:material/...:` token syntax:
+
+```
+pmui.Select(
+  label="Mode",
+  options=[
+    "Zoom :material/zoom:",
+    "Explore :material/explore@size=large,color=warning:",
+  ],
+)
+```
+
 ### Static Components Pattern (Material UI)
 
 ```python
@@ -304,7 +364,7 @@ import param
 
 pn.extension()
 
-pmui.Paper.param.margin.default=10
+pmui.Paper.param.margin.default = 10
 
 class HelloWorld(pn.viewable.Viewer):
     characters = param.Integer(default=10, bounds=(1, 100), doc="Number of characters to display")
@@ -350,4 +410,4 @@ if pn.state.served:
     HelloWorld().servable()
 ```
 
-**For all other Panel patterns (parameter-driven architecture, reactive updates, serving, etc.), refer tot the 'panel' skill.**
+**For all other Panel patterns (parameter-driven architecture, reactive updates, serving, etc.), refer to the 'panel' skill.**
