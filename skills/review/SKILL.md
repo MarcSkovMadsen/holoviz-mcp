@@ -12,5 +12,5 @@ Perform a `git diff` from the PR branch to the main branch, and review the code 
 - [ ] DO place imports at the top of the file; DON'T place imports inside functions unless there is a specific reason (slow import, circular import, etc.).
 - [ ] DO consider the full set of changes and whether there is a more efficient or cleaner way to achieve the same result.
 - [ ] DO use consistent and readable naming conventions, e.g., if `FollowUpSuggestion` is used, the variable name should be `follow_up_suggestion`, not `followup_suggestion` or `follow_up_suggestions` (plural)
-- [ ] if necessary, ensure the feature or enhancement documented in the docs
-- [ ] avoid implicit boolean checks on pandas objects, e.g. `if df`, `if df == obj`, etc
+- [ ] DO ensure the feature or enhancement documented in the docs
+- [ ] DO NOT use implicit boolean checks on pandas objects, e.g. `if df`, `if df == obj`, etc
