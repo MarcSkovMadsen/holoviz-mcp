@@ -11,6 +11,6 @@ Perform a `git diff` from the PR branch to the main branch, and review the code 
 - [ ] anything over 3 levels of nesting should be refactored into helper functions
 - [ ] imports should be at the top of the file, not inside functions unless there is a specific reason to do so (slow import, circular import, etc.)
 - [ ] understanding the full changes, is there a more efficient or cleaner way to achieve the same result?
-- [ ] consistent and readable naming conventions, e.g. if FollowUpSuggestion is used, the variable name should be follow_up_suggestion, not followup_suggestion or follow_up_suggestions (plural)
+- [ ] consistent and readable naming conventions, e.g. if `ExampleClass` is used, the variable name should be `example_class`, not `exampleclass` or `example_classes` (plural)
 - [ ] if necessary, ensure the feature or enhancement documented in the docs
 - [ ] avoid implicit boolean checks on pandas objects, e.g. `if df`, `if df == obj`, etc
