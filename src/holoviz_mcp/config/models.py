@@ -235,13 +235,20 @@ class HoloVizMCPConfig(BaseModel):
 
         Args:
             location: Which skills directory to get:
-                - "builtin": Skills embedded in the package (skills/<name>/SKILL.md)
+                - "builtin": Built-in skills context dir (developing-with-holoviz/)
                 - "default": Alias for "builtin" (backward compat)
                 - "user": User-level overrides (~/.holoviz-mcp/skills/)
                 - "project": Project-level overrides (./skills/ in cwd)
         """
         if location == "builtin" or location == "default":
-            return Path(__file__).parent.parent / "skills"
+            # In a built wheel, hatch force-include copies skills/developing-with-holoviz/
+            # from the repo root to holoviz_mcp/developing-with-holoviz/ inside the package.
+            installed = Path(__file__).parent.parent / "developing-with-holoviz"
+            if installed.exists():
+                return installed
+            # Development fallback: source hasn't been built yet, point at the repo source tree.
+            repo_source = Path(__file__).parent.parent.parent.parent / "skills" / "developing-with-holoviz"
+            return repo_source
         elif location == "project":
             return Path.cwd() / "skills"
         else:
