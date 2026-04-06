@@ -13,4 +13,6 @@ Perform a `git diff` from the PR branch to the main branch, and review the code 
 - [ ] DO consider the full set of changes and whether there is a more efficient or cleaner way to achieve the same result.
 - [ ] DO use consistent and readable naming conventions, e.g., if `FollowUpSuggestion` is used, the variable name should be `follow_up_suggestion`, not `followup_suggestion` or `follow_up_suggestions` (plural)
 - [ ] DO ensure the feature or enhancement documented in the docs
-- [ ] DO NOT use implicit boolean checks on pandas objects, e.g. `if df`, `if df == obj`, etc
+- [ ] DO minimize magic numbers; try to add an option to customize it if possible
+- [ ] DO parameterize tests
+- [ ] DO test for NaN and datetime types (np, pd)
