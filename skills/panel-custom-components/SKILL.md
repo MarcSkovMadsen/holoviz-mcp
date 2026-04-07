@@ -1,8 +1,8 @@
 ---
 name: panel-custom-components
-description: Build custom Panel components using JSComponent (vanilla JS, web components), ReactComponent (React/JSX), AnyWidgetComponent (AnyWidget spec for cross-platform), or MaterialUIComponent (Material UI themed). Use when wrapping JS libraries, creating interactive widgets, or building themed components. Includes decision guide, best practices, DOs/DON'Ts, and Playwright UI testing patterns.
+description: Build custom Panel components using JSComponent (vanilla JS, web components), ReactComponent (React/JSX), AnyWidgetComponent (AnyWidget spec for cross-platform), or MaterialUIComponent (Material UI themed). Use when wrapping JS libraries, creating interactive widgets, or building themed components. Includes decision guide, CDN selection guide, best practices, and DOs/DON'Ts. For Playwright UI testing patterns, see the `panel-pytest-playwright` skill.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: holoviz
   category: web-development
   difficulty: advanced
@@ -34,22 +34,22 @@ This skill covers building custom Panel components that bridge Python and JavaSc
 ### Decision Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ Need Material UI theming / using panel-material-ui?             │
-│   YES → MaterialUIComponent                                      │
-│   NO  ↓                                                          │
-├─────────────────────────────────────────────────────────────────┤
-│ Need Jupyter compatibility / sharing community widgets?          │
-│   YES → AnyWidgetComponent                                       │
-│   NO  ↓                                                          │
-├─────────────────────────────────────────────────────────────────┤
-│ Using React libraries or need complex state management?          │
-│   YES → ReactComponent                                           │
-│   NO  ↓                                                          │
-├─────────────────────────────────────────────────────────────────┤
-│ Vanilla JS, Web Components, or simple DOM manipulation?          │
-│   YES → JSComponent                                              │
-└─────────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------+
+| Need Material UI theming / using panel-material-ui?               |
+|   YES -> MaterialUIComponent                                      |
+|   NO  v                                                           |
++-------------------------------------------------------------------+
+| Need Jupyter compatibility / sharing community widgets?           |
+|   YES -> AnyWidgetComponent                                      |
+|   NO  v                                                           |
++-------------------------------------------------------------------+
+| Using React libraries or need complex state management?           |
+|   YES -> ReactComponent                                           |
+|   NO  v                                                           |
++-------------------------------------------------------------------+
+| Vanilla JS, Web Components, or simple DOM manipulation?           |
+|   YES -> JSComponent                                              |
++-------------------------------------------------------------------+
 ```
 
 
@@ -123,7 +123,7 @@ poc = MyComponentPOC(value="Test", height=200, sizing_mode="stretch_width")
 poc.servable()
 ```
 
-ALWAYS test the UI via Playwright smoke tests! (see details below)
+ALWAYS test the UI via Playwright smoke tests! (see the `panel-pytest-playwright` skill)
 
 **POC validation checklist:**
 
@@ -214,6 +214,65 @@ _importmap = {
 }
 ```
 
+### CDN Selection Guide
+
+Not all CDNs handle shared transitive dependencies the same way. **Choosing the wrong CDN can cause silent failures** where the toolbar renders but the main content is empty, or you get `"Class constructor X cannot be invoked without 'new'"` errors.
+
+**The problem:** Libraries with a plugin architecture (e.g. FullCalendar, ProseMirror, TipTap) have plugins that extend base classes from a shared core package. When each plugin is loaded as a separate ESM bundle, the CDN must ensure all plugins share the *same instance* of the core's internal classes. If they get separate copies, JavaScript's `class extends` and `instanceof` checks fail silently.
+
+#### CDN Comparison
+
+| CDN | Shared Deps | Best For | Watch Out |
+|-----|------------|----------|----------|
+| **cdn.skypack.dev** | Correctly deduplicates | Plugin-based libs (FullCalendar, ProseMirror) | Slower, sometimes stale |
+| **esm.sh** | Duplicates by default | Simple libs, React libs with `?external=` | Breaks plugin architectures |
+| **cdn.jsdelivr.net** | N/A (serves raw files) | UMD bundles, CSS files | No ESM bundling |
+
+#### When esm.sh Fails
+
+esm.sh bundles each package independently. When you import `@fullcalendar/core` and `@fullcalendar/daygrid` as separate entries, each gets its own bundled copy of shared internals (like Preact). The `Calendar` class in core and the `DayGridView` plugin extending core's base classes now come from *different bundle instances* -- the prototype chain breaks:
+
+```python
+# This FAILS with esm.sh:
+_importmap = {
+    "imports": {
+        "@fullcalendar/core": "https://esm.sh/@fullcalendar/core@6.1.15",
+        # Each plugin gets its own copy of core internals -- class identity mismatch!
+        "@fullcalendar/daygrid": "https://esm.sh/@fullcalendar/daygrid@6.1.15",
+    }
+}
+# Error: "Class constructor Q cannot be invoked without 'new'"
+# Or: toolbar renders but calendar grid is completely empty
+```
+
+Using `?external=@fullcalendar/core` doesn't fix it either -- esm.sh still produces incompatible bundles.
+
+```python
+# This WORKS with cdn.skypack.dev:
+_importmap = {
+    "imports": {
+        "@fullcalendar/core": "https://cdn.skypack.dev/@fullcalendar/core@6.1.15",
+        # Skypack deduplicates: all plugins share one copy of core internals
+        "@fullcalendar/daygrid": "https://cdn.skypack.dev/@fullcalendar/daygrid@6.1.15",
+    }
+}
+```
+
+#### Decision Rule
+
+- **Library has plugins that extend a shared core?** --> Use `cdn.skypack.dev`
+- **Standalone library or React library?** --> `esm.sh` is fine (use `?external=react,react-dom` for React)
+- **Need CSS files or raw package files?** --> Use `cdn.jsdelivr.net`
+
+#### Signs You Hit This Problem
+
+1. Toolbar / chrome renders but main content area is blank
+2. `"Class constructor X cannot be invoked without 'new'"` in the console
+3. `"TypeError: Cannot read properties of undefined"` deep in library internals
+4. Works in a plain HTML page but breaks inside Panel's JSComponent
+
+**Fix:** Switch from esm.sh to cdn.skypack.dev for all imports in that library's plugin family.
+
 ### Child and Children Parameters
 
 Nest Panel components inside custom components:
@@ -239,7 +298,11 @@ class Container(JSComponent):
 
 ### Event Handling
 
-**JavaScript → Python:**
+There are two communication patterns between Python and JavaScript. Use **structured events** (`send_event`/`_handle_*`) for simple named actions. Use **message passing** (`_send_msg`/`_handle_msg`) for complex bidirectional communication with arbitrary data.
+
+#### Pattern 1: Structured Events (simple actions)
+
+**JavaScript to Python:**
 
 ```javascript
 // In JavaScript
@@ -249,19 +312,19 @@ button.onclick = () => {
 ```
 
 ```python
-# In Python
+# In Python -- handler name must be _handle_{event_name}
 class MyComponent(JSComponent):
     def _handle_button_click(self, event):
         print(f"Button clicked at {event.data['timestamp']}")
 ```
 
-**Python → JavaScript:**
+**Python to JavaScript:**
 
 ```python
-# In Python
+# In Python -- use _send_msg (note the underscore prefix!)
 class MyComponent(JSComponent):
     def trigger_animation(self):
-        self.send_msg({'action': 'animate', 'duration': 500})
+        self._send_msg({'action': 'animate', 'duration': 500})
 ```
 
 ```javascript
@@ -272,6 +335,66 @@ model.on('msg:custom', (event) => {
     }
 });
 ```
+
+> **CRITICAL: Use `self._send_msg()` (with underscore), not `self.send_msg()`.** The public `send_msg` method does not exist on JSComponent. Using it raises `AttributeError`.
+
+#### Pattern 2: Message Passing (complex bidirectional communication)
+
+For wrapping complex libraries where JS needs to send structured data back to Python (e.g. clicked events, navigation state, multiple callback types), use `model.send_msg()` on the JS side with `_handle_msg()` on the Python side:
+
+```javascript
+// In JavaScript -- model.send_msg() sends a dict to Python's _handle_msg
+datesSet(info) {
+    model.send_msg({
+        current_date: info.startStr,
+        current_view: info.view.type,
+    });
+},
+eventClick(info) {
+    model.send_msg({ clicked_event: JSON.stringify(serializeEvent(info.event)) });
+},
+```
+
+```python
+# In Python -- _handle_msg receives the dict from JS
+import json
+
+class MyCalendar(JSComponent):
+    current_date = param.String(default="")
+    current_view = param.String(default="")
+    clicked_event = param.Dict(default={})
+
+    def _handle_msg(self, msg):
+        """Handle all messages from JS."""
+        if "current_date" in msg:
+            self.current_date = msg["current_date"]
+        if "current_view" in msg:
+            self.current_view = msg["current_view"]
+        if "clicked_event" in msg:
+            self.clicked_event = json.loads(msg["clicked_event"])
+```
+
+> **When to use which:** `send_event`/`_handle_*` is simpler for one-off actions (button click, form submit). `send_msg`/`_handle_msg` is better when the JS library has many callback types or when you need to send structured data with multiple fields in a single message.
+
+### The `_rename` Dict
+
+Use `_rename` to exclude Python-only parameters (like callbacks) from being synced to JavaScript:
+
+```python
+class Calendar(JSComponent):
+    # These params exist in Python but should NOT be sent to JS
+    event_click_callback = param.Callable(default=None)
+    date_click_callback = param.Callable(default=None)
+    events_in_view = param.List(default=[], constant=True)
+
+    _rename = {
+        "event_click_callback": None,  # None = exclude from JS sync
+        "date_click_callback": None,
+        "events_in_view": None,
+    }
+```
+
+This prevents Panel from trying to serialize callables or read-only state to JavaScript, which would cause errors.
 
 ## 4. JSComponent Patterns
 
@@ -484,6 +607,125 @@ export function render({ model, el }) {
     });
 }
 ```
+
+## 4.2. Wrapping Plugin-Based Libraries
+
+Libraries like FullCalendar, ProseMirror, CodeMirror, and TipTap use a **plugin architecture**: a core package plus optional plugin packages that extend it. These require special handling in Panel.
+
+### Key Patterns
+
+**1. Use cdn.skypack.dev** (not esm.sh) -- see CDN Selection Guide above.
+
+**2. Load plugins asynchronously with `Promise.all`** -- only load what the config needs:
+
+```javascript
+import { Calendar } from "@fullcalendar/core";
+
+export function render({ model, el }) {
+    let calendar = null;
+
+    function createCalendar(plugins, interactionPlugin) {
+        const allPlugins = interactionPlugin
+            ? [interactionPlugin, ...plugins]
+            : [...plugins];
+
+        calendar = new Calendar(el, {
+            plugins: allPlugins,
+            initialView: model.initial_view,
+            // ... other options from model params ...
+        });
+        calendar.render();
+    }
+
+    // Only load plugins that the toolbar/view actually needs
+    function loadPluginIfNeeded(viewName, pluginName) {
+        const toolbar = model.header_toolbar || {};
+        const inToolbar = Object.values(toolbar).some(v => v.includes(viewName));
+        if (model.initial_view.startsWith(viewName) || inToolbar) {
+            return import(`@fullcalendar/${pluginName}`).then(m => m.default);
+        }
+        return Promise.resolve(null);
+    }
+
+    const pluginPromises = [
+        loadPluginIfNeeded("dayGrid", "daygrid"),
+        loadPluginIfNeeded("timeGrid", "timegrid"),
+        loadPluginIfNeeded("list", "list"),
+    ];
+
+    const interactionPromise = (model.selectable || model.editable)
+        ? import("@fullcalendar/interaction").then(m => m.default)
+        : Promise.resolve(null);
+
+    // Wait for all plugins, then create the calendar
+    Promise.all([...pluginPromises, interactionPromise])
+        .then(results => {
+            const interactionPlugin = results[results.length - 1];
+            const plugins = results.slice(0, -1).filter(p => p !== null);
+            createCalendar(plugins, interactionPlugin);
+        });
+}
+```
+
+**3. Use `model.send_msg` + `_handle_msg` for callbacks** -- plugin libraries often have many event types. Route them all through `_handle_msg`:
+
+```javascript
+// JS: send structured messages for each callback type
+eventClick(info) {
+    model.send_msg({ event_click: JSON.stringify(info.event) });
+},
+datesSet(info) {
+    model.send_msg({ current_date: info.startStr, current_view: info.view.type });
+},
+```
+
+```python
+# Python: dispatch in _handle_msg
+def _handle_msg(self, msg):
+    if "event_click" in msg:
+        info = json.loads(msg["event_click"])
+        if self.event_click_callback:
+            self.event_click_callback(info)
+    if "current_date" in msg:
+        self.current_date = msg["current_date"]
+    if "current_view" in msg:
+        self.current_view = msg["current_view"]
+```
+
+**4. Use `_send_msg` + `model.on('msg:custom')` for commands** -- Python methods like `go_to_date()` send typed messages to JS:
+
+```python
+# Python side
+def go_to_date(self, date):
+    self._send_msg({"type": "gotoDate", "date": date})
+
+def change_view(self, view):
+    self._send_msg({"type": "changeView", "view": view})
+```
+
+```javascript
+// JS side
+model.on("msg:custom", (event) => {
+    const d = event.data || event;
+    if (d.type === "gotoDate") calendar.gotoDate(d.date);
+    else if (d.type === "changeView") calendar.changeView(d.view);
+    else if (d.type === "today") calendar.today();
+});
+```
+
+**5. Use `_rename` to exclude callback params** -- callable params can't be serialized to JS:
+
+```python
+class Calendar(JSComponent):
+    event_click_callback = param.Callable(default=None)
+    events_in_view = param.List(default=[], constant=True)
+
+    _rename = {
+        "event_click_callback": None,
+        "events_in_view": None,
+    }
+```
+
 
 ## 5. ReactComponent Patterns
 
@@ -1003,7 +1245,16 @@ class IconComponent(MaterialUIComponent):
    computed = param.String()   # Available as model.computed
    ```
 
-8. **Prefer ESM imports over `__javascript__` - ESM imports are synchronous, `__javascript__` is not**
+8. **Don't use `self.send_msg()` -- it doesn't exist**
+   ```python
+   # WRONG: raises AttributeError
+   self.send_msg({'type': 'navigate'})
+
+   # RIGHT: use the private method
+   self._send_msg({'type': 'navigate'})
+   ```
+
+9. **Prefer ESM imports over `__javascript__` - ESM imports are synchronous, `__javascript__` is not**
    ```python
    # WRONG: __javascript__ loads asynchronously - render() may run before library is ready
    __javascript__ = ["https://unpkg.com/@google/model-viewer@3.4.0/dist/model-viewer.min.js"]
@@ -1024,275 +1275,20 @@ class IconComponent(MaterialUIComponent):
 
 ## 9. Testing with Playwright
 
-Custom components should be tested using Playwright for UI testing. Panel provides test utilities that make this straightforward.
+For comprehensive Playwright UI testing patterns (setup, fixtures, smoke tests, state sync tests, parametrized tests), see the **`panel-pytest-playwright` skill**.
 
-### Setup
+Quick reference:
 
 ```bash
 pip install panel pytest pytest-playwright pytest-xdist
 playwright install chromium
-```
-
-### Test Utilities from Panel
-
-Panel provides test utilities in `panel.tests.util` for serving components during Playwright tests:
-
-- **`serve_component(page, app)`** - Serves a component and navigates the browser to it. Returns `(msgs, port)` tuple with console messages and server port.
-- **`wait_until(fn, page, timeout=5000)`** - Polls a function until it returns `True` or times out. Essential for JS → Python sync tests.
-
-### Complete Example Test File
-
-This complete, working example demonstrates all key testing patterns:
-
-```python
-"""Tests for Panel custom components with Playwright."""
-
-import pytest
-
-pytest.importorskip("playwright")
-
-import panel as pn
-import param
-from panel.custom import JSComponent
-from panel.tests.util import serve_component, wait_until
-from playwright.sync_api import expect
-
-pytestmark = pytest.mark.ui
-
-# Timeout constants
-DEFAULT_TIMEOUT = 2_000  # Standard operations (clicks, text assertions)
-LOAD_TIMEOUT = 5_000  # Initial page/component load
-NETWORK_TIMEOUT = 5_000  # External resources (CDN libraries)
-
-
-# =============================================================================
-# Test Components
-# =============================================================================
-
-
-class CounterButton(JSComponent):
-    """A simple counter button component for testing."""
-
-    value = param.Integer(default=0, doc="Current count")
-
-    _esm = """
-    export function render({ model, el }) {
-        const button = document.createElement('button');
-        button.id = 'counter-btn';
-
-        function update() {
-            button.textContent = `Count: ${model.value}`;
-        }
-
-        button.onclick = () => {
-            model.value += 1;
-        };
-
-        model.on('value', update);
-        update();
-
-        el.appendChild(button);
-    }
-    """
-
-
-class DisplayComponent(JSComponent):
-    """A simple display component for testing Python → JS sync."""
-
-    text = param.String(default="", doc="Text to display")
-
-    _esm = """
-    export function render({ model, el }) {
-        const display = document.createElement('div');
-        display.id = 'display';
-
-        function update() {
-            display.textContent = model.text;
-        }
-
-        model.on('text', update);
-        update();
-
-        el.appendChild(display);
-    }
-    """
-
-
-class TextInput(JSComponent):
-    """A simple text input for testing JS → Python sync."""
-
-    value = param.String(default="", doc="Input value")
-
-    _esm = """
-    export function render({ model, el }) {
-        const input = document.createElement('input');
-        input.id = 'text-input';
-        input.type = 'text';
-        input.value = model.value;
-
-        input.oninput = (e) => {
-            model.value = e.target.value;
-        };
-
-        model.on('value', () => {
-            if (input.value !== model.value) {
-                input.value = model.value;
-            }
-        });
-
-        el.appendChild(input);
-    }
-    """
-
-
-# =============================================================================
-# Fixtures - CRITICAL: Always reset state to properly shuts down all threaded Panel
-# servers, allowing pytest to exit cleanly after tests complete.
-# =============================================================================
-
-# ALWAYS INCLUDE THIS FIXTURE!
-@pytest.fixture(autouse=True)
-def server_cleanup():
-    """Clean up Panel state after each test."""
-    try:
-        yield
-    finally:
-        pn.state.reset()
-
-
-# =============================================================================
-# Smoke Test - CRITICAL: ALWAYS Verify Panel/Bokeh infrastructure works before other tests!
-# =============================================================================
-
-# ALWAYS INCLUDE THIS TEST!
-def test_no_console_errors(page):
-    """Smoke test: Verify no JavaScript errors during component load."""
-    component = CounterButton(value=0)
-    msgs, _port = serve_component(page, component)
-
-    # Check for Bokeh document idle message (confirms Panel loaded successfully)
-    # Example: "[bokeh 3.8.2] document idle at 16 ms"
-    info_messages = [m for m in msgs if m.type == "info"]
-    assert any("document idle" in m.text.lower() for m in info_messages), \
-        f"Expected Bokeh 'document idle' message not found. Got: {[m.text for m in info_messages]}"
-
-    # Check for no errors (ignore favicon 404s)
-    error_messages = [m for m in msgs if m.type == "error"]
-    real_errors = [m for m in error_messages if "favicon" not in m.text.lower()]
-    assert len(real_errors) == 0, f"JavaScript errors found: {[m.text for m in real_errors]}"
-
-
-# =============================================================================
-# Basic Test Patterns
-# =============================================================================
-
-
-def test_component_renders(page):
-    """Test that component renders correctly."""
-    counter = CounterButton(value=42)
-    serve_component(page, counter)
-
-    expect(page.locator("#counter-btn")).to_have_text("Count: 42", timeout=LOAD_TIMEOUT)
-
-
-def test_component_interaction(page):
-    """Test user interaction updates state."""
-    counter = CounterButton(value=0)
-    serve_component(page, counter)
-
-    page.locator("#counter-btn").click()
-    wait_until(lambda: counter.value == 1, page)
-    expect(page.locator("#counter-btn")).to_have_text("Count: 1", timeout=DEFAULT_TIMEOUT)
-
-
-# =============================================================================
-# State Sync Tests
-# =============================================================================
-
-
-def test_python_to_js_sync(page):
-    """Test Python → JS state synchronization."""
-    display = DisplayComponent(text="Initial")
-    serve_component(page, display)
-
-    expect(page.locator("#display")).to_have_text("Initial", timeout=LOAD_TIMEOUT)
-
-    # Update from Python
-    display.text = "Updated"
-
-    expect(page.locator("#display")).to_have_text("Updated", timeout=DEFAULT_TIMEOUT)
-
-
-def test_js_to_python_sync(page):
-    """Test JS → Python state synchronization."""
-    text_input = TextInput(value="")
-    serve_component(page, text_input)
-
-    page.locator("#text-input").fill("Hello World")
-
-    wait_until(lambda: text_input.value == "Hello World", page)
-    assert text_input.value == "Hello World"
-
-
-def test_bidirectional_sync(page):
-    """Test bidirectional state synchronization."""
-    counter = CounterButton(value=5)
-    serve_component(page, counter)
-
-    # Verify initial state
-    expect(page.locator("#counter-btn")).to_have_text("Count: 5", timeout=LOAD_TIMEOUT)
-
-    # JS → Python: Click button
-    page.locator("#counter-btn").click()
-    wait_until(lambda: counter.value == 6, page)
-
-    # Python → JS: Update from Python
-    counter.value = 100
-    expect(page.locator("#counter-btn")).to_have_text("Count: 100", timeout=DEFAULT_TIMEOUT)
-
-    # JS → Python: Click again
-    page.locator("#counter-btn").click()
-    wait_until(lambda: counter.value == 101, page)
-```
-
-### Key Testing Patterns
-
-| Pattern | Use Case |
-|---------|----------|
-| `msgs, port = serve_component(page, component)` | Serve component, get console messages |
-| `expect(locator).to_have_text("text", timeout=X)` | Assert element text |
-| `wait_until(lambda: condition, page)` | Wait for Python state change (JS → Python) |
-| `page.locator("#id").click()` / `.fill("text")` | Simulate user interaction |
-
-### Testing Components with External Resources
-
-Components loading external resources (CDN libraries, 3D models) need longer timeouts and explicit dimensions:
-
-```python
-def test_component_with_external_resources(page):
-    viewer = ModelViewer(
-        src="https://example.com/model.glb",
-        # IMPORTANT: Set explicit dimensions - 100% width/height collapses to 0px
-        style={"min-height": "400px", "min-width": "400px"},
-    )
-    serve_component(page, viewer)
-    expect(page.locator("#model-viewer")).to_be_visible(timeout=NETWORK_TIMEOUT)
-```
-
-### Running Tests
-
-```bash
-# Run UI tests in parallel for faster feedback (recommended)
 pytest path/to/test_file.py -n auto
-
-# Run UI tests sequentially (exit on first failure)
-pytest path/to/test_file.py -x
 ```
 
-- Use `-n auto` (pytest-xdist) to run tests in parallel for faster feedback
-- Run headless unless users ask for headed mode
-- Use `-x` (exit on first failure) for sequential runs
-- Use `--headed --slowmo 500` for debugging if the users asks for this
+Key utilities from `panel.tests.util`:
+- `serve_component(page, component)` -- serves and navigates browser
+- `wait_until(lambda: condition, page)` -- polls until True (JS to Python sync)
+
 
 ## 10. Complete Examples
 
@@ -1378,39 +1374,6 @@ class CounterButton(AnyWidgetComponent):
     """
 ```
 
-### Test for All Versions
-
-```python
-import pytest
-pytest.importorskip("playwright")
-
-from playwright.sync_api import expect
-from panel.tests.util import serve_component, wait_until
-
-pytestmark = pytest.mark.ui
-
-@pytest.mark.parametrize("CounterClass", [
-    pytest.param("counter_js.CounterButton", id="js"),
-    pytest.param("counter_react.CounterButton", id="react"),
-    pytest.param("counter_anywidget.CounterButton", id="anywidget"),
-])
-def test_counter(page, CounterClass):
-    import importlib
-    module_name, class_name = CounterClass.rsplit(".", 1)
-    module = importlib.import_module(module_name)
-    Counter = getattr(module, class_name)
-
-    counter = Counter(value=0)
-    serve_component(page, counter)
-
-    button = page.locator("#counter-btn")
-    expect(button).to_have_text("Count: 0")
-
-    button.click()
-    wait_until(lambda: counter.value == 1, page)
-    expect(button).to_have_text("Count: 1")
-```
-
 
 ## 11. Troubleshooting
 
@@ -1426,11 +1389,13 @@ def test_counter(page, CounterClass):
 1. **JSComponent:** Ensure `model.on('param', callback)` is registered
 2. **ReactComponent:** Use `model.useState()` not `React.useState()` for synced state
 3. **AnyWidgetComponent:** Call `model.save_changes()` after `model.set()`
+
 ### Import Errors
 
 1. Verify CDN URLs in `_importmap` are correct
 2. For React libraries, add `?external=react,react-dom`
 3. Check for CORS issues with custom CDN URLs
+4. For plugin-based libraries, try `cdn.skypack.dev` instead of `esm.sh` (see CDN Selection Guide)
 
 ### Styles Not Applied
 
@@ -1641,4 +1606,5 @@ For integrating specific JavaScript libraries:
 
 1. Search the web for "[library name] ESM import" to find CDN URLs
 2. Check esm.sh for React-compatible bundles: `https://esm.sh/[package]`
-3. Check jsDelivr for UMD bundles: `https://cdn.jsdelivr.net/npm/[package]`
+3. Check cdn.skypack.dev for plugin-based libraries: `https://cdn.skypack.dev/[package]`
+4. Check jsDelivr for UMD bundles: `https://cdn.jsdelivr.net/npm/[package]`
