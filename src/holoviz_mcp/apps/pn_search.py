@@ -53,12 +53,12 @@ class SearchConfiguration(param.Parameterized):
     """Configuration for Panel component search tool."""
 
     query = param.String(default="Button", label="Search Query")
-    package = param.Selector(default=ALL, objects=[ALL], label="Package")
+    package: str = param.Selector(default=ALL, objects=[ALL], label="Package")
     limit = param.Integer(default=10, bounds=(1, 50), label="Max Results")
 
     search = param.Event(label="Search")
 
-    results = param.List(default=[], doc="Search results")
+    results: list = param.List(default=[], doc="Search results")
     loading = param.Boolean(default=False, doc="Loading state")
     error_message = param.String(default="", doc="Error message if search fails")
 
@@ -114,7 +114,7 @@ class SearchConfiguration(param.Parameterized):
 class SearchResultsViewer(pn.viewable.Viewer):
     """Viewer for displaying search results as a menu list."""
 
-    results = param.List(default=[], allow_refs=True, doc="List of search results")
+    results: list = param.List(default=[], allow_refs=True, doc="List of search results")
 
     data = param.DataFrame(doc="DataFrame of search results")
 

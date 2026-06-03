@@ -80,7 +80,7 @@ class GetComponentConfiguration(param.Parameterized):
 
     component_name = param.String(default="Button", label="Component Name")
     module_path = param.String(default="", label="Module Path")
-    package = param.Selector(default="panel", objects=[ALL, "panel"], label="Package")
+    package: str = param.Selector(default="panel", objects=[ALL, "panel"], label="Package")
 
     get_component = param.Event(label="Get Component")
 

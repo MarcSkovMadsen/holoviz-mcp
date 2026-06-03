@@ -1,5 +1,7 @@
 """An app to retrieve HoloViews element documentation via the hv_get tool."""
 
+from typing import Literal
+
 import panel as pn
 import panel_material_ui as pmui
 import param
@@ -36,8 +38,8 @@ Visit the [HoloViews Documentation](https://holoviews.org/) and [HoloViz MCP](ht
 class GetDocstringConfiguration(param.Parameterized):
     """Configuration for the HoloViews get_docstring tool."""
 
-    element = param.Selector(default="", objects=[""], label="Element")
-    backend = param.Selector(default="bokeh", objects=["bokeh", "matplotlib", "plotly"], label="Backend")
+    element: str = param.Selector(default="", objects=[""], label="Element")
+    backend: Literal["bokeh", "matplotlib", "plotly"] = param.Selector(default="bokeh", objects=["bokeh", "matplotlib", "plotly"], label="Backend")
 
     result = param.String(default="", doc="Docstring result")
     loading = param.Boolean(default=False, doc="Loading state")

@@ -1,5 +1,7 @@
 """A search application for exploring the HoloViz MCP search tool."""
 
+from typing import Literal
+
 import panel as pn
 import panel_material_ui as pmui
 import param
@@ -99,7 +101,7 @@ class SearchConfiguration(param.Parameterized):
 
     query = param.String(default="What is HoloViz?", doc="Search text for semantic similarity search across the documentation")
 
-    project = param.Selector(
+    project: str = param.Selector(
         default=ALL,
         objects=[ALL, "panel", "hvplot", "datashader", "holoviews", "geoviews", "param", "colorcet", "holoviz"],
         doc="Filter results to a specific project. Select 'all' for all projects.",
@@ -107,7 +109,7 @@ class SearchConfiguration(param.Parameterized):
 
     max_results = param.Integer(default=5, bounds=(1, 50), doc="Maximum number of search results to return")
 
-    content = param.Selector(
+    content: Literal["truncated", "chunk", "full", "none"] = param.Selector(
         default="truncated",
         objects=["truncated", "chunk", "full", "none"],
         doc='Controls what content is returned. "truncated": full doc smart-truncated around query keywords (default). '
@@ -293,7 +295,10 @@ class SearchApp(pn.viewable.Viewer):
     """
 
     title = param.String(default="HoloViz MCP - search Tool Demo", doc="Title of the search app")
-    config = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
+    # Annotated as non-optional (always set in __init__) so param 2.4.0's generic
+    # ClassSelector descriptor does not infer ``SearchConfiguration | None`` and
+    # trigger union-attr errors on ``self.config.param``.
+    config: SearchConfiguration = param.ClassSelector(class_=SearchConfiguration, doc="Configuration for the search app")
 
     def __init__(self, **params):
         """Initialize the SearchApp with default configuration."""

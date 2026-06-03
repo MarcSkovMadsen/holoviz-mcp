@@ -54,7 +54,7 @@ class SkillConfiguration(param.Parameterized):
     Parameters correspond to the skill selection for viewing skills.
     """
 
-    skill = param.Selector(
+    skill: str | None = param.Selector(
         default=None,
         objects=[],
         doc="Select a skill to view its details",

@@ -189,6 +189,16 @@ python_version = '3.11'
 no_implicit_optional = true
 check_untyped_defs = true
 
+# The apps/ package contains demo/dev Panel tools built on param.Parameterized.
+# param 2.4.0 ships inline type hints that turn Parameter objects into generic
+# descriptors (param#1147). For these demo apps that produces noise:
+#   - assignment: reassigning an inherited Boolean param at class level
+#     (e.g. ``pn.pane.Markdown.disable_anchors = True``) now mismatches Boolean[bool]
+# These are silenced only here; union-attr and other checks stay enabled.
+[[tool.mypy.overrides]]
+module = "holoviz_mcp.apps.*"
+disable_error_code = ["assignment"]
+
 [tool.hatch.build.targets.wheel.force-include]
 "skills" = "holoviz_mcp/skills"
 
