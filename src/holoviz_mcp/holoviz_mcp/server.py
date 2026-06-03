@@ -690,10 +690,7 @@ def _patch_fastmcp_skills_utf8() -> None:
             raise FileNotFoundError(f"Skill directory not found: {self._skill_path}")
 
         if not main_file.exists():
-            raise FileNotFoundError(
-                f"Main skill file not found: {main_file}. "
-                f"Expected {self._main_file_name} in {self._skill_path}"
-            )
+            raise FileNotFoundError(f"Main skill file not found: {main_file}. " f"Expected {self._main_file_name} in {self._skill_path}")
 
         content = main_file.read_text(encoding="utf-8")
         frontmatter, body = _skill_provider_module.parse_frontmatter(content)
@@ -792,6 +789,7 @@ def _add_skills_provider():
     if roots:
         provider = SkillsDirectoryProvider(roots=roots, supporting_files="resources")
         mcp.add_provider(provider)
+
 
 _add_agent_resources()
 _add_skills_provider()

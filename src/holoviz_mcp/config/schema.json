@@ -131,7 +131,7 @@
                 "url_transform": {
                   "type": "string",
                   "description": "How to transform file path into URL",
-                  "enum": ["holoviz", "plotly", "datashader"],
+                  "enum": ["holoviz", "plotly", "datashader", "azure_devops_wiki"],
                   "default": "holoviz"
                 },
                 "reference_patterns": {
