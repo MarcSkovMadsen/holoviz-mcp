@@ -44,13 +44,14 @@ class GitRepository(BaseModel):
         description="Folders to index within the repository. Can be a list of folder names or a dict mapping folder names to FolderConfig objects",
     )
     base_url: AnyHttpUrl = Field(..., description="Base URL for documentation links")
-    url_transform: Literal["holoviz", "plotly", "datashader"] = Field(
+    url_transform: Literal["holoviz", "plotly", "datashader", "azure_devops_wiki"] = Field(
         default="holoviz",
         description="""How to transform file path into URL:
 
         - holoViz transform suffix to .html: filename.md -> filename.html
         - plotly transform suffix to /: filename.md -> filename/
         - datashader removes leading index and transform suffix to .html: 01_filename.md -> filename.html
+        - azure_devops_wiki builds an Azure DevOps wiki ?pagePath= URL: Owners/Support-Flow.md -> ?pagePath=%2FOwners%2FSupport%20Flow
         """,
     )
     reference_patterns: list[str] = Field(

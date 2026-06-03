@@ -60,11 +60,11 @@ class ListComponentsConfiguration(param.Parameterized):
 
     component_name = param.String(default="Button", label="Component Name")
     module_path = param.String(default="", label="Module Path")
-    package = param.Selector(default=ALL, objects=[ALL], label="Package")
+    package: str = param.Selector(default=ALL, objects=[ALL], label="Package")
 
     list_components = param.Event(label="List Components")
 
-    results = param.List(default=[], doc="List results")
+    results: list = param.List(default=[], doc="List results")
     loading = param.Boolean(default=False, doc="Loading state")
     error_message = param.String(default="", doc="Error message if listing fails")
 
@@ -118,7 +118,7 @@ class ListComponentsConfiguration(param.Parameterized):
 class ComponentsListViewer(pn.viewable.Viewer):
     """Viewer for displaying component list as a table."""
 
-    results = param.List(default=[], allow_refs=True, doc="List of components")
+    results: list = param.List(default=[], allow_refs=True, doc="List of components")
 
     data = param.DataFrame(doc="DataFrame of components")
 

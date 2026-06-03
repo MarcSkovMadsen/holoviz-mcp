@@ -8,6 +8,7 @@
 """
 
 import json
+from typing import Literal
 
 import panel as pn
 import panel_material_ui as pmui
@@ -31,7 +32,9 @@ class ConfigViewer(param.Parameterized):
         - Supports dark and light themes
     """
 
-    config_source = param.Selector(objects=["Combined", "Default", "User"], default="Combined", doc="Which configuration to show")
+    config_source: Literal["Combined", "Default", "User"] = param.Selector(
+        objects=["Combined", "Default", "User"], default="Combined", doc="Which configuration to show"
+    )
     dark_theme = param.Boolean(default=False, doc="Use dark theme for the JSON editor", allow_refs=True)
 
     def __init__(self, **params):

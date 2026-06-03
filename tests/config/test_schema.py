@@ -88,7 +88,7 @@ class TestSchemaValidation:
 
         assert "url_transform" in repo_props, "url_transform field missing from GitRepository schema"
         assert "enum" in repo_props["url_transform"], "url_transform should have enum values"
-        assert repo_props["url_transform"]["enum"] == ["holoviz", "plotly", "datashader"]
+        assert repo_props["url_transform"]["enum"] == ["holoviz", "plotly", "datashader", "azure_devops_wiki"]
 
     def test_schema_includes_base_url_as_required(self):
         """Test that schema marks base_url as required for GitRepository."""

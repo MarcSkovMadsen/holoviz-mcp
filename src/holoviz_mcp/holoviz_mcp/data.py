@@ -15,6 +15,8 @@ from pathlib import PurePosixPath
 from typing import Any
 from typing import Literal
 from typing import Optional
+from urllib.parse import quote
+from urllib.parse import unquote
 
 import chromadb
 import git
@@ -1059,6 +1061,61 @@ def convert_path_to_url(path: Path, remove_first_part: bool = True, url_transfor
     return url_path
 
 
+def convert_path_to_azure_devops_wiki_url(base_url: str, path: Path) -> str:
+    r"""Build an Azure DevOps wiki page URL from a repo-relative file path.
+
+    Azure DevOps wiki repositories store each page as a Markdown file whose name
+    is the page title with spaces replaced by dashes (e.g. the page
+    ``Support Flow`` is stored as ``Support-Flow.md``). The reliable, page-id
+    independent way to link to a page is the ``?pagePath=`` query form::
+
+        {base_url}?pagePath=%2FOwners%2FSupport%20Flow
+
+    The page path is the repo-relative path with the file extension stripped,
+    dashes converted back to spaces, and each segment URL-encoded
+    (``/`` -> ``%2F``, space -> ``%20``).
+
+    Parameters
+    ----------
+    base_url : str
+        Wiki base URL, e.g.
+        ``https://dev.azure.com/{org}/{project}/_wiki/wikis/{wiki}``. Any
+        trailing slash is stripped. It must not contain a page-specific numeric
+        id, which the ``?pagePath=`` form does not require.
+    path : Path
+        Repo-relative path to the page file, e.g.
+        ``Owners/HOWTO/Request-access.md``.
+
+    Returns
+    -------
+    str
+        Full Azure DevOps wiki URL using the ``?pagePath=`` query form.
+
+    Examples
+    --------
+        >>> convert_path_to_azure_devops_wiki_url(
+        ...     "https://dev.azure.com/org/proj/_wiki/wikis/my.wiki",
+        ...     Path("Owners/Support-Flow.md"),
+        ... )
+        'https://dev.azure.com/org/proj/_wiki/wikis/my.wiki?pagePath=%2FOwners%2FSupport%20Flow'
+    """
+    posix_path = PurePosixPath(_normalize_source_path(path))
+    # Strip the file extension from the final segment only.
+    posix_path = posix_path.with_suffix("")
+
+    encoded_segments: list[str] = []
+    for segment in posix_path.parts:
+        # Order matters: replace dash separators with spaces *before* decoding so
+        # that an Azure-encoded literal hyphen (``%2D``) or other escaped char
+        # (e.g. ``%23`` for ``#``) is preserved rather than mistaken for a space
+        # separator. Then re-encode the decoded title segment.
+        title = unquote(segment.replace("-", " "))
+        encoded_segments.append(quote(title, safe=""))
+
+    page_path = "%2F" + "%2F".join(encoded_segments)
+    return f"{base_url.rstrip('/')}?pagePath={page_path}"
+
+
 class DocumentationIndexer:
     """Handles cloning, processing, and indexing of documentation."""
 
@@ -1521,6 +1578,11 @@ class DocumentationIndexer:
         """
         repo_config = self.config.repositories[project]
         base_url = str(repo_config.base_url).rstrip("/")
+
+        # Azure DevOps wiki uses a ?pagePath= query form built from the full
+        # repo-relative path; the folder/.html mapping below does not apply.
+        if repo_config.url_transform == "azure_devops_wiki":
+            return convert_path_to_azure_devops_wiki_url(base_url, path)
 
         # Get the URL path mapping for this folder
         folder_url_path = repo_config.get_folder_url_path(folder_name)

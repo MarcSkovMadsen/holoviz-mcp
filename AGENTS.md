@@ -218,7 +218,7 @@ git push origin feature/your-feature-name
 pixi run test
 
 # Run specific test file
-pixi run pytest tests/test_panel_mcp.py
+pixi run -e py312 pytest tests/test_panel_mcp.py
 
 # Run with coverage
 pixi run test-coverage

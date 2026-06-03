@@ -12,6 +12,7 @@ from holoviz_mcp.holoviz_mcp.data import _build_stem_boost_clause
 from holoviz_mcp.holoviz_mcp.data import _build_where_document_clause
 from holoviz_mcp.holoviz_mcp.data import _extract_reference_category
 from holoviz_mcp.holoviz_mcp.data import chunk_document
+from holoviz_mcp.holoviz_mcp.data import convert_path_to_azure_devops_wiki_url
 from holoviz_mcp.holoviz_mcp.data import convert_path_to_url
 from holoviz_mcp.holoviz_mcp.data import extract_keywords
 from holoviz_mcp.holoviz_mcp.data import extract_pascal_terms
@@ -77,6 +78,56 @@ def test_convert_path_to_url_datashader():
 def test_convert_path_to_url_holoviz():
     url = convert_path_to_url(Path("examples/user_guide/10-Indexing_and_Selecting_Data.ipynb"), url_transform="datashader")
     assert url == "user_guide/Indexing_and_Selecting_Data.html"
+
+
+# Azure DevOps wiki
+# Pages are stored as files with spaces replaced by dashes. The viewable URL uses a
+# ?pagePath= query parameter where the path is the repo-relative path with the extension
+# stripped, dashes turned back into spaces, and each segment URL-encoded.
+AZURE_WIKI_BASE_URL = "https://dev.azure.com/dongenergy-p/Analytics%20Workspace/_wiki/wikis/Analytics-Workspace.wiki"
+
+
+def test_convert_path_to_azure_devops_wiki_url():
+    url = convert_path_to_azure_devops_wiki_url(
+        AZURE_WIKI_BASE_URL,
+        Path("Owners/HOWTO/Request-access-to-Analytics-Workspace-Forms-in-OneWebshop.md"),
+    )
+    assert url == (
+        "https://dev.azure.com/dongenergy-p/Analytics%20Workspace/_wiki/wikis/Analytics-Workspace.wiki"
+        "?pagePath=%2FOwners%2FHOWTO%2FRequest%20access%20to%20Analytics%20Workspace%20Forms%20in%20OneWebshop"
+    )
+
+
+def test_convert_path_to_azure_devops_wiki_url_short():
+    url = convert_path_to_azure_devops_wiki_url(AZURE_WIKI_BASE_URL, Path("Owners/Support-Flow.md"))
+    assert url == "https://dev.azure.com/dongenergy-p/Analytics%20Workspace/_wiki/wikis/Analytics-Workspace.wiki?pagePath=%2FOwners%2FSupport%20Flow"
+
+
+def test_convert_path_to_azure_devops_wiki_url_strips_trailing_slash():
+    url = convert_path_to_azure_devops_wiki_url(AZURE_WIKI_BASE_URL + "/", Path("Owners/Support-Flow.md"))
+    assert url == "https://dev.azure.com/dongenergy-p/Analytics%20Workspace/_wiki/wikis/Analytics-Workspace.wiki?pagePath=%2FOwners%2FSupport%20Flow"
+
+
+def test_convert_path_to_azure_devops_wiki_url_encoded_chars():
+    # Azure encodes a literal '#' as %23 in the filename; it must survive round-trip.
+    url = convert_path_to_azure_devops_wiki_url(AZURE_WIKI_BASE_URL, Path("Owners/C%23-Guide.md"))
+    assert url == "https://dev.azure.com/dongenergy-p/Analytics%20Workspace/_wiki/wikis/Analytics-Workspace.wiki?pagePath=%2FOwners%2FC%23%20Guide"
+
+
+def test_generate_doc_url_azure_devops_wiki(tmp_path):
+    """_generate_doc_url must use the pagePath form and keep the leading path segment."""
+    indexer = DocumentationIndexer(data_dir=tmp_path, repos_dir=tmp_path / "repos", vector_dir=tmp_path / "chroma")
+    indexer.config.repositories["aw-wiki"] = GitRepository(
+        url=AnyHttpUrl("https://dongenergy-p@dev.azure.com/dongenergy-p/Analytics%20Workspace/_git/Analytics-Workspace.wiki"),
+        base_url=AnyHttpUrl(AZURE_WIKI_BASE_URL),
+        folders={"": {"url_path": "/"}},
+        url_transform="azure_devops_wiki",
+    )
+    url = indexer._generate_doc_url("aw-wiki", Path("Owners/HOWTO/Request-access-to-Analytics-Workspace-Forms-in-OneWebshop.md"), folder_name="")
+    assert url == (
+        "https://dev.azure.com/dongenergy-p/Analytics%20Workspace/_wiki/wikis/Analytics-Workspace.wiki"
+        "?pagePath=%2FOwners%2FHOWTO%2FRequest%20access%20to%20Analytics%20Workspace%20Forms%20in%20OneWebshop"
+    )
 
 
 # https://github.com/holoviz/panel/blob/main/examples/reference/layouts/Card.ipynb

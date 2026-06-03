@@ -58,10 +58,10 @@ For more information visit: [hvPlot Documentation](https://hvplot.holoviz.org/) 
 class GetDocstringConfiguration(param.Parameterized):
     """Configuration for hvPlot hvplot_get tool."""
 
-    plot_type = param.Selector(default="line", objects=["line"], label="Plot Type")
+    plot_type: str = param.Selector(default="line", objects=["line"], label="Plot Type")
     docstring = param.Boolean(default=True, label="Include Docstring")
     generic = param.Boolean(default=True, label="Include Generic Options")
-    style = param.Selector(default=True, objects=[True, "matplotlib", "bokeh", "plotly"], label="Style Backend")
+    style: bool | str = param.Selector(default=True, objects=[True, "matplotlib", "bokeh", "plotly"], label="Style Backend")
 
     result = param.String(default="", doc="Docstring result")
     loading = param.Boolean(default=False, doc="Loading state")
