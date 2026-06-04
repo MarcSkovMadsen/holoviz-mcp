@@ -690,7 +690,7 @@ def _patch_fastmcp_skills_utf8() -> None:
             raise FileNotFoundError(f"Skill directory not found: {self._skill_path}")
 
         if not main_file.exists():
-            raise FileNotFoundError(f"Main skill file not found: {main_file}. " f"Expected {self._main_file_name} in {self._skill_path}")
+            raise FileNotFoundError(f"Main skill file not found: {main_file}. Expected {self._main_file_name} in {self._skill_path}")
 
         content = main_file.read_text(encoding="utf-8")
         frontmatter, body = _skill_provider_module.parse_frontmatter(content)
@@ -785,7 +785,18 @@ def _add_skills_provider():
 
     _patch_fastmcp_skills_utf8()
 
-    roots = [p for p in _skills_search_paths() if p.exists()]
+    roots: list[Path] = []
+    for p in _skills_search_paths():
+        if not p.exists():
+            continue
+        roots.append(p)
+        # Context-directory layout: sub-skills are nested one level deeper inside
+        # a ``skills/`` subdirectory.  Add that subdirectory as an additional root
+        # so the provider can discover each sub-skill directly.
+        nested = p / "skills"
+        if nested.is_dir() and nested not in roots:
+            roots.append(nested)
+
     if roots:
         provider = SkillsDirectoryProvider(roots=roots, supporting_files="resources")
         mcp.add_provider(provider)

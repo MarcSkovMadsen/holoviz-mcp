@@ -73,6 +73,25 @@ If you get detailed, accurate responses with specific Panel component informatio
 !!! tip "Force MCP Usage"
     In VS Code, you can include `#holoviz` in your prompt to explicitly request that Copilot use the holoviz-mcp server for your query.
 
+## Activate Skills
+
+[Agent Skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills) are Markdown files that provide reusable instructions to Copilot. HoloViz MCP ships skills for Panel, hvPlot, HoloViews, and more — and you can use them independently of the MCP server.
+
+To activate automatic skills usage in VS Code:
+
+1. Open VS Code Settings (`Ctrl+,` or `Cmd+,`)
+2. Search for **`chat.useAgentSkills`** and check the box
+
+Then install HoloViz skills into your project:
+
+```bash
+holoviz-mcp install copilot --skills
+```
+
+This populates `.github/skills/` with HoloViz skill definitions. Skills can also be placed in `.claude/skills/` or `.agents/skills/` for the same effect.
+
+Verify the setup by typing `/skills` in the Copilot Chat panel — you should see the HoloViz skills listed.
+
 ## Advanced Configuration
 
 ### Set Log Level

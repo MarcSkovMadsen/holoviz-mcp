@@ -79,7 +79,7 @@ You should see output confirming that agents were installed to `.github/agents/`
     This installs agents to `~/.copilot/agents/`.
 
 !!! tip
-    Run `holoviz-mcp install copilot --skills` to populate the `.github/skills` folder too. See [Use Agent Skills in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills) for more info.
+    Run `holoviz-mcp install copilot --skills` to populate the `.github/skills` folder too. To activate skills in VS Code you also need to enable the `chat.useAgentSkills` setting — see [Activate Skills](../how-to/configure-vscode.md#activate-skills) for the full steps.
 
 ## Step 5: Configure VS Code
 

@@ -3,15 +3,22 @@
 Pure Python functions for accessing skill/best-practice documents.
 No MCP framework required. No heavy dependencies (chromadb, etc.).
 
-Skills are stored in the Agent Skills standard format::
+Built-in skills follow the Agent Skills standard format inside a named
+context directory.  They live in the repo root at ``skills/developing-with-holoviz/``
+and are copied into the installed package at build time::
 
-    skills/<name>/SKILL.md
+    skills/developing-with-holoviz/SKILL.md          <- routing skill
+    skills/developing-with-holoviz/skills/<name>/SKILL.md  <- sub-skills
+
+    # installed location (wheel / site-packages):
+    holoviz_mcp/developing-with-holoviz/SKILL.md
+    holoviz_mcp/developing-with-holoviz/skills/<name>/SKILL.md
 
 Three sources are scanned with precedence (most specific wins):
 
 1. **Project-level** — ``./skills/`` in cwd
 2. **User-level** — ``~/.holoviz-mcp/skills/``
-3. **Built-in** — Skills embedded in the package
+3. **Built-in** — Skills installed into the package (``holoviz_mcp/developing-with-holoviz/``)
 
 Usage::
 
@@ -50,8 +57,14 @@ def _skills_search_paths() -> list[Path]:
 def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
     """Locate the SKILL.md file for a given skill name within a directory.
 
-    Supports both the new directory format (``<name>/SKILL.md``) and the
-    legacy flat format (``<name>.md``) for backward compatibility.
+    .. deprecated::
+        This function is no longer called internally — :func:`get_skill` now
+        delegates to :func:`_scan_skills_in_dir` for consistent handling of all
+        layouts (context-directory, flat, and legacy).  ``_find_skill_file`` does
+        not understand the context-directory layout and will fail to find built-in
+        skills.  It is retained for any external callers but will be removed in a
+        future release.  Use :func:`get_skill`
+        instead.
 
     Parameters
     ----------
@@ -65,6 +78,13 @@ def _find_skill_file(skill_dir: Path, name: str) -> Path | None:
     Path | None
         Path to the skill file, or None if not found.
     """
+    import warnings
+
+    warnings.warn(
+        "_find_skill_file() is deprecated and does not support the context-directory layout. Use get_skill() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # New format: <name>/SKILL.md
     candidate = skill_dir / name / "SKILL.md"
     if candidate.exists():
@@ -84,7 +104,7 @@ def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
     Parameters
     ----------
     skill_dir : Path
-        Root skills directory to scan.
+        Root directory to scan.
 
     Returns
     -------
@@ -95,15 +115,27 @@ def _scan_skills_in_dir(skill_dir: Path) -> dict[str, Path]:
     if not skill_dir.exists():
         return skills
 
-    # New format: subdirectories with SKILL.md
-    for sub in sorted(skill_dir.iterdir()):
-        if sub.is_dir():
-            skill_file = sub / "SKILL.md"
-            if skill_file.exists():
-                skills[sub.name] = skill_file
+    # Context-directory layout: top-level SKILL.md is the routing skill
+    root_skill = skill_dir / "SKILL.md"
+    if root_skill.exists():
+        skills[skill_dir.name] = root_skill
 
-    # Legacy flat format: *.md files
+    # Context-directory layout: sub-skills live inside a nested skills/ dir
+    nested_skills_dir = skill_dir / "skills"
+    scan_dirs = [nested_skills_dir] if nested_skills_dir.is_dir() else [skill_dir]
+
+    # Standard format: <name>/SKILL.md
+    for scan_dir in scan_dirs:
+        for sub in sorted(scan_dir.iterdir()):
+            if sub.is_dir():
+                skill_file = sub / "SKILL.md"
+                if skill_file.exists() and sub.name not in skills:
+                    skills[sub.name] = skill_file
+
+    # Legacy flat format: *.md files directly in skill_dir
     for md_file in sorted(skill_dir.glob("*.md")):
+        if md_file.name == "SKILL.md":
+            continue
         name = md_file.stem
         if name not in skills:  # Don't override directory-format skills
             skills[name] = md_file
@@ -185,10 +217,12 @@ def get_skill(name: str) -> str:
     name = name.replace("_", "-")
 
     # Search in precedence order (project > user > builtin)
+    # Uses _scan_skills_in_dir for consistent handling of all layouts including
+    # the context-directory layout (routing skill + nested skills/ subdir).
     for search_dir in _skills_search_paths():
-        skill_file = _find_skill_file(search_dir, name)
-        if skill_file is not None:
-            return skill_file.read_text(encoding="utf-8")
+        scanned = _scan_skills_in_dir(search_dir)
+        if name in scanned:
+            return scanned[name].read_text(encoding="utf-8")
 
     # If not found, raise error with helpful message
     available: set[str] = set()
@@ -224,16 +258,18 @@ def _find_skill_dir(name: str) -> Path:
     name = name.replace("_", "-")
 
     for search_dir in _skills_search_paths():
+        # Flat layout: skills/<name>/SKILL.md
         candidate = search_dir / name
         if candidate.is_dir() and (candidate / "SKILL.md").exists():
             return candidate
+        # Context-directory layout: skills/skills/<name>/SKILL.md
+        nested = search_dir / "skills" / name
+        if nested.is_dir() and (nested / "SKILL.md").exists():
+            return nested
 
     available: set[str] = set()
     for search_dir in _skills_search_paths():
-        if search_dir.exists():
-            for sub in search_dir.iterdir():
-                if sub.is_dir() and (sub / "SKILL.md").exists():
-                    available.add(sub.name)
+        available.update(_scan_skills_in_dir(search_dir).keys())
 
     available_str = ", ".join(sorted(available)) if available else "None"
     raise FileNotFoundError(f"Skill directory '{name}' not found. Available skills: {available_str}")
