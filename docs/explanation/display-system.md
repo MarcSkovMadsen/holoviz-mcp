@@ -6,7 +6,7 @@ The Display Server is a component of the HoloViz MCP that enables AI assistants 
 
 The Display System uses a decoupled architecture:
 
-1. **MCP Server** (your main process): Hosts the `show` tool, connects via HTTP
+1. **MCP Server** (your main process): Hosts the `show` and `show_pyodide` tools
 2. **Display Server** (independent process): Executes Python code and serves web pages
 3. **Browser** (user interface): Displays visualizations and management interfaces
 
@@ -22,7 +22,14 @@ When you use the `show` tool:
 3. Display Server stores the snippet in SQLite database
 4. Display Server executes the code and captures output
 5. MCP server returns URL to view visualization
-6. User accesses visualization via URL in browser
+6. User accesses visualization via URL in browser (or via in-chat MCP App UI when supported)
+
+When you use the `show_pyodide` tool:
+
+1. AI sends code to the MCP server via the tool
+2. MCP server returns a payload for an MCP App resource
+3. The host renders the app in a sandboxed iframe
+4. panel-live runs the code in a browser/Pyodide runtime
 
 This decoupled architecture means:
 
@@ -38,7 +45,7 @@ The `show` MCP tool is the primary interface for creating visualizations. It acc
 - **app** (required): Python code to execute
 - **name** (optional): Human-readable title for the visualization
 - **description** (optional): Explanation of what the code does
-- **method** (optional): Execution method - "jupyter" (default) or "panel"
+- **method** (optional): Execution method - "jupyter" (default), "panel", or "pyodide"
 
 The tool returns a response containing:
 
@@ -47,6 +54,17 @@ The tool returns a response containing:
 - **created_at**: Timestamp when created
 
 The workflow is designed to be simple: send code, get URL, view in browser.
+
+## The `show_pyodide` Tool
+
+The `show_pyodide` MCP tool is a browser-runtime path intended for panel-live/Pyodide rendering.
+It does not depend on display-server code execution.
+
+It accepts:
+
+- **code** (required): Python code to run in panel-live
+- **name** (optional): Human-readable title for the app
+- **description** (optional): Explanation of what the code does
 
 ## Why an Independent Server?
 
@@ -81,7 +99,7 @@ A **snippet** is a stored code sample with metadata. Each snippet has:
 - Detected packages and Panel extensions
 - Execution method and timestamp
 
-The Display System supports two execution methods:
+The Display System supports three execution methods:
 
 ### Jupyter Method (Default)
 
@@ -100,6 +118,11 @@ Executes code that explicitly calls `.servable()` on Panel components. This meth
 - Requires explicit `pn.extension()` call
 - Multiple objects can be served
 - Best for complex, interactive applications
+
+### Pyodide Method
+
+Stores snippets with browser-runtime intent and skips Panel-extension inference.
+This method is intended for `show_pyodide` and panel-live flows.
 
 The method is automatically inferred from the code or can be specified explicitly.
 

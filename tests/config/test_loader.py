@@ -210,6 +210,41 @@ class TestConfigLoader:
         assert "repo1" in merged["docs"]["repositories"]
         assert "repo2" in merged["docs"]["repositories"]
 
+    def test_filter_known_fields_keeps_display(self, config_loader: ConfigLoader):
+        """Display config should not be filtered out as unknown."""
+        filtered = config_loader._filter_known_fields(
+            {
+                "display": {"enabled": False},
+                "server": {"name": "test"},
+                "unknown": {"x": 1},
+            }
+        )
+
+        assert "display" in filtered
+        assert "unknown" not in filtered
+
+    def test_user_display_config_override(self, config_loader: ConfigLoader, test_config: HoloVizMCPConfig):
+        """User config display settings are merged and applied."""
+        config_file = test_config.config_file_path()
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+
+        user_config = {
+            "display": {
+                "enabled": False,
+                "mode": "remote",
+                "server_url": "http://localhost:5008",
+            }
+        }
+
+        with open(config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        config = config_loader.load_config()
+
+        assert config.display.enabled is False
+        assert config.display.mode == "remote"
+        assert config.display.server_url == "http://localhost:5008"
+
 
 class TestConfigLoaderGlobalFunctions:
     """Test global configuration functions."""

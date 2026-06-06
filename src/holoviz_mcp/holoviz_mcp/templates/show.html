@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>HoloViz MCP · show</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        min-height: 100vh;
+        gap: 12px;
+        padding: 12px;
+        box-sizing: border-box;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      button,
+      a.button {
+        border: 1px solid rgba(120, 120, 120, 0.4);
+        border-radius: 8px;
+        padding: 6px 10px;
+        background: transparent;
+        color: inherit;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+
+      .message {
+        margin: 0;
+        white-space: pre-wrap;
+        opacity: 0.9;
+      }
+
+      iframe {
+        width: 100%;
+        height: calc(100vh - 180px);
+        min-height: 420px;
+        border: 1px solid rgba(120, 120, 120, 0.4);
+        border-radius: 8px;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div class="actions">
+        <button id="copy-code" type="button">Copy Code</button>
+        <button id="copy-link" type="button">Copy URL</button>
+      </div>
+      <p id="message" class="message">Awaiting tool result…</p>
+      <iframe id="view" src="about:blank" title="show preview"></iframe>
+    </div>
+
+    <script type="module">
+      import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@0.4.0/app-with-deps";
+
+      const message = document.getElementById("message");
+      const iframe = document.getElementById("view");
+      const copyCodeButton = document.getElementById("copy-code");
+      const copyButton = document.getElementById("copy-link");
+
+      const urlRegex = /(https?:\/\/[^\s)]+)/i;
+      let currentUrl = "";
+      let currentCode = "";
+
+      copyCodeButton.addEventListener("click", async () => {
+        if (!navigator.clipboard) {
+          return;
+        }
+
+        await navigator.clipboard.writeText(currentCode || "No code available.");
+      });
+
+      copyButton.addEventListener("click", async () => {
+        if (!currentUrl || !navigator.clipboard) {
+          return;
+        }
+        await navigator.clipboard.writeText(currentUrl);
+      });
+
+      const app = new App({ name: "holoviz-mcp-show", version: "0.1.0" });
+
+      app.ontoolresult = ({ content }) => {
+        const textContent = content?.find((entry) => entry.type === "text");
+        const rawText = textContent?.text ?? "No tool text payload received.";
+
+        let parsedPayload = null;
+        try {
+          parsedPayload = JSON.parse(rawText);
+        } catch {
+          parsedPayload = null;
+        }
+
+        if (parsedPayload && typeof parsedPayload === "object") {
+          const baseMessage = parsedPayload.message || "Tool result received.";
+          const extraError = parsedPayload.error_message ? `\n\n${parsedPayload.error_message}` : "";
+          message.textContent = `${baseMessage}${extraError}`;
+          currentUrl = typeof parsedPayload.url === "string" ? parsedPayload.url : "";
+          currentCode = typeof parsedPayload.code === "string" ? parsedPayload.code : "";
+        } else {
+          message.textContent = rawText;
+          const match = rawText.match(urlRegex);
+          currentUrl = match ? match[1] : "";
+          currentCode = "";
+        }
+
+        if (currentUrl) {
+          iframe.src = currentUrl;
+        } else {
+          iframe.src = "about:blank";
+        }
+      };
+
+      await app.connect();
+    </script>
+  </body>
+</html>

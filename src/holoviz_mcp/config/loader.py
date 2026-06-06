@@ -102,7 +102,7 @@ class ConfigLoader:
         This prevents validation errors when loading user config files that might
         contain extra fields.
         """
-        known_fields = {"server", "docs", "resources", "prompts", "user_dir", "default_dir", "repos_dir"}
+        known_fields = {"server", "docs", "resources", "prompts", "display", "user_dir", "default_dir", "repos_dir"}
         return {k: v for k, v in config_dict.items() if k in known_fields}
 
     def _get_default_config(self) -> dict[str, Any]:
@@ -123,6 +123,14 @@ class ConfigLoader:
             },
             "resources": {"search_paths": []},
             "prompts": {"search_paths": []},
+            "display": {
+                "enabled": True,
+                "mode": "subprocess",
+                "port": 5005,
+                "host": "localhost",
+                "max_restarts": 3,
+                "health_check_interval": 60,
+            },
         }
 
     def _load_yaml_file(self, file_path: Path) -> dict[str, Any]:
@@ -272,6 +280,12 @@ class ConfigLoader:
             },
             "resources": {"search_paths": []},
             "prompts": {"search_paths": []},
+            "display": {
+                "enabled": True,
+                "mode": "subprocess",
+                "port": 5005,
+                "host": "localhost",
+            },
         }
 
         with open(config_file, "w", encoding="utf-8") as f:

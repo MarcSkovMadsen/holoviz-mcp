@@ -19,14 +19,73 @@ from __future__ import annotations
 import asyncio
 import atexit
 import logging
+import os
 from asyncio import sleep
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
+
+
+def _internalize_url(url: str) -> str:
+    """Convert an externalized proxy/Codespaces URL back to a localhost URL.
+
+    panel-live-server (and other tools) rewrite localhost URLs to externally
+    reachable addresses so the *user* can open them in a browser.  When the
+    *inspect* tool uses Playwright on the same machine it should talk directly
+    to localhost — no round-trip through the internet, no auth required.
+
+    Supported patterns
+    ------------------
+    GitHub Codespaces
+        ``https://<name>-<port>.app.github.dev<path>``
+        → ``http://localhost:<port><path>``
+
+    Jupyter server proxy
+        ``<JUPYTER_SERVER_PROXY_URL>/<port><path>``
+        → ``http://localhost:<port><path>``
+
+    All other URLs are returned unchanged.
+    """
+    if not url:
+        return url
+
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").lower()
+
+    # ── GitHub Codespaces ────────────────────────────────────────────────────
+    codespace_name = os.getenv("CODESPACE_NAME", "")
+    forwarding_domain = os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "app.github.dev")
+    if codespace_name and hostname.endswith(f".{forwarding_domain}"):
+        # hostname: "<codespace_name>-<port>.<forwarding_domain>"
+        inner = hostname[: -len(f".{forwarding_domain}")]  # strip domain suffix
+        # port is always the last hyphen-separated segment
+        try:
+            port = int(inner.rsplit("-", 1)[-1])
+        except ValueError:
+            return url
+        path = parsed.path or "/"
+        query = f"?{parsed.query}" if parsed.query else ""
+        return f"http://localhost:{port}{path}{query}"
+
+    # ── Jupyter server proxy ─────────────────────────────────────────────────
+    proxy_base = os.getenv("JUPYTER_SERVER_PROXY_URL", "").rstrip("/")
+    if proxy_base and url.startswith(proxy_base):
+        remainder = url[len(proxy_base) :].lstrip("/")  # e.g. "5077/view?id=abc"
+        parts = remainder.split("/", 1)
+        try:
+            port = int(parts[0])
+        except ValueError:
+            return url
+        rest = "/" + parts[1] if len(parts) > 1 else "/"
+        return f"http://localhost:{port}{rest}"
+
+    return url
+
 
 # Known browser/framework noise patterns to filter from console logs.
 # These are infrastructure messages, not application errors.
@@ -179,6 +238,8 @@ async def inspect_app(
     """
     if not screenshot and not console_logs:
         raise ValueError("At least one of 'screenshot' or 'console_logs' must be True.")
+
+    url = _internalize_url(url)
 
     manager = _get_playwright_manager()
     browser = await manager.get_browser()
