@@ -23,30 +23,30 @@ Core dependencies provided with the `panel` Python package:
 
 Optional panel-extensions:
 
-- **panel-material-ui**: Modern Material UI components. To replace the panel native widgets within the next two years.
+- **panel-material-ui**: Modern Material UI components. Will replace the panel native widgets within the next two years.
 - **panel-graphic-walker**: Modern Tableau like interface. Can offload computations to the server and thus scale to large datasets.
 
-Optional dependencies from the HoloViz Ecosystem:
+Optional HoloViz ecosystem dependencies:
 
-- **colorcet**: Perceptually uniform colormaps collection. Best for: scientific visualization requiring accurate color representation, avoiding rainbow colormaps, accessible color schemes. Integrates with hvPlot, HoloViews, Matplotlib, Bokeh.
-- **datashader**: Renders large datasets (millions+ points) into images for visualization. Best for: big data visualization, geospatial datasets, scatter plots with millions of points, heatmaps of dense data. Requires hvPlot or HoloViews as frontend.
-- **geoviews**: Geographic data visualization with map projections and tile sources. Best for: geographic/geospatial plots, map-based dashboards, when you need coordinate systems and projections. Built on HoloViews, works seamlessly with hvPlot.
-- **holoviews**: Declarative data visualization library with composable elements. Best for: complex multi-layered plots, advanced interactivity (linked brushing, selection), when you need fine control over plot composition, scientific visualizations. More powerful but steeper learning curve than hvPlot.
-- **holoviz-mcp**: Model Context Protocol server for HoloViz ecosystem. Provides access to detailed documentation, component search and agent skills.
-- **hvplot**: High-level plotting API with Pandas `.plot()`-like syntax. Best for: quick exploratory visualizations, interactive plots from DataFrames/Xarray, when you want interactivity without verbose code. Built on HoloViews.
-- **hvsampledata**: Shared datasets for the HoloViz projects.
+* **hvPlot**: High-level interactive plotting for DataFrames and arrays.
+* **HoloViews**: Composable, declarative visualizations for more advanced interactivity and plot composition.
+* **Datashader**: Scalable rendering for very large datasets.
+* **GeoViews**: Geospatial plotting with projections and map tiles.
+* **colorcet**: Perceptually uniform, accessible colormaps.
+* **holoviz-mcp**: Documentation, component search, and skill lookup tools for the HoloViz ecosystem.
+* **hvsampledata**: Shared example datasets for HoloViz projects.
 
-Optional dependencies from the wider PyData Ecosystem:
+Optional wider PyData dependencies:
 
-- **altair**: Declarative, grammar-of-graphics visualization library. Best for: statistical visualizations, interactive exploratory charts, when you need Vega-Lite's extensive chart gallery. Works well with Pandas/Polars DataFrames.
-- **dask**: Parallel computing library for scaling Pandas DataFrames beyond memory. Best for: processing datasets larger than RAM, parallel computation across multiple cores/machines, lazy evaluation workflows.
-- **duckdb**: High-performance analytical SQL database. Best for: fast SQL queries on DataFrames, aggregations on large datasets, when you need SQL interface, OLAP-style analytics. Much faster than Pandas for analytical queries.
-- **matplotlib**: Low-level, highly customizable plotting library. Best for: publication-quality static plots, fine-grained control over every aspect of visualization, scientific plots, when you need pixel-perfect control.
-- **pandas**: Industry-standard DataFrame library for tabular data. Best for: data cleaning, transformation, time series analysis, datasets that fit in memory. The default choice for most data work.
-- **Plotly**: Interactive, publication-quality visualization library. Best for: 3D plots, complex interactive charts, animations, when you need hover tooltips and interactivity. Works well with Dash and Panel.
-- **polars**: Modern, fast DataFrame library written in Rust. Best for: high-performance data processing, datasets that fit in memory but need speed, when you need lazy evaluation, better memory efficiency than Pandas.
-- **xarray**: N-dimensional labeled arrays and datasets. Best for: multidimensional scientific data (climate, satellite imagery), data with multiple dimensions and coordinates, NetCDF/HDF5 files, geospatial raster data.
-- **watchfiles**: Enables high performance file watching and autoreload for the panel server.
+* **pandas**: Standard tabular data processing.
+* **polars**: Faster, memory-efficient DataFrame processing.
+* **duckdb**: Fast analytical SQL over local data and DataFrames.
+* **dask**: Parallel and out-of-core computation for larger-than-memory workloads.
+* **xarray**: Labeled N-dimensional arrays for scientific data.
+* **Altair**: Declarative statistical visualization with Vega-Lite.
+* **Plotly**: Rich interactive charts, including 3D and animation.
+* **matplotlib**: Fine-grained static plotting.
+* **watchfiles**: Fast file watching and autoreload for Panel development.
 
 ## Common Use Cases
 
@@ -222,7 +222,7 @@ DO fix any errors identified.
 - DO use `param.Parameterized` or `pn.viewable.Viewer` classes to organize and manage state
 - DO create widgets with `.from_param()` method. DON'T do this for panes, i.e. pn.pane.Str has no from_param method.
 - DO use `@param.depends()` for reactive methods
-- DO use `@param.depends(..., watch=True)` to update parameter/ state values and for side-effects like sending an email.
+- DO use `@param.depends(..., watch=True)` to update parameter/ state values and for side-effects like logging.
 - DO group related parameters in separate `Parameterized` or `Viewable` classes
 
 ```python
@@ -393,6 +393,7 @@ if __name__ == "__main__":
 - **Defer load**: Defer load to after the app is shown to the user: `pn.extension(defer_load=True, loading_indicator=True, ...)`
 - **Lazy-load components** using Tabs or Accordion for heavy content
 - **Use caching** with `@pn.cache` decorator for expensive computations
+- **Batch Updates** with `pn.io.hold()` as a decorator or context manager when updating multiple components at once.
 - **Use async/await**: Implement asynchronous patterns for I/O operations
 - **Use faster frameworks**: Replace slower Pandas with faster Polars or DuckDB
 - **Offload to threads**: Consider using threading for CPU-intensive tasks
@@ -524,11 +525,11 @@ def kpi_value(self):
 
 ### Markdown
 
-- DO set `Markdown.disable_anchors=True` to avoid page flickr when hovering over headers.
+- DO set `Markdown.disable_anchors=True` to avoid page flicker when hovering over headers.
 
 ### Bind
 
-- DON't bind a function to nothing: `pn.bind(some_func)`. Just run the function instead `some_func()`.
+- DON'T bind a function to nothing: `pn.bind(some_func)`. Just run the function instead `some_func()`.
 
 ## Plotting
 
